@@ -6,9 +6,9 @@ import { useState } from "react";
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const nav = [
-    ...CATEGORIES.map((c) => ({ label: c.label.toUpperCase(), to: "/products", search: { category: c.slug } as const })),
-    { label: "COLLECTIONS", to: "/products", search: {} },
-    { label: "NEW ARRIVALS", to: "/products", search: { sort: "new" as const } },
+    ...CATEGORIES.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
+    { label: "COLLECTIONS", hash: "" },
+    { label: "NEW ARRIVALS", hash: "new" },
   ];
 
   return (
@@ -33,8 +33,8 @@ export function SiteHeader() {
           {nav.map((n) => (
             <Link
               key={n.label}
-              to={n.to}
-              search={n.search as never}
+              to="/products"
+              hash={n.hash || undefined}
               className="text-cream/85 transition-colors hover:text-gold"
             >
               {n.label}
@@ -61,8 +61,8 @@ export function SiteHeader() {
             {nav.map((n) => (
               <Link
                 key={n.label}
-                to={n.to}
-                search={n.search as never}
+                to="/products"
+                hash={n.hash || undefined}
                 onClick={() => setOpen(false)}
                 className="rounded-md px-3 py-2 tracking-[0.16em] text-cream/85 hover:bg-white/5 hover:text-gold"
               >
