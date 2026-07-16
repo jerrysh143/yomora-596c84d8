@@ -87,10 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
       {
         property: "og:description",
-        content: "Beautifully crafted 925 sterling silver jewellery. Free shipping across India.",
+        content: "YOMORA by Nehalbhai Devika Jewellers — timeless 925 sterling silver rings, earrings, neckwear, and bracelets crafted for every you.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
+      { name: "twitter:description", content: "YOMORA by Nehalbhai Devika Jewellers — timeless 925 sterling silver rings, earrings, neckwear, and bracelets crafted for every you." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/772713ce-6192-47f4-858a-c2b2c9aa3080/id-preview-f9eb098d--20fcf4de-a694-46e3-a66b-02f491105103.lovable.app-1784237796544.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/772713ce-6192-47f4-858a-c2b2c9aa3080/id-preview-f9eb098d--20fcf4de-a694-46e3-a66b-02f491105103.lovable.app-1784237796544.png" },
     ],
     links: [
       {
