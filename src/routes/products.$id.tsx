@@ -1,30 +1,22 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ShieldCheck, Truck, RotateCcw, Check } from "lucide-react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { PRODUCTS, formatINR, getProduct } from "@/lib/products";
+import { formatINR, productImage } from "@/lib/products";
+import { productQuery, productsQuery } from "@/lib/products.queries";
 
 export const Route = createFileRoute("/products/$id")({
   loader: ({ params }) => {
-    const product = getProduct(params.id);
-    if (!product) throw notFound();
-    return { product };
+    // Data is fetched via useSuspenseQuery in the component; loader kept minimal.
+    return { id: params.id };
   },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return { meta: [{ title: "Not found — YOMORA" }, { name: "robots", content: "noindex" }] };
-    }
-    const p = loaderData.product;
-    return {
-      meta: [
-        { title: `${p.name} — YOMORA` },
-        { name: "description", content: p.description },
-        { property: "og:title", content: `${p.name} — YOMORA` },
-        { property: "og:description", content: p.description },
-        { property: "og:image", content: p.image },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Product — YOMORA" },
+      { name: "description", content: "Handcrafted 925 sterling silver jewellery from YOMORA." },
+    ],
+  }),
   notFoundComponent: () => (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -53,7 +45,10 @@ export const Route = createFileRoute("/products/$id")({
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
+  const { id } = Route.useLoaderData();
+  const { data: product } = useSuspenseQuery(productQuery(id));
+  const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
+  if (!product) throw notFound();
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
@@ -67,7 +62,7 @@ function ProductPage() {
 
         <div className="mt-8 grid gap-10 md:grid-cols-2">
           <div className="bg-secondary/40">
-            <img src={product.image} width={900} height={900} alt={product.name} className="aspect-square w-full object-cover" />
+            <img src={productImage(product)} width={900} height={900} alt={product.name} className="aspect-square w-full object-cover" />
           </div>
 
           <div>
@@ -106,7 +101,7 @@ function ProductPage() {
               {related.map((p) => (
                 <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                   <div className="overflow-hidden bg-secondary/40">
-                    <img src={p.image} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   </div>
                   <h3 className="mt-3 font-display text-lg text-foreground">{p.name}</h3>
                   <p className="mt-1 text-sm text-foreground">{formatINR(p.price)}</p>
