@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { CATEGORIES, PRODUCTS, formatINR, type Category } from "@/lib/products";
+import { CATEGORIES, formatINR, productImage, type Category } from "@/lib/products";
+import { productsQuery } from "@/lib/products.queries";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -13,12 +15,16 @@ export const Route = createFileRoute("/products")({
       { property: "og:description", content: "925 hallmarked sterling silver jewellery for every occasion." },
     ],
   }),
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(productsQuery());
+  },
   component: ProductsPage,
 });
 
 type Filter = Category | "all";
 
 function ProductsPage() {
+  const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
   const [filter, setFilter] = useState<Filter>("all");
   const [sortNew, setSortNew] = useState(false);
 
@@ -37,9 +43,9 @@ function ProductsPage() {
 
   const items = useMemo(() => {
     let list = filter === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === filter);
-    if (sortNew) list = [...list].sort((a, b) => Number(!!b.isNew) - Number(!!a.isNew));
+    if (sortNew) list = [...list].sort((a, b) => Number(!!b.is_new) - Number(!!a.is_new));
     return list;
-  }, [filter, sortNew]);
+  }, [filter, sortNew, PRODUCTS]);
 
   const filters: { key: Filter; label: string }[] = [
     { key: "all", label: "All" },
@@ -85,8 +91,8 @@ function ProductsPage() {
           {items.map((p) => (
             <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
-                <img src={p.image} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                {p.isNew && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                {p.is_new && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
               </div>
               <div className="pt-4">
                 <h3 className="font-display text-lg text-foreground">{p.name}</h3>

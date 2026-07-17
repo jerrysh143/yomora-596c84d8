@@ -1,18 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, Award, Gem, Hammer, Truck, ShieldCheck, PencilLine, Check } from "lucide-react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { PRODUCTS, CATEGORIES, formatINR } from "@/lib/products";
+import { CATEGORIES, formatINR, productImage } from "@/lib/products";
+import { productsQuery } from "@/lib/products.queries";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(productsQuery());
+  },
   component: Index,
 });
 
 function Index() {
-  const featured = PRODUCTS.slice(0, 4);
+  const { data: products } = useSuspenseQuery(productsQuery());
+  const featured = products.slice(0, 4);
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -142,10 +148,11 @@ function Index() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {CATEGORIES.map((c) => {
-              const p = PRODUCTS.find((x) => x.category === c.slug)!;
+              const p = products.find((x) => x.category === c.slug);
+              const img = p ? productImage(p) : "";
               return (
                 <Link key={c.slug} to="/products" hash={c.slug} className="group relative block overflow-hidden bg-onyx">
-                  <img src={p.image} width={900} height={900} loading="lazy" alt={c.label} className="h-72 w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
+                  <img src={img} width={900} height={900} loading="lazy" alt={c.label} className="h-72 w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-onyx/85 via-onyx/20 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-5 text-cream">
                     <span className="font-display text-xl">{c.label}</span>
@@ -173,8 +180,8 @@ function Index() {
             {featured.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
-                  <img src={p.image} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  {p.isNew && (
+                  <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  {p.is_new && (
                     <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
                   )}
                 </div>
