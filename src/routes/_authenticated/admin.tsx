@@ -449,6 +449,59 @@ on conflict do nothing;`}
           </form>
         </div>
       )}
+
+      {catOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closeCat}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleCatSubmit}
+            className="grid w-full max-w-md gap-4 border border-border bg-background p-6"
+          >
+            <h2 className="font-display text-2xl">{catEditing ? "Edit category" : "New category"}</h2>
+            <Field label="Slug (URL id)">
+              <input
+                required
+                disabled={!!catEditing}
+                value={catForm.slug}
+                onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })}
+                placeholder="e.g. pendants"
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+            <Field label="Label">
+              <input
+                required
+                value={catForm.label}
+                onChange={(e) => setCatForm({ ...catForm, label: e.target.value })}
+                placeholder="Pendants"
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+            <Field label="Sort order">
+              <input
+                required
+                type="number"
+                min={0}
+                value={catForm.sort_order}
+                onChange={(e) => setCatForm({ ...catForm, sort_order: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+            <div className="mt-2 flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={closeCat} className="border border-border px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] hover:border-foreground">
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={saveCatMut.isPending}
+                className="bg-onyx px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90 disabled:opacity-50"
+              >
+                {saveCatMut.isPending ? "SAVING…" : "SAVE"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
