@@ -3,15 +3,17 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { CATEGORIES, formatINR, productImage, type Category, type Product } from "@/lib/products";
+import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
+import { categoriesQuery } from "@/lib/categories.queries";
 import {
   checkIsAdminFn,
   deleteProductFn,
   upsertProductFn,
 } from "@/lib/products.functions";
+import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -51,6 +53,8 @@ function AdminPage() {
   const checkAdmin = useServerFn(checkIsAdminFn);
   const upsert = useServerFn(upsertProductFn);
   const del = useServerFn(deleteProductFn);
+  const upsertCat = useServerFn(upsertCategoryFn);
+  const delCat = useServerFn(deleteCategoryFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -58,10 +62,17 @@ function AdminPage() {
   });
 
   const { data: products = [] } = useQuery(productsQuery());
+  const { data: categories = [] } = useQuery(categoriesQuery());
+
+  const [tab, setTab] = useState<"products" | "categories">("products");
 
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+
+  const [catEditing, setCatEditing] = useState<CategoryRow | null>(null);
+  const [catCreating, setCatCreating] = useState(false);
+  const [catForm, setCatForm] = useState({ slug: "", label: "", sort_order: "0" });
 
   const open = (p: Product | null) => {
     if (p) {
@@ -80,7 +91,7 @@ function AdminPage() {
     } else {
       setEditing(null);
       setCreating(true);
-      setForm(emptyForm);
+      setForm({ ...emptyForm, category: (categories[0]?.slug ?? "") });
     }
   };
   const close = () => {
@@ -88,6 +99,20 @@ function AdminPage() {
     setCreating(false);
   };
   const isOpen = editing !== null || creating;
+
+  const openCat = (c: CategoryRow | null) => {
+    if (c) {
+      setCatEditing(c);
+      setCatCreating(false);
+      setCatForm({ slug: c.slug, label: c.label, sort_order: String(c.sort_order) });
+    } else {
+      setCatEditing(null);
+      setCatCreating(true);
+      setCatForm({ slug: "", label: "", sort_order: String(categories.length + 1) });
+    }
+  };
+  const closeCat = () => { setCatEditing(null); setCatCreating(false); };
+  const catOpen = catEditing !== null || catCreating;
 
   const saveMut = useMutation({
     mutationFn: (data: Product & { image_url: string | null }) =>
@@ -105,6 +130,26 @@ function AdminPage() {
     onSuccess: () => {
       toast.success("Product deleted");
       qc.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveCatMut = useMutation({
+    mutationFn: (data: { slug: string; label: string; sort_order: number }) =>
+      upsertCat({ data }),
+    onSuccess: () => {
+      toast.success("Category saved");
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      closeCat();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delCatMut = useMutation({
+    mutationFn: (slug: string) => delCat({ data: { slug } }),
+    onSuccess: () => {
+      toast.success("Category deleted");
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -145,6 +190,20 @@ function AdminPage() {
     return map;
   }, [products]);
 
+  const handleCatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const sort = Number(catForm.sort_order);
+    if (!Number.isFinite(sort) || sort < 0) {
+      toast.error("Sort order must be a positive number");
+      return;
+    }
+    saveCatMut.mutate({
+      slug: catForm.slug.trim().toLowerCase(),
+      label: catForm.label.trim(),
+      sort_order: sort,
+    });
+  };
+
   if (checkingAdmin) {
     return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Loading dashboard…</div>;
   }
@@ -179,21 +238,82 @@ on conflict do nothing;`}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
-            <h1 className="mt-2 font-display text-4xl">Manage products</h1>
+            <h1 className="mt-2 font-display text-4xl">
+              {tab === "products" ? "Manage products" : "Manage categories"}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {products.length} pieces in the catalog.
+              {tab === "products"
+                ? `${products.length} pieces in the catalog.`
+                : `${categories.length} categories.`}
             </p>
           </div>
           <button
-            onClick={() => open(null)}
+            onClick={() => (tab === "products" ? open(null) : openCat(null))}
             className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
           >
-            <Plus className="h-4 w-4" /> NEW PRODUCT
+            <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
           </button>
         </div>
 
+        <div className="mt-6 flex gap-2 border-b border-border">
+          {([
+            { k: "products" as const, label: "PRODUCTS", icon: Package },
+            { k: "categories" as const, label: "CATEGORIES", icon: Tag },
+          ]).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.k;
+            return (
+              <button
+                key={t.k}
+                onClick={() => setTab(t.k)}
+                className={`inline-flex items-center gap-2 px-4 py-3 text-[11px] font-semibold tracking-[0.24em] transition-colors ${
+                  active ? "border-b-2 border-gold text-gold" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {tab === "categories" && (
+          <div className="mt-8 grid gap-2">
+            {categories.length === 0 && (
+              <p className="py-8 text-sm text-muted-foreground">No categories yet. Add your first one.</p>
+            )}
+            {categories.map((c) => {
+              const count = products.filter((p) => p.category === c.slug).length;
+              return (
+                <div key={c.slug} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border border-border p-3">
+                  <span className="grid h-10 w-10 place-items-center border border-border text-xs text-muted-foreground">
+                    {c.sort_order}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-display text-lg text-foreground">{c.label}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">/{c.slug}</div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{count} product{count === 1 ? "" : "s"}</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => openCat(c)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Delete category "${c.label}"?`)) delCatMut.mutate(c.slug); }}
+                      className="rounded p-2 text-muted-foreground hover:text-destructive"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {tab === "products" && (
         <div className="mt-8 grid gap-8">
-          {CATEGORIES.map((c) => {
+          {categories.map((c) => {
             const items = grouped.get(c.slug) ?? [];
             return (
               <div key={c.slug}>
@@ -239,6 +359,7 @@ on conflict do nothing;`}
             );
           })}
         </div>
+        )}
       </section>
 
       {isOpen && (
@@ -280,7 +401,7 @@ on conflict do nothing;`}
                   onChange={(e) => setForm({ ...form, category: e.target.value as Category })}
                   className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
                 >
-                  {CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c.slug} value={c.slug}>{c.label}</option>
                   ))}
                 </select>
