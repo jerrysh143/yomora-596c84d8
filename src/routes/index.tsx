@@ -6,18 +6,21 @@ import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { CATEGORIES, formatINR, productImage } from "@/lib/products";
+import { formatINR, productImage } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
+import { categoriesQuery } from "@/lib/categories.queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(productsQuery());
+    context.queryClient.ensureQueryData(categoriesQuery());
   },
   component: Index,
 });
 
 function Index() {
   const { data: products } = useSuspenseQuery(productsQuery());
+  const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
   const featured = products.slice(0, 4);
   return (
     <div className="min-h-screen bg-background">

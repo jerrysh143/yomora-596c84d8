@@ -3,8 +3,9 @@ import { useState, useMemo, useEffect } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { CATEGORIES, formatINR, productImage, type Category } from "@/lib/products";
+import { formatINR, productImage, type Category } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
+import { categoriesQuery } from "@/lib/categories.queries";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/products")({
   }),
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(productsQuery());
+    context.queryClient.ensureQueryData(categoriesQuery());
   },
   component: ProductsPage,
 });
@@ -25,6 +27,7 @@ type Filter = Category | "all";
 
 function ProductsPage() {
   const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
+  const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
   const [filter, setFilter] = useState<Filter>("all");
   const [sortNew, setSortNew] = useState(false);
 
@@ -39,7 +42,7 @@ function ProductsPage() {
     apply();
     window.addEventListener("hashchange", apply);
     return () => window.removeEventListener("hashchange", apply);
-  }, []);
+  }, [CATEGORIES]);
 
   const items = useMemo(() => {
     let list = filter === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === filter);
