@@ -1,10 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { Search, User, ShoppingBag, Menu, Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import { CATEGORIES } from "@/lib/products";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
   const nav = [
     ...CATEGORIES.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
     { label: "COLLECTIONS", hash: "" },
@@ -44,7 +51,13 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3 text-cream/85">
           <button aria-label="Search" className="rounded-full p-2 hover:text-gold"><Search className="h-5 w-5" /></button>
-          <button aria-label="Account" className="rounded-full p-2 hover:text-gold"><User className="h-5 w-5" /></button>
+          <Link
+            to={signedIn ? "/admin" : "/auth"}
+            aria-label={signedIn ? "Admin dashboard" : "Sign in"}
+            className="rounded-full p-2 hover:text-gold"
+          >
+            <User className="h-5 w-5" />
+          </Link>
           <button aria-label="Cart" className="relative rounded-full p-2 hover:text-gold">
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">0</span>
