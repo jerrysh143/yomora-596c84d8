@@ -51,7 +51,7 @@ const productInput = z.object({
   id: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens"),
   name: z.string().min(1).max(120),
   price: z.number().int().min(0).max(10_000_000),
-  category: z.enum(["rings", "earrings", "neckwear", "bracelets"]),
+  category: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, "Invalid category slug"),
   tagline: z.string().max(200).default(""),
   description: z.string().max(4000).default(""),
   image_url: z.string().url().max(1000).nullable().or(z.literal("").transform(() => null)),

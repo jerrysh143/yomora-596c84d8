@@ -3,7 +3,9 @@ import necklaceImg from "@/assets/product-necklace.jpg";
 import earringsImg from "@/assets/product-earrings.jpg";
 import braceletImg from "@/assets/product-bracelet.jpg";
 
-export type Category = "rings" | "earrings" | "neckwear" | "bracelets";
+export type Category = string;
+
+export type CategoryRow = { slug: string; label: string; sort_order: number };
 
 export type Product = {
   id: string;
@@ -16,14 +18,7 @@ export type Product = {
   is_new: boolean;
 };
 
-export const CATEGORIES: { slug: Category; label: string }[] = [
-  { slug: "rings", label: "Rings" },
-  { slug: "earrings", label: "Earrings" },
-  { slug: "neckwear", label: "Neckwear" },
-  { slug: "bracelets", label: "Bracelets" },
-];
-
-const CATEGORY_FALLBACK: Record<Category, string> = {
+const CATEGORY_FALLBACK: Record<string, string> = {
   rings: ringImg,
   earrings: earringsImg,
   neckwear: necklaceImg,
@@ -31,7 +26,7 @@ const CATEGORY_FALLBACK: Record<Category, string> = {
 };
 
 export const productImage = (p: Pick<Product, "image_url" | "category">) =>
-  p.image_url || CATEGORY_FALLBACK[p.category];
+  p.image_url || CATEGORY_FALLBACK[p.category] || ringImg;
 
 export const formatINR = (value: number) =>
   new Intl.NumberFormat("en-IN", {

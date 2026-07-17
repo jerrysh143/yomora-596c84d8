@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Search, User, ShoppingBag, Menu, Truck, ShieldCheck, RotateCcw } from "lucide-react";
-import { CATEGORIES } from "@/lib/products";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { categoriesQuery } from "@/lib/categories.queries";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -12,8 +13,9 @@ export function SiteHeader() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
     return () => sub.subscription.unsubscribe();
   }, []);
+  const { data: categories = [] } = useQuery(categoriesQuery());
   const nav = [
-    ...CATEGORIES.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
+    ...categories.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
     { label: "COLLECTIONS", hash: "" },
     { label: "NEW ARRIVALS", hash: "new" },
   ];
