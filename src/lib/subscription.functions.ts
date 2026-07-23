@@ -25,7 +25,7 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!isAdmin) throw new Error("Forbidden: admin role required");
 }
 
-export const getSubscriptionPlanFn = createServerFn({ method: "GET" }).handler(async () => {
+export const listSubscriptionPlansFn = createServerFn({ method: "GET" }).handler(async () => {
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
   const client = createClient(process.env.SUPABASE_URL!, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -41,35 +41,52 @@ export const getSubscriptionPlanFn = createServerFn({ method: "GET" }).handler(a
   const { data, error } = await client
     .from("subscription_plan")
     .select("*")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
-  return data as SubscriptionPlan | null;
+  return (data ?? []) as SubscriptionPlan[];
 });
+
+const planInputSchema = z.object({
+  name: z.string().min(1).max(120),
+  tagline: z.string().max(300),
+  price: z.number().int().min(0),
+  duration_label: z.string().max(60),
+  benefits: z.array(z.string().max(200)).max(20),
+  cta_label: z.string().min(1).max(60),
+  is_active: z.boolean(),
+});
+
+export const createSubscriptionPlanFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof planInputSchema>) => planInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: row, error } = await context.supabase
+      .from("subscription_plan")
+      .insert(data)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row as SubscriptionPlan;
+  });
+
+export const deleteSubscriptionPlanFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("subscription_plan")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
 export const updateSubscriptionPlanFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    id: string;
-    name: string;
-    tagline: string;
-    price: number;
-    duration_label: string;
-    benefits: string[];
-    cta_label: string;
-    is_active: boolean;
-  }) =>
-    z.object({
-      id: z.string().uuid(),
-      name: z.string().min(1).max(120),
-      tagline: z.string().max(300),
-      price: z.number().int().min(0),
-      duration_label: z.string().max(60),
-      benefits: z.array(z.string().max(200)).max(20),
-      cta_label: z.string().min(1).max(60),
-      is_active: z.boolean(),
-    }).parse(d),
+  .inputValidator((d: z.infer<typeof planInputSchema> & { id: string }) =>
+    planInputSchema.extend({ id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);

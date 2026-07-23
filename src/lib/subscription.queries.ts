@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getSubscriptionPlanFn } from "./subscription.functions";
+import { listSubscriptionPlansFn } from "./subscription.functions";
 
-export const subscriptionPlanQuery = () =>
+export const subscriptionPlansQuery = () =>
   queryOptions({
-    queryKey: ["subscription_plan"],
-    queryFn: () => getSubscriptionPlanFn(),
+    queryKey: ["subscription_plans"],
+    queryFn: () => listSubscriptionPlansFn(),
   });

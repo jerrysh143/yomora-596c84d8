@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
-import { subscriptionPlanQuery } from "@/lib/subscription.queries";
+import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SiteIcon } from "@/lib/site-icons";
 import { Sparkles } from "lucide-react";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(productsQuery());
     context.queryClient.ensureQueryData(categoriesQuery());
-    context.queryClient.ensureQueryData(subscriptionPlanQuery());
+    context.queryClient.ensureQueryData(subscriptionPlansQuery());
     context.queryClient.ensureQueryData(siteContentQuery());
   },
   component: Index,
@@ -27,7 +27,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { data: products } = useSuspenseQuery(productsQuery());
   const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
-  const { data: plan } = useSuspenseQuery(subscriptionPlanQuery());
+  const { data: plans } = useSuspenseQuery(subscriptionPlansQuery());
+  const activePlans = plans.filter((p) => p.is_active);
   const { data: content } = useSuspenseQuery(siteContentQuery());
   const hero = content.hero;
   const trust = content.trust_bar;
@@ -214,7 +215,7 @@ function Index() {
       </section>
 
       {/* SUBSCRIPTION */}
-      {plan && plan.is_active && (
+      {activePlans.length > 0 && (
         <section id="subscription" className="bg-background">
           <div className="container-x mx-auto max-w-[1400px] py-20">
             <div className="text-center">
@@ -226,38 +227,42 @@ function Index() {
               </p>
             </div>
 
-            <div className="mx-auto mt-12 max-w-lg border border-gold/40 bg-onyx text-cream shadow-[0_20px_60px_-30px_rgba(212,175,55,0.5)]">
-              <div className="flex items-center justify-between border-b border-gold/20 px-8 py-5">
-                <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.28em] text-gold">
-                  <Sparkles className="h-3.5 w-3.5" /> EXCLUSIVE PLAN
-                </span>
-                <span className="text-[10px] tracking-[0.22em] text-cream/60">925 SILVER</span>
-              </div>
-              <div className="px-8 py-8 text-center">
-                <h3 className="font-display text-3xl text-cream">{plan.name}</h3>
-                <p className="mt-2 text-sm text-cream/70">{plan.tagline}</p>
-                <div className="mt-6 flex items-baseline justify-center gap-2">
-                  <span className="font-display text-5xl text-gold">{formatINR(plan.price)}</span>
-                  <span className="text-xs uppercase tracking-[0.22em] text-cream/60">{plan.duration_label}</span>
+            <div className={`mx-auto mt-12 grid gap-6 ${activePlans.length === 1 ? "max-w-lg" : "max-w-[1200px] md:grid-cols-2 lg:grid-cols-3"}`}>
+              {activePlans.map((plan) => (
+                <div key={plan.id} className="border border-gold/40 bg-onyx text-cream shadow-[0_20px_60px_-30px_rgba(212,175,55,0.5)]">
+                  <div className="flex items-center justify-between border-b border-gold/20 px-8 py-5">
+                    <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.28em] text-gold">
+                      <Sparkles className="h-3.5 w-3.5" /> EXCLUSIVE PLAN
+                    </span>
+                    <span className="text-[10px] tracking-[0.22em] text-cream/60">925 SILVER</span>
+                  </div>
+                  <div className="px-8 py-8 text-center">
+                    <h3 className="font-display text-3xl text-cream">{plan.name}</h3>
+                    <p className="mt-2 text-sm text-cream/70">{plan.tagline}</p>
+                    <div className="mt-6 flex items-baseline justify-center gap-2">
+                      <span className="font-display text-5xl text-gold">{formatINR(plan.price)}</span>
+                      <span className="text-xs uppercase tracking-[0.22em] text-cream/60">{plan.duration_label}</span>
+                    </div>
+                    <ul className="mt-8 grid gap-3 text-left">
+                      {plan.benefits.map((b) => (
+                        <li key={b} className="flex items-start gap-3 text-sm text-cream/85">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                          <span>{b}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to="/products"
+                      className="mt-8 inline-flex w-full items-center justify-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+                    >
+                      {plan.cta_label.toUpperCase()} <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <p className="mt-4 text-[10px] tracking-[0.22em] text-cream/50">
+                      CANCEL ANYTIME · APPLIES ACROSS THE FULL CATALOGUE
+                    </p>
+                  </div>
                 </div>
-                <ul className="mt-8 grid gap-3 text-left">
-                  {plan.benefits.map((b) => (
-                    <li key={b} className="flex items-start gap-3 text-sm text-cream/85">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/products"
-                  className="mt-8 inline-flex w-full items-center justify-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-                >
-                  {plan.cta_label.toUpperCase()} <ArrowRight className="h-4 w-4" />
-                </Link>
-                <p className="mt-4 text-[10px] tracking-[0.22em] text-cream/50">
-                  CANCEL ANYTIME · APPLIES ACROSS THE FULL CATALOGUE
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
