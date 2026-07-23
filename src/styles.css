@@ -167,3 +167,9 @@
   @media (min-width: 768px) { padding-inline: 2.5rem; }
   @media (min-width: 1280px) { padding-inline: 4rem; }
 }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { display: none; }
+}
