@@ -75,6 +75,43 @@ export type FooterContent = {
   copyright: string;
 };
 
+export type ReelsContent = {
+  enabled: boolean;
+  eyebrow: string;
+  title: string;
+  description: string;
+  items: { url: string; caption: string }[];
+};
+
+export type SocialPlatform =
+  | "Instagram"
+  | "Facebook"
+  | "YouTube"
+  | "TikTok"
+  | "X"
+  | "WhatsApp"
+  | "Pinterest"
+  | "LinkedIn";
+
+export const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  "Instagram",
+  "Facebook",
+  "YouTube",
+  "TikTok",
+  "X",
+  "WhatsApp",
+  "Pinterest",
+  "LinkedIn",
+];
+
+export type SocialContent = {
+  cta_label: string;
+  handle: string;
+  show_in_header: boolean;
+  show_in_footer: boolean;
+  items: { platform: SocialPlatform; url: string; label: string }[];
+};
+
 export type SiteContentMap = {
   header: HeaderContent;
   header_nav: HeaderNavContent;
@@ -85,6 +122,8 @@ export type SiteContentMap = {
   featured_section: SectionHeadingContent;
   cta_strip: CtaStripContent;
   footer: FooterContent;
+  reels: ReelsContent;
+  social: SocialContent;
 };
 
 export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
@@ -167,6 +206,23 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     newsletter_title: "STAY IN TOUCH",
     newsletter_body: "New arrivals, quiet drops, and craft notes.",
     copyright: "© YOMORA · Nehalbhai Devika Jewellers",
+  },
+  reels: {
+    enabled: true,
+    eyebrow: "AS SEEN ON INSTAGRAM",
+    title: "Reels & Stories",
+    description:
+      "Behind the craft, styling notes and new drops — follow along on Instagram.",
+    items: [],
+  },
+  social: {
+    cta_label: "FOLLOW US",
+    handle: "@yomora",
+    show_in_header: true,
+    show_in_footer: true,
+    items: [
+      { platform: "Instagram", url: "https://instagram.com/", label: "Instagram" },
+    ],
   },
 };
 

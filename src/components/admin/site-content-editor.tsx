@@ -8,7 +8,9 @@ import { updateSiteContentFn } from "@/lib/site-content.functions";
 import {
   ICON_CHOICES,
   SITE_CONTENT_DEFAULTS,
+  SOCIAL_PLATFORMS,
   type IconName,
+  type SocialPlatform,
   type SiteContentKey,
   type SiteContentMap,
 } from "@/lib/site-content.defaults";
@@ -342,6 +344,89 @@ export function SiteContentEditor() {
               <Field label="Newsletter body"><input className={inputCls} value={s.newsletter_body} onChange={(e) => set({ newsletter_body: e.target.value })} /></Field>
             </div>
             <Field label="Copyright (year auto-inserted after ©)"><input className={inputCls} value={s.copyright} onChange={(e) => set({ copyright: e.target.value })} /></Field>
+          </>
+        )}
+      />
+
+      {/* REELS */}
+      <SectionCard
+        title="Instagram Reels section"
+        description="Homepage grid of embedded Reels. Paste public Reel or post URLs."
+        value={content.reels}
+        saving={isSaving("reels")}
+        onSave={(v) => persist("reels", v)}
+        render={(s, set) => (
+          <>
+            <label className="inline-flex items-center gap-2 text-xs">
+              <input type="checkbox" checked={s.enabled} onChange={(e) => set({ enabled: e.target.checked })} />
+              Show Reels section on homepage
+            </label>
+            <Field label="Eyebrow"><input className={inputCls} value={s.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
+            <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Description"><textarea rows={2} className={inputCls} value={s.description} onChange={(e) => set({ description: e.target.value })} /></Field>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">REEL LINKS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, items: [...p.items, { url: "", caption: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add Reel</button>
+              </div>
+              <div className="grid gap-2">
+                {s.items.map((r, i) => (
+                  <div key={i} className="grid grid-cols-[2fr_1fr_auto] gap-2">
+                    <input className={inputCls} placeholder="https://www.instagram.com/reel/xxxxxx/" value={r.url} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, url: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="Optional caption" value={r.caption} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, caption: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, items: p.items.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Paste the full URL of a public Reel, post or video (e.g. <code>https://www.instagram.com/reel/ABC123/</code>). Private accounts won't render.
+              </p>
+            </div>
+          </>
+        )}
+      />
+
+      {/* SOCIAL */}
+      <SectionCard
+        title="Social media & Follow buttons"
+        description="Icons and follow buttons shown in the header, footer and Reels section."
+        value={content.social}
+        saving={isSaving("social")}
+        onSave={(v) => persist("social", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Public handle (e.g. @yomora)"><input className={inputCls} value={s.handle} onChange={(e) => set({ handle: e.target.value })} /></Field>
+              <Field label="Follow button label"><input className={inputCls} value={s.cta_label} onChange={(e) => set({ cta_label: e.target.value })} /></Field>
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={s.show_in_header} onChange={(e) => set({ show_in_header: e.target.checked })} />
+                Show icons in header
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={s.show_in_footer} onChange={(e) => set({ show_in_footer: e.target.checked })} />
+                Show icons in footer
+              </label>
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">SOCIAL ACCOUNTS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, items: [...p.items, { platform: "Instagram" as SocialPlatform, url: "", label: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add account</button>
+              </div>
+              <div className="grid gap-2">
+                {s.items.map((it, i) => (
+                  <div key={i} className="grid grid-cols-[140px_2fr_1fr_auto] gap-2">
+                    <select className={inputCls} value={it.platform} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, platform: e.target.value as SocialPlatform } : x) }))}>
+                      {SOCIAL_PLATFORMS.map((pf) => <option key={pf} value={pf}>{pf}</option>)}
+                    </select>
+                    <input className={inputCls} placeholder="https://…" value={it.url} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, url: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="Label (optional)" value={it.label} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, label: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, items: p.items.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       />

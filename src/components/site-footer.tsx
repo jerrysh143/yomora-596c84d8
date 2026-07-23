@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
+import { SocialLinks } from "@/components/social-links";
 
 export function SiteFooter() {
   const { data: siteContent } = useQuery(siteContentQuery());
@@ -12,6 +13,7 @@ export function SiteFooter() {
         <div>
           <div className="font-display text-2xl tracking-[0.18em] text-gold">YOMORA</div>
           <p className="mt-3 text-xs leading-relaxed text-cream/60">{f.brand_blurb}</p>
+          <SocialLinks placement="footer" className="mt-4" />
         </div>
         <FooterCol title="Shop" links={f.shop_links} />
         <FooterCol title="Help" links={f.help_links} />

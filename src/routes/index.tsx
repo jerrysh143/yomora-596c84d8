@@ -6,6 +6,7 @@ import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ReelsSection } from "@/components/reels-section";
 import { formatINR, productImage } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
@@ -267,6 +268,8 @@ function Index() {
           </div>
         </section>
       )}
+
+      <ReelsSection />
 
       <SiteFooter />
     </div>
