@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Instagram } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 
@@ -92,31 +92,40 @@ export function ReelsSection() {
   if (!reels.enabled || reels.items.length === 0) return null;
 
   return (
-    <section className="bg-secondary/30">
-      <div className="container-x mx-auto max-w-[1400px] py-20">
-        <div ref={ref} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="bg-onyx">
+      <div className="mx-auto flex max-w-[1400px] flex-col items-center py-20">
+        <div
+          ref={ref}
+          className="no-scrollbar flex w-full snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 md:justify-center md:gap-6 md:px-10"
+        >
           {reels.items.map((r, i) => (
-            <div key={i} className="group border border-border bg-background overflow-hidden">
+            <div
+              key={i}
+              className="group relative aspect-[9/16] w-[78vw] max-w-[320px] flex-none snap-center overflow-hidden border border-gold/40 bg-[#0d0d0d] shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:-translate-y-1 hover:border-gold sm:w-[280px] md:w-[300px]"
+            >
               <blockquote
-                className="instagram-media"
+                className="instagram-media !m-0 !min-w-0 !w-full h-full"
                 data-instgrm-permalink={normalizeUrl(r.url)}
                 data-instgrm-version="14"
-                style={{ background: "#000", margin: 0, minWidth: 0, width: "100%" }}
+                style={{ background: "#0d0d0d", margin: 0, minWidth: 0, width: "100%" }}
               />
             </div>
           ))}
         </div>
 
         {instagram && (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-12 flex flex-col items-center">
             <a
               href={instagram.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 border border-gold/60 bg-onyx px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-gold/10"
+              className="group inline-flex items-center gap-3 border border-gold/60 px-10 py-3.5 text-[12px] tracking-[0.28em] text-gold transition-colors hover:border-gold hover:bg-gold/10"
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
             >
-              <Instagram className="h-4 w-4 text-gold" /> VISIT INSTAGRAM
+              VISIT INSTAGRAM
+              <ArrowRight className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-1" strokeWidth={1} />
             </a>
+            <div className="mt-4 h-px w-12 bg-gold/30" />
           </div>
         )}
       </div>
