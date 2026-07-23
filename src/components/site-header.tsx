@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { Search, User, ShoppingBag, Menu, Truck, ShieldCheck, RotateCcw } from "lucide-react";
+import { Search, User, ShoppingBag, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { categoriesQuery } from "@/lib/categories.queries";
+import { siteContentQuery } from "@/lib/site-content.queries";
+import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
+import { SiteIcon } from "@/lib/site-icons";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -14,6 +17,8 @@ export function SiteHeader() {
     return () => sub.subscription.unsubscribe();
   }, []);
   const { data: categories = [] } = useQuery(categoriesQuery());
+  const { data: siteContent } = useQuery(siteContentQuery());
+  const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const nav = [
     ...categories.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
     { label: "COLLECTIONS", hash: "" },
@@ -25,17 +30,19 @@ export function SiteHeader() {
       {/* Utility strip */}
       <div className="border-b border-white/5">
         <div className="container-x mx-auto max-w-[1400px] flex flex-wrap items-center justify-center gap-x-8 gap-y-1 py-2 text-[11px] tracking-wide text-cream/80">
-          <span className="inline-flex items-center gap-2"><Truck className="h-3.5 w-3.5 text-gold" /> Free Shipping Across India</span>
-          <span className="inline-flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-gold" /> 925 Hallmarked Silver</span>
-          <span className="inline-flex items-center gap-2"><RotateCcw className="h-3.5 w-3.5 text-gold" /> Easy 7-Day Returns</span>
+          {header.announcements.map((a, i) => (
+            <span key={i} className="inline-flex items-center gap-2">
+              <SiteIcon name={a.icon} className="h-3.5 w-3.5 text-gold" /> {a.text}
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Main nav */}
       <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[auto_1fr_auto] items-center gap-6 py-5">
         <Link to="/" className="flex flex-col leading-none">
-          <span className="font-display text-3xl tracking-[0.18em] text-gold">YOMORA</span>
-          <span className="mt-1 text-[10px] tracking-[0.28em] text-cream/60">BY NEHALBHAI DEVIKA JEWELLERS</span>
+          <span className="font-display text-3xl tracking-[0.18em] text-gold">{header.brand_name}</span>
+          <span className="mt-1 text-[10px] tracking-[0.28em] text-cream/60">{header.brand_tagline}</span>
         </Link>
 
         <nav className="hidden items-center justify-center gap-8 text-xs font-medium tracking-[0.18em] lg:flex">
