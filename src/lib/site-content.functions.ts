@@ -12,7 +12,7 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!isAdmin) throw new Error("Forbidden: admin role required");
 }
 
-export const getSiteContentFn = createServerFn({ method: "GET" }).handler(async () => {
+export const getSiteContentFn = createServerFn({ method: "GET" }).handler(async (): Promise<{ key: string; data: any }[]> => {
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
   const client = createClient(process.env.SUPABASE_URL!, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -27,7 +27,7 @@ export const getSiteContentFn = createServerFn({ method: "GET" }).handler(async 
   });
   const { data, error } = await client.from("site_content").select("key, data");
   if (error) throw new Error(error.message);
-  return (data ?? []) as { key: string; data: unknown }[];
+  return (data ?? []) as { key: string; data: any }[];
 });
 
 export const updateSiteContentFn = createServerFn({ method: "POST" })
