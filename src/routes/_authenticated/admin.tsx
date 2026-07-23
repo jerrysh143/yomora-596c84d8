@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -202,21 +202,19 @@ function AdminPage() {
     is_active: boolean;
   } | null>(null);
 
-  const planLoaded = plan?.id ?? null;
-  const activePlanId = planForm && plan ? plan.id : null;
-  if (plan && planForm === null) {
-    setPlanForm({
-      name: plan.name,
-      tagline: plan.tagline,
-      price: String(plan.price),
-      duration_label: plan.duration_label,
-      benefits: (plan.benefits ?? []).join("\n"),
-      cta_label: plan.cta_label,
-      is_active: plan.is_active,
-    });
-  }
-  void planLoaded;
-  void activePlanId;
+  useEffect(() => {
+    if (plan && planForm === null) {
+      setPlanForm({
+        name: plan.name,
+        tagline: plan.tagline,
+        price: String(plan.price),
+        duration_label: plan.duration_label,
+        benefits: (plan.benefits ?? []).join("\n"),
+        cta_label: plan.cta_label,
+        is_active: plan.is_active,
+      });
+    }
+  }, [plan, planForm]);
 
   const planMut = useMutation({
     mutationFn: (data: Parameters<typeof savePlan>[0]["data"]) => savePlan({ data }),
