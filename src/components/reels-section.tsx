@@ -117,6 +117,8 @@ export function ReelsSection() {
                 data-instgrm-version="14"
                 style={{ background: "#0d0d0d", margin: 0, minWidth: 0, width: "100%" }}
               />
+              {/* Block clicks on Instagram's overlay link so the tile stays visual-only. */}
+              <div className="pointer-events-none absolute inset-0" aria-hidden />
             </div>
           ))}
         </div>
