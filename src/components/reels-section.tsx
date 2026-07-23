@@ -47,6 +47,48 @@ export function ReelsSection() {
     return () => clearTimeout(t);
   }, [reels.enabled, reels.items.length]);
 
+  // Apply autoplay/loop hints to the rendered Instagram iframes.
+  useEffect(() => {
+    if (!reels.enabled || !ref.current) return;
+    const root = ref.current;
+
+    const apply = () => {
+      const frames = root.querySelectorAll<HTMLIFrameElement>("iframe.instagram-media");
+      frames.forEach((f) => {
+        if (reels.autoplay) f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
+        else f.removeAttribute("allow");
+        f.dataset.reelLoop = reels.loop ? "1" : "0";
+      });
+    };
+
+    apply();
+    const mo = new MutationObserver(apply);
+    mo.observe(root, { childList: true, subtree: true });
+
+    // Best-effort: when Instagram's embed posts an "ended" style message, ask it to restart.
+    const onMsg = (e: MessageEvent) => {
+      if (!reels.loop) return;
+      const src = (e.source as Window | null) ?? null;
+      if (!src) return;
+      const frames = root.querySelectorAll<HTMLIFrameElement>("iframe.instagram-media");
+      const match = Array.from(frames).find((f) => f.contentWindow === src);
+      if (!match) return;
+      const data = typeof e.data === "string" ? e.data : JSON.stringify(e.data ?? "");
+      if (/end|complete|finish/i.test(data)) {
+        try {
+          match.contentWindow?.postMessage({ method: "restart" }, "*");
+        } catch {
+          /* noop */
+        }
+      }
+    };
+    window.addEventListener("message", onMsg);
+    return () => {
+      mo.disconnect();
+      window.removeEventListener("message", onMsg);
+    };
+  }, [reels.enabled, reels.autoplay, reels.loop, reels.items.length]);
+
   if (!reels.enabled || reels.items.length === 0) return null;
 
   return (

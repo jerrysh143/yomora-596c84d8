@@ -80,6 +80,8 @@ export type ReelsContent = {
   eyebrow: string;
   title: string;
   description: string;
+  autoplay: boolean;
+  loop: boolean;
   items: { url: string; caption: string }[];
 };
 
@@ -213,6 +215,8 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     title: "Reels & Stories",
     description:
       "Behind the craft, styling notes and new drops — follow along on Instagram.",
+    autoplay: true,
+    loop: true,
     items: [],
   },
   social: {
