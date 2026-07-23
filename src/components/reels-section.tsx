@@ -58,6 +58,14 @@ export function ReelsSection() {
         if (reels.autoplay) f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
         else f.removeAttribute("allow");
         f.dataset.reelLoop = reels.loop ? "1" : "0";
+        // Crop Instagram chrome (header with profile + footer with like/caption/link)
+        // so only the video itself is visible inside the tile.
+        f.style.position = "absolute";
+        f.style.left = "0";
+        f.style.top = "-54px";
+        f.style.width = "100%";
+        f.style.height = "calc(100% + 54px + 140px)";
+        f.style.border = "0";
       });
     };
 
@@ -109,6 +117,8 @@ export function ReelsSection() {
                 data-instgrm-version="14"
                 style={{ background: "#0d0d0d", margin: 0, minWidth: 0, width: "100%" }}
               />
+              {/* Block clicks on Instagram's overlay link so the tile stays visual-only. */}
+              <div className="pointer-events-none absolute inset-0" aria-hidden />
             </div>
           ))}
         </div>
