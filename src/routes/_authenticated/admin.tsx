@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -21,6 +21,8 @@ import {
   type OrderStatus,
   type OrderItem,
 } from "@/lib/orders.functions";
+import { updateSubscriptionPlanFn, type SubscriptionPlan } from "@/lib/subscription.functions";
+import { subscriptionPlanQuery } from "@/lib/subscription.queries";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -65,6 +67,7 @@ function AdminPage() {
   const listOrders = useServerFn(listOrdersFn);
   const updateOrder = useServerFn(updateOrderStatusFn);
   const removeOrder = useServerFn(deleteOrderFn);
+  const savePlan = useServerFn(updateSubscriptionPlanFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -78,8 +81,9 @@ function AdminPage() {
     queryFn: () => listOrders(),
     enabled: !!adminInfo?.isAdmin,
   });
+  const { data: plan } = useQuery(subscriptionPlanQuery());
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -188,6 +192,59 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [planForm, setPlanForm] = useState<{
+    name: string;
+    tagline: string;
+    price: string;
+    duration_label: string;
+    benefits: string;
+    cta_label: string;
+    is_active: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (plan && planForm === null) {
+      setPlanForm({
+        name: plan.name,
+        tagline: plan.tagline,
+        price: String(plan.price),
+        duration_label: plan.duration_label,
+        benefits: (plan.benefits ?? []).join("\n"),
+        cta_label: plan.cta_label,
+        is_active: plan.is_active,
+      });
+    }
+  }, [plan, planForm]);
+
+  const planMut = useMutation({
+    mutationFn: (data: Parameters<typeof savePlan>[0]["data"]) => savePlan({ data }),
+    onSuccess: () => {
+      toast.success("Subscription plan saved");
+      qc.invalidateQueries({ queryKey: ["subscription_plan"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handlePlanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!plan || !planForm) return;
+    const price = Number(planForm.price);
+    if (!Number.isFinite(price) || price < 0) {
+      toast.error("Price must be a positive number");
+      return;
+    }
+    planMut.mutate({
+      id: plan.id,
+      name: planForm.name.trim(),
+      tagline: planForm.tagline.trim(),
+      price,
+      duration_label: planForm.duration_label.trim(),
+      benefits: planForm.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
+      cta_label: planForm.cta_label.trim(),
+      is_active: planForm.is_active,
+    });
+  };
+
   const filteredOrders = useMemo(
     () => orders.filter((o) => o.status === orderFilter),
     [orders, orderFilter],
@@ -283,17 +340,19 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : "Manage orders"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : "Manage subscription"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
                 ? `${products.length} pieces in the catalog.`
                 : tab === "categories"
                 ? `${categories.length} categories.`
-                : `${orderCounts.pending} pending · ${orderCounts.completed} completed`}
+                : tab === "orders"
+                ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
+                : plan ? (plan.is_active ? "Live on the storefront." : "Currently hidden from the storefront.") : "Loading plan…"}
             </p>
           </div>
-          {tab !== "orders" && (
+          {tab !== "orders" && tab !== "subscription" && (
             <button
               onClick={() => (tab === "products" ? open(null) : openCat(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
@@ -308,6 +367,7 @@ on conflict do nothing;`}
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
+            { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
           ]).map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
@@ -529,6 +589,58 @@ on conflict do nothing;`}
         </div>
         )}
       </section>
+
+      {tab === "subscription" && plan && planForm && (
+        <section className="container-x mx-auto max-w-3xl pb-16">
+          <form onSubmit={handlePlanSubmit} className="grid gap-4 border border-border bg-background p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl">Subscription plan</h2>
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={planForm.is_active}
+                  onChange={(e) => setPlanForm({ ...planForm, is_active: e.target.checked })}
+                />
+                Show on storefront
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Plan name">
+                <input required value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="Price (INR)">
+                <input required type="number" min={0} value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="Duration label">
+                <input required value={planForm.duration_label} onChange={(e) => setPlanForm({ ...planForm, duration_label: e.target.value })} placeholder="per year" className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="CTA button label">
+                <input required value={planForm.cta_label} onChange={(e) => setPlanForm({ ...planForm, cta_label: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+            </div>
+            <Field label="Tagline">
+              <input value={planForm.tagline} onChange={(e) => setPlanForm({ ...planForm, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+            </Field>
+            <Field label="Benefits (one per line)">
+              <textarea
+                rows={6}
+                value={planForm.benefits}
+                onChange={(e) => setPlanForm({ ...planForm, benefits: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={planMut.isPending}
+                className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
+              >
+                {planMut.isPending ? "SAVING…" : "SAVE PLAN"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
 
       {isOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={close}>
