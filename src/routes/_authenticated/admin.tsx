@@ -403,16 +403,16 @@ on conflict do nothing;`}
                 : tab === "orders"
                 ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
                 : tab === "subscription"
-                ? (plan ? (plan.is_active ? "Live on the storefront." : "Currently hidden from the storefront.") : "Loading plan…")
+                ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
                 : "Edit every homepage section, header and footer."}
             </p>
           </div>
-          {(tab === "products" || tab === "categories") && (
+          {(tab === "products" || tab === "categories" || tab === "subscription") && (
             <button
-              onClick={() => (tab === "products" ? open(null) : openCat(null))}
+              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : openPlan(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
             >
-              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
+              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : "ADD PLAN"}
             </button>
           )}
         </div>
@@ -648,11 +648,54 @@ on conflict do nothing;`}
         {tab === "site" && <SiteContentEditor />}
       </section>
 
-      {tab === "subscription" && plan && planForm && (
-        <section className="container-x mx-auto max-w-3xl pb-16">
-          <form onSubmit={handlePlanSubmit} className="grid gap-4 border border-border bg-background p-6">
+      {tab === "subscription" && (
+        <section className="container-x mx-auto max-w-5xl pb-16">
+          {plans.length === 0 ? (
+            <div className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              No plans yet. Click <span className="font-semibold text-foreground">ADD PLAN</span> to create one.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {plans.map((p) => (
+                <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background p-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display text-lg">{p.name}</h3>
+                      <span className={`rounded px-2 py-0.5 text-[10px] tracking-[0.2em] ${p.is_active ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"}`}>
+                        {p.is_active ? "LIVE" : "HIDDEN"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{p.tagline || "—"}</p>
+                    <p className="mt-1 text-xs">{formatINR(p.price)} · {p.duration_label} · {p.benefits.length} benefits</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openPlan(p)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Delete plan "${p.name}"?`)) planDeleteMut.mutate(p.id); }}
+                      className="rounded p-2 text-muted-foreground hover:text-destructive"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isPlanOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closePlan}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handlePlanSubmit}
+            className="grid max-h-[90vh] w-full max-w-2xl gap-4 overflow-y-auto border border-border bg-background p-6"
+          >
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl">Subscription plan</h2>
+              <h2 className="font-display text-2xl">{planEditing ? "Edit plan" : "New plan"}</h2>
               <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
@@ -687,17 +730,20 @@ on conflict do nothing;`}
                 className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
               />
             </Field>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closePlan} className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary">
+                CANCEL
+              </button>
               <button
                 type="submit"
-                disabled={planMut.isPending}
+                disabled={planCreateMut.isPending || planUpdateMut.isPending}
                 className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
               >
-                {planMut.isPending ? "SAVING…" : "SAVE PLAN"}
+                {(planCreateMut.isPending || planUpdateMut.isPending) ? "SAVING…" : planEditing ? "SAVE PLAN" : "CREATE PLAN"}
               </button>
             </div>
           </form>
-        </section>
+        </div>
       )}
 
       {isOpen && (
