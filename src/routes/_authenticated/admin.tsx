@@ -590,6 +590,58 @@ on conflict do nothing;`}
         )}
       </section>
 
+      {tab === "subscription" && plan && planForm && (
+        <section className="container-x mx-auto max-w-3xl pb-16">
+          <form onSubmit={handlePlanSubmit} className="grid gap-4 border border-border bg-background p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl">Subscription plan</h2>
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={planForm.is_active}
+                  onChange={(e) => setPlanForm({ ...planForm, is_active: e.target.checked })}
+                />
+                Show on storefront
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Plan name">
+                <input required value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="Price (INR)">
+                <input required type="number" min={0} value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="Duration label">
+                <input required value={planForm.duration_label} onChange={(e) => setPlanForm({ ...planForm, duration_label: e.target.value })} placeholder="per year" className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+              <Field label="CTA button label">
+                <input required value={planForm.cta_label} onChange={(e) => setPlanForm({ ...planForm, cta_label: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              </Field>
+            </div>
+            <Field label="Tagline">
+              <input value={planForm.tagline} onChange={(e) => setPlanForm({ ...planForm, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+            </Field>
+            <Field label="Benefits (one per line)">
+              <textarea
+                rows={6}
+                value={planForm.benefits}
+                onChange={(e) => setPlanForm({ ...planForm, benefits: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={planMut.isPending}
+                className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
+              >
+                {planMut.isPending ? "SAVING…" : "SAVE PLAN"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
       {isOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={close}>
           <form
