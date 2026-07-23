@@ -7,6 +7,7 @@ import { categoriesQuery } from "@/lib/categories.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { SiteIcon } from "@/lib/site-icons";
+import { SocialLinks } from "@/components/social-links";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -61,6 +62,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3 text-cream/85">
+          <SocialLinks placement="header" className="mr-1 hidden sm:flex" iconClassName="h-4 w-4" />
           <button aria-label="Search" className="rounded-full p-2 hover:text-gold"><Search className="h-5 w-5" /></button>
           <Link
             to={signedIn ? "/admin" : "/auth"}

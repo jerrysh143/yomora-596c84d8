@@ -8,7 +8,9 @@ import { updateSiteContentFn } from "@/lib/site-content.functions";
 import {
   ICON_CHOICES,
   SITE_CONTENT_DEFAULTS,
+  SOCIAL_PLATFORMS,
   type IconName,
+  type SocialPlatform,
   type SiteContentKey,
   type SiteContentMap,
 } from "@/lib/site-content.defaults";
