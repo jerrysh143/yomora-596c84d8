@@ -21,8 +21,13 @@ import {
   type OrderStatus,
   type OrderItem,
 } from "@/lib/orders.functions";
-import { updateSubscriptionPlanFn, type SubscriptionPlan } from "@/lib/subscription.functions";
-import { subscriptionPlanQuery } from "@/lib/subscription.queries";
+import {
+  updateSubscriptionPlanFn,
+  createSubscriptionPlanFn,
+  deleteSubscriptionPlanFn,
+  type SubscriptionPlan,
+} from "@/lib/subscription.functions";
+import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { SiteContentEditor } from "@/components/admin/site-content-editor";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -69,6 +74,8 @@ function AdminPage() {
   const updateOrder = useServerFn(updateOrderStatusFn);
   const removeOrder = useServerFn(deleteOrderFn);
   const savePlan = useServerFn(updateSubscriptionPlanFn);
+  const createPlan = useServerFn(createSubscriptionPlanFn);
+  const removePlan = useServerFn(deleteSubscriptionPlanFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -82,7 +89,7 @@ function AdminPage() {
     queryFn: () => listOrders(),
     enabled: !!adminInfo?.isAdmin,
   });
-  const { data: plan } = useQuery(subscriptionPlanQuery());
+  const { data: plans = [] } = useQuery(subscriptionPlansQuery());
 
   const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
@@ -193,7 +200,7 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [planForm, setPlanForm] = useState<{
+  type PlanFormState = {
     name: string;
     tagline: string;
     price: string;
@@ -201,41 +208,81 @@ function AdminPage() {
     benefits: string;
     cta_label: string;
     is_active: boolean;
-  } | null>(null);
+  };
+  const emptyPlanForm: PlanFormState = {
+    name: "",
+    tagline: "",
+    price: "",
+    duration_label: "per year",
+    benefits: "",
+    cta_label: "Subscribe Now",
+    is_active: true,
+  };
+  const [planEditing, setPlanEditing] = useState<SubscriptionPlan | null>(null);
+  const [planCreating, setPlanCreating] = useState(false);
+  const [planForm, setPlanForm] = useState<PlanFormState>(emptyPlanForm);
 
-  useEffect(() => {
-    if (plan && planForm === null) {
+  const openPlan = (p: SubscriptionPlan | null) => {
+    if (p) {
+      setPlanEditing(p);
+      setPlanCreating(false);
       setPlanForm({
-        name: plan.name,
-        tagline: plan.tagline,
-        price: String(plan.price),
-        duration_label: plan.duration_label,
-        benefits: (plan.benefits ?? []).join("\n"),
-        cta_label: plan.cta_label,
-        is_active: plan.is_active,
+        name: p.name,
+        tagline: p.tagline,
+        price: String(p.price),
+        duration_label: p.duration_label,
+        benefits: (p.benefits ?? []).join("\n"),
+        cta_label: p.cta_label,
+        is_active: p.is_active,
       });
+    } else {
+      setPlanEditing(null);
+      setPlanCreating(true);
+      setPlanForm(emptyPlanForm);
     }
-  }, [plan, planForm]);
+  };
+  const closePlan = () => {
+    setPlanEditing(null);
+    setPlanCreating(false);
+    setPlanForm(emptyPlanForm);
+  };
+  const isPlanOpen = !!planEditing || planCreating;
 
-  const planMut = useMutation({
+  const planCreateMut = useMutation({
+    mutationFn: (data: Parameters<typeof createPlan>[0]["data"]) => createPlan({ data }),
+    onSuccess: () => {
+      toast.success("Plan created");
+      qc.invalidateQueries({ queryKey: ["subscription_plans"] });
+      closePlan();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const planUpdateMut = useMutation({
     mutationFn: (data: Parameters<typeof savePlan>[0]["data"]) => savePlan({ data }),
     onSuccess: () => {
-      toast.success("Subscription plan saved");
-      qc.invalidateQueries({ queryKey: ["subscription_plan"] });
+      toast.success("Plan saved");
+      qc.invalidateQueries({ queryKey: ["subscription_plans"] });
+      closePlan();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const planDeleteMut = useMutation({
+    mutationFn: (id: string) => removePlan({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Plan deleted");
+      qc.invalidateQueries({ queryKey: ["subscription_plans"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!plan || !planForm) return;
     const price = Number(planForm.price);
     if (!Number.isFinite(price) || price < 0) {
       toast.error("Price must be a positive number");
       return;
     }
-    planMut.mutate({
-      id: plan.id,
+    const payload = {
       name: planForm.name.trim(),
       tagline: planForm.tagline.trim(),
       price,
@@ -243,7 +290,12 @@ function AdminPage() {
       benefits: planForm.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
       cta_label: planForm.cta_label.trim(),
       is_active: planForm.is_active,
-    });
+    };
+    if (planEditing) {
+      planUpdateMut.mutate({ id: planEditing.id, ...payload });
+    } else {
+      planCreateMut.mutate(payload);
+    }
   };
 
   const filteredOrders = useMemo(
