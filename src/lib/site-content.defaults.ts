@@ -27,6 +27,11 @@ export type HeaderContent = {
   brand_tagline: string;
 };
 
+export type HeaderNavContent = {
+  items: { label: string; to: string; hash: string }[];
+  include_categories: boolean;
+};
+
 export type HeroContent = {
   eyebrow: string;
   title_line_1: string;
@@ -72,6 +77,7 @@ export type FooterContent = {
 
 export type SiteContentMap = {
   header: HeaderContent;
+  header_nav: HeaderNavContent;
   hero: HeroContent;
   trust_bar: TrustBarContent;
   legacy: LegacyContent;
@@ -90,6 +96,13 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     ],
     brand_name: "YOMORA",
     brand_tagline: "BY NEHALBHAI DEVIKA JEWELLERS",
+  },
+  header_nav: {
+    include_categories: true,
+    items: [
+      { label: "COLLECTIONS", to: "/products", hash: "" },
+      { label: "NEW ARRIVALS", to: "/products", hash: "new" },
+    ],
   },
   hero: {
     eyebrow: "PREMIUM 925 STERLING SILVER JEWELLERY",

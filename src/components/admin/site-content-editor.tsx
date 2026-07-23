@@ -142,6 +142,44 @@ export function SiteContentEditor() {
         )}
       />
 
+      {/* HEADER NAV */}
+      <SectionCard
+        title="Header menu"
+        description="Main navigation links shown in the header."
+        value={content.header_nav}
+        saving={isSaving("header_nav")}
+        onSave={(v) => persist("header_nav", v)}
+        render={(s, set) => (
+          <>
+            <label className="inline-flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={s.include_categories}
+                onChange={(e) => set({ include_categories: e.target.checked })}
+              />
+              Auto-include all categories before custom links
+            </label>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">MENU ITEMS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, items: [...p.items, { label: "", to: "/products", hash: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add link</button>
+              </div>
+              <div className="grid gap-2">
+                {s.items.map((it, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
+                    <input className={inputCls} placeholder="LABEL" value={it.label} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, label: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="/path (e.g. /products)" value={it.to} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, to: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="anchor (optional)" value={it.hash} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, hash: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, items: p.items.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">Tip: use path <code>/products</code> and an anchor like <code>rings</code> to jump straight to a category on the shop page.</p>
+            </div>
+          </>
+        )}
+      />
+
       {/* HERO */}
       <SectionCard
         title="Hero section"

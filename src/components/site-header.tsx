@@ -19,10 +19,12 @@ export function SiteHeader() {
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: siteContent } = useQuery(siteContentQuery());
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
-  const nav = [
-    ...categories.map((c) => ({ label: c.label.toUpperCase(), hash: c.slug })),
-    { label: "COLLECTIONS", hash: "" },
-    { label: "NEW ARRIVALS", hash: "new" },
+  const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
+  const nav: { label: string; to: string; hash: string }[] = [
+    ...(headerNav.include_categories
+      ? categories.map((c) => ({ label: c.label.toUpperCase(), to: "/products", hash: c.slug }))
+      : []),
+    ...headerNav.items.map((i) => ({ label: i.label, to: i.to || "/products", hash: i.hash || "" })),
   ];
 
   return (
@@ -49,7 +51,7 @@ export function SiteHeader() {
           {nav.map((n) => (
             <Link
               key={n.label}
-              to="/products"
+              to={n.to}
               hash={n.hash || undefined}
               className="text-cream/85 transition-colors hover:text-gold"
             >
@@ -83,7 +85,7 @@ export function SiteHeader() {
             {nav.map((n) => (
               <Link
                 key={n.label}
-                to="/products"
+                to={n.to}
                 hash={n.hash || undefined}
                 onClick={() => setOpen(false)}
                 className="rounded-md px-3 py-2 tracking-[0.16em] text-cream/85 hover:bg-white/5 hover:text-gold"
