@@ -207,7 +207,7 @@ function Index() {
 
       {/* SUBSCRIPTION */}
       {activePlans.length > 0 && (
-        <section id="subscription" className="bg-background">
+        <section id="subscription" className="bg-secondary/40">
           <div className="container-x mx-auto max-w-[1400px] py-20">
             <div className="text-center">
               <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">MEMBERSHIP</p>
