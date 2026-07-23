@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -14,6 +14,13 @@ import {
   upsertProductFn,
 } from "@/lib/products.functions";
 import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
+import {
+  listOrdersFn,
+  updateOrderStatusFn,
+  deleteOrderFn,
+  type OrderStatus,
+  type OrderItem,
+} from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -55,6 +62,9 @@ function AdminPage() {
   const del = useServerFn(deleteProductFn);
   const upsertCat = useServerFn(upsertCategoryFn);
   const delCat = useServerFn(deleteCategoryFn);
+  const listOrders = useServerFn(listOrdersFn);
+  const updateOrder = useServerFn(updateOrderStatusFn);
+  const removeOrder = useServerFn(deleteOrderFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -63,8 +73,14 @@ function AdminPage() {
 
   const { data: products = [] } = useQuery(productsQuery());
   const { data: categories = [] } = useQuery(categoriesQuery());
+  const { data: orders = [] } = useQuery({
+    queryKey: ["orders"],
+    queryFn: () => listOrders(),
+    enabled: !!adminInfo?.isAdmin,
+  });
 
-  const [tab, setTab] = useState<"products" | "categories">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders">("products");
+  const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
@@ -154,6 +170,34 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const orderStatusMut = useMutation({
+    mutationFn: (v: { id: string; status: OrderStatus }) => updateOrder({ data: v }),
+    onSuccess: () => {
+      toast.success("Order updated");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const orderDeleteMut = useMutation({
+    mutationFn: (id: string) => removeOrder({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Order deleted");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => o.status === orderFilter),
+    [orders, orderFilter],
+  );
+  const orderCounts = useMemo(() => ({
+    pending: orders.filter((o) => o.status === "pending").length,
+    completed: orders.filter((o) => o.status === "completed").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
+  }), [orders]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const price = Number(form.price);
@@ -239,26 +283,31 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : "Manage categories"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : "Manage orders"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
                 ? `${products.length} pieces in the catalog.`
-                : `${categories.length} categories.`}
+                : tab === "categories"
+                ? `${categories.length} categories.`
+                : `${orderCounts.pending} pending · ${orderCounts.completed} completed`}
             </p>
           </div>
-          <button
-            onClick={() => (tab === "products" ? open(null) : openCat(null))}
-            className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-          >
-            <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
-          </button>
+          {tab !== "orders" && (
+            <button
+              onClick={() => (tab === "products" ? open(null) : openCat(null))}
+              className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+            >
+              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
+            </button>
+          )}
         </div>
 
         <div className="mt-6 flex gap-2 border-b border-border">
           {([
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
+            { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
           ]).map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
@@ -358,6 +407,125 @@ on conflict do nothing;`}
               </div>
             );
           })}
+        </div>
+        )}
+
+        {tab === "orders" && (
+        <div className="mt-8 grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {([
+              { k: "pending" as const, label: "Pending", count: orderCounts.pending },
+              { k: "completed" as const, label: "Completed", count: orderCounts.completed },
+              { k: "cancelled" as const, label: "Cancelled", count: orderCounts.cancelled },
+            ]).map((f) => {
+              const active = orderFilter === f.k;
+              return (
+                <button
+                  key={f.k}
+                  onClick={() => setOrderFilter(f.k)}
+                  className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] transition-colors ${
+                    active
+                      ? "border-gold bg-gold text-onyx"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label.toUpperCase()}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${active ? "bg-onyx text-gold" : "bg-secondary/40"}`}>
+                    {f.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {filteredOrders.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No {orderFilter} orders.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {filteredOrders.map((o) => {
+                const items = (o.items as OrderItem[]) ?? [];
+                return (
+                  <div key={o.id} className="grid gap-3 border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-display text-lg text-foreground">{o.customer_name}</span>
+                          <StatusBadge status={o.status} />
+                        </div>
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {o.customer_email}
+                          {o.customer_phone ? ` · ${o.customer_phone}` : ""}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          #{o.id.slice(0, 8)} · {new Date(o.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-foreground">{formatINR(o.total)}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {items.reduce((s, i) => s + i.quantity, 0)} item(s)
+                        </div>
+                      </div>
+                    </div>
+
+                    {items.length > 0 && (
+                      <div className="grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                        {items.map((i, idx) => (
+                          <div key={idx} className="flex justify-between">
+                            <span>{i.name} × {i.quantity}</span>
+                            <span>{formatINR(i.price * i.quantity)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {o.shipping_address && (
+                      <div className="border-t border-border pt-3 text-xs text-muted-foreground">
+                        <span className="text-[10px] tracking-[0.2em] text-foreground/70">SHIP TO</span>
+                        <div className="mt-1 whitespace-pre-wrap">{o.shipping_address}</div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      {o.status !== "pending" && (
+                        <button
+                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "pending" })}
+                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-foreground"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" /> REOPEN
+                        </button>
+                      )}
+                      {o.status !== "completed" && (
+                        <button
+                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "completed" })}
+                          className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+                        >
+                          <Check className="h-3.5 w-3.5" /> MARK COMPLETED
+                        </button>
+                      )}
+                      {o.status !== "cancelled" && (
+                        <button
+                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "cancelled" })}
+                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-destructive hover:text-destructive"
+                        >
+                          <X className="h-3.5 w-3.5" /> CANCEL
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { if (confirm("Delete this order permanently?")) orderDeleteMut.mutate(o.id); }}
+                        className="rounded p-2 text-muted-foreground hover:text-destructive"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         )}
       </section>
@@ -529,5 +697,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[10px] tracking-[0.2em] text-muted-foreground">{label.toUpperCase()}</span>
       {children}
     </label>
+  );
+}
+
+function StatusBadge({ status }: { status: OrderStatus }) {
+  const styles: Record<OrderStatus, string> = {
+    pending: "bg-gold text-onyx",
+    completed: "bg-emerald-600 text-white",
+    cancelled: "bg-destructive text-destructive-foreground",
+  };
+  return (
+    <span className={`px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] ${styles[status]}`}>
+      {status.toUpperCase()}
+    </span>
   );
 }
