@@ -361,6 +361,16 @@ export function SiteContentEditor() {
               <input type="checkbox" checked={s.enabled} onChange={(e) => set({ enabled: e.target.checked })} />
               Show Reels section on homepage
             </label>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={s.autoplay} onChange={(e) => set({ autoplay: e.target.checked })} />
+                Autoplay reels when visible
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={s.loop} onChange={(e) => set({ loop: e.target.checked })} />
+                Loop reels continuously
+              </label>
+            </div>
             <Field label="Eyebrow"><input className={inputCls} value={s.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
             <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
             <Field label="Description"><textarea rows={2} className={inputCls} value={s.description} onChange={(e) => set({ description: e.target.value })} /></Field>
