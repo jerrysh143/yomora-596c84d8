@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, Award, Gem, Hammer, Truck, ShieldCheck, PencilLine, Check } from "lucide-react";
+import { ArrowRight, PencilLine, Check } from "lucide-react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
@@ -10,6 +10,8 @@ import { formatINR, productImage } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { subscriptionPlanQuery } from "@/lib/subscription.queries";
+import { siteContentQuery } from "@/lib/site-content.queries";
+import { SiteIcon } from "@/lib/site-icons";
 import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/")({
     context.queryClient.ensureQueryData(productsQuery());
     context.queryClient.ensureQueryData(categoriesQuery());
     context.queryClient.ensureQueryData(subscriptionPlanQuery());
+    context.queryClient.ensureQueryData(siteContentQuery());
   },
   component: Index,
 });
@@ -25,6 +28,13 @@ function Index() {
   const { data: products } = useSuspenseQuery(productsQuery());
   const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
   const { data: plan } = useSuspenseQuery(subscriptionPlanQuery());
+  const { data: content } = useSuspenseQuery(siteContentQuery());
+  const hero = content.hero;
+  const trust = content.trust_bar;
+  const legacy = content.legacy;
+  const catsSection = content.categories_section;
+  const featuredSection = content.featured_section;
+  const ctaStrip = content.cta_strip;
   const featured = products.slice(0, 4);
   return (
     <div className="min-h-screen bg-background">
@@ -45,32 +55,31 @@ function Index() {
 
         <div className="container-x relative mx-auto max-w-[1400px] py-20 md:py-28 lg:py-36">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">PREMIUM 925 STERLING SILVER JEWELLERY</p>
+            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{hero.eyebrow}</p>
             <h1 className="mt-6 font-display text-5xl leading-[1.05] text-cream sm:text-6xl lg:text-7xl">
-              Timeless Elegance,<br />Crafted for Every You
+              {hero.title_line_1}<br />{hero.title_line_2}
             </h1>
             <div className="mt-5 flex items-center gap-3">
               <span className="h-px w-16 bg-gold" />
               <span className="text-gold">✦</span>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-cream/75">
-              Discover beautifully designed 925 Sterling Silver jewellery, crafted to complement every moment of your life. From everyday wear to unforgettable occasions.
-            </p>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-cream/75">{hero.description}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/products"
+                hash={hero.primary_cta_hash || undefined}
                 className="group inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx transition-colors hover:bg-gold-soft"
               >
-                SHOP COLLECTION
+                {hero.primary_cta_label}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/products"
-                hash="new"
+                hash={hero.secondary_cta_hash || undefined}
                 className="inline-flex items-center gap-3 border border-gold/70 px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-gold/10"
               >
-                NEW ARRIVALS
+                {hero.secondary_cta_label}
               </Link>
             </div>
 
@@ -82,10 +91,8 @@ function Index() {
                 <PencilLine className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-semibold tracking-[0.22em] text-gold">MODIFIED 925 SILVER JEWELLERY</div>
-                <p className="mt-1 text-[11px] leading-relaxed text-cream/70">
-                  We also create custom &amp; modified 925 silver jewellery as per your style and requirements.
-                </p>
+                <div className="text-[11px] font-semibold tracking-[0.22em] text-gold">{hero.custom_card_title}</div>
+                <p className="mt-1 text-[11px] leading-relaxed text-cream/70">{hero.custom_card_body}</p>
               </div>
               <ArrowRight className="h-4 w-4 text-gold" />
             </Link>
@@ -96,11 +103,9 @@ function Index() {
       {/* TRUST BAR */}
       <section className="border-t border-white/5 bg-onyx text-cream">
         <div className="container-x mx-auto grid max-w-[1400px] grid-cols-2 gap-y-6 py-8 md:grid-cols-5">
-          <TrustItem icon={<Award className="h-6 w-6" />} title="32+ YEARS OF TRUST" body="Trusted Jewellery Legacy Since 1994" />
-          <TrustItem icon={<Gem className="h-6 w-6" />} title="GENUINE 925 SILVER" body="Hallmarked & Quality Assured" />
-          <TrustItem icon={<Hammer className="h-6 w-6" />} title="EXPERT CRAFTSMANSHIP" body="Fine Detailing, Superior Finish" />
-          <TrustItem icon={<Truck className="h-6 w-6" />} title="PAN INDIA DELIVERY" body="Fast, Secure & Reliable" />
-          <TrustItem icon={<ShieldCheck className="h-6 w-6" />} title="SECURE PAYMENTS" body="100% Safe & Protected" />
+          {trust.items.map((t, i) => (
+            <TrustItem key={i} icon={<SiteIcon name={t.icon} className="h-6 w-6" />} title={t.title} body={t.body} />
+          ))}
         </div>
       </section>
 
@@ -108,7 +113,7 @@ function Index() {
       <section className="bg-background">
         <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-20 md:grid-cols-[1fr_1.1fr_0.9fr]">
           <img
-            src={legacyImg}
+            src={legacy.image_url || legacyImg}
             width={1200}
             height={900}
             loading="lazy"
@@ -116,23 +121,15 @@ function Index() {
             className="h-full w-full object-cover"
           />
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">OUR LEGACY</p>
+            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{legacy.eyebrow}</p>
             <h2 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
-              A Legacy of Trust.<br />A Future of Luxury.
+              {legacy.title_line_1}<br />{legacy.title_line_2}
             </h2>
             <div className="mt-4 h-px w-20 bg-gold" />
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-              For over 32 years, Nehalbhai Devika Jewellers has been a name of trust, quality and timeless relationships. YOMORA is our premium silver jewellery brand, bringing that legacy to the modern world.
-            </p>
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{legacy.description}</p>
           </div>
           <ul className="space-y-3 border-l border-gold/40 pl-6 md:pl-8">
-            {[
-              "Genuine 925 Hallmarked Silver",
-              "Trendy & Timeless Designs",
-              "Modified & Custom Jewellery",
-              "Premium Packaging",
-              "Loved by Thousands of Customers",
-            ].map((t) => (
+            {legacy.bullets.map((t) => (
               <li key={t} className="flex items-center gap-3 text-sm text-foreground">
                 <Check className="h-4 w-4 text-gold" />
                 {t}
@@ -147,8 +144,8 @@ function Index() {
         <div className="container-x mx-auto max-w-[1400px] py-20">
           <div className="flex items-end justify-between gap-6">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">SHOP BY CATEGORY</p>
-              <h2 className="mt-3 font-display text-4xl text-foreground">Explore Our Collections</h2>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{catsSection.eyebrow}</p>
+              <h2 className="mt-3 font-display text-4xl text-foreground">{catsSection.title}</h2>
             </div>
             <Link to="/products" className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex">VIEW ALL →</Link>
           </div>
@@ -177,8 +174,8 @@ function Index() {
         <div className="container-x mx-auto max-w-[1400px] py-20">
           <div className="flex items-end justify-between gap-6">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">FEATURED</p>
-              <h2 className="mt-3 font-display text-4xl text-foreground">Signature Pieces</h2>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{featuredSection.eyebrow}</p>
+              <h2 className="mt-3 font-display text-4xl text-foreground">{featuredSection.title}</h2>
             </div>
             <Link to="/products" className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex">SHOP ALL →</Link>
           </div>
@@ -207,11 +204,11 @@ function Index() {
       <section className="bg-onyx text-cream">
         <div className="container-x mx-auto max-w-[1400px] grid items-center gap-6 py-14 md:grid-cols-[1fr_auto]">
           <div>
-            <h3 className="font-display text-3xl md:text-4xl">Custom &amp; Modified 925 Silver Jewellery</h3>
-            <p className="mt-2 max-w-xl text-sm text-cream/70">Have something in mind? Our karigars craft made-to-order pieces to your exact specifications.</p>
+            <h3 className="font-display text-3xl md:text-4xl">{ctaStrip.title}</h3>
+            <p className="mt-2 max-w-xl text-sm text-cream/70">{ctaStrip.body}</p>
           </div>
           <Link to="/products" className="inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft">
-            REQUEST A CUSTOM PIECE <ArrowRight className="h-4 w-4" />
+            {ctaStrip.button_label} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
