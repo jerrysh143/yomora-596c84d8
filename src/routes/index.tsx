@@ -111,36 +111,6 @@ function Index() {
         </div>
       </section>
 
-      {/* LEGACY */}
-      <section className="bg-background">
-        <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-20 md:grid-cols-[1fr_1.1fr_0.9fr]">
-          <img
-            src={legacy.image_url || legacyImg}
-            width={1200}
-            height={900}
-            loading="lazy"
-            alt="Nehalbhai Devika Jewellers showroom"
-            className="h-full w-full object-cover"
-          />
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{legacy.eyebrow}</p>
-            <h2 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
-              {legacy.title_line_1}<br />{legacy.title_line_2}
-            </h2>
-            <div className="mt-4 h-px w-20 bg-gold" />
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{legacy.description}</p>
-          </div>
-          <ul className="space-y-3 border-l border-gold/40 pl-6 md:pl-8">
-            {legacy.bullets.map((t) => (
-              <li key={t} className="flex items-center gap-3 text-sm text-foreground">
-                <Check className="h-4 w-4 text-gold" />
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
       {/* CATEGORIES */}
       <section className="bg-secondary/40">
         <div className="container-x mx-auto max-w-[1400px] py-20">
@@ -202,22 +172,42 @@ function Index() {
         </div>
       </section>
 
-      {/* CTA STRIP */}
-      <section className="bg-onyx text-cream">
-        <div className="container-x mx-auto max-w-[1400px] grid items-center gap-6 py-14 md:grid-cols-[1fr_auto]">
+      {/* REELS — lifestyle / social proof after products */}
+      <ReelsSection />
+
+      {/* LEGACY — brand story after customer has seen product */}
+      <section className="bg-background">
+        <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-20 md:grid-cols-[1fr_1.1fr_0.9fr]">
+          <img
+            src={legacy.image_url || legacyImg}
+            width={1200}
+            height={900}
+            loading="lazy"
+            alt="Nehalbhai Devika Jewellers showroom"
+            className="h-full w-full object-cover"
+          />
           <div>
-            <h3 className="font-display text-3xl md:text-4xl">{ctaStrip.title}</h3>
-            <p className="mt-2 max-w-xl text-sm text-cream/70">{ctaStrip.body}</p>
+            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{legacy.eyebrow}</p>
+            <h2 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
+              {legacy.title_line_1}<br />{legacy.title_line_2}
+            </h2>
+            <div className="mt-4 h-px w-20 bg-gold" />
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{legacy.description}</p>
           </div>
-          <Link to="/products" className="inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft">
-            {ctaStrip.button_label} <ArrowRight className="h-4 w-4" />
-          </Link>
+          <ul className="space-y-3 border-l border-gold/40 pl-6 md:pl-8">
+            {legacy.bullets.map((t) => (
+              <li key={t} className="flex items-center gap-3 text-sm text-foreground">
+                <Check className="h-4 w-4 text-gold" />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
       {/* SUBSCRIPTION */}
       {activePlans.length > 0 && (
-        <section id="subscription" className="bg-background">
+        <section id="subscription" className="bg-secondary/40">
           <div className="container-x mx-auto max-w-[1400px] py-20">
             <div className="text-center">
               <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">MEMBERSHIP</p>
@@ -269,7 +259,18 @@ function Index() {
         </section>
       )}
 
-      <ReelsSection />
+      {/* CUSTOM PIECE CTA — soft close before footer */}
+      <section className="bg-onyx text-cream">
+        <div className="container-x mx-auto max-w-[1400px] grid items-center gap-6 py-14 md:grid-cols-[1fr_auto]">
+          <div>
+            <h3 className="font-display text-3xl md:text-4xl">{ctaStrip.title}</h3>
+            <p className="mt-2 max-w-xl text-sm text-cream/70">{ctaStrip.body}</p>
+          </div>
+          <Link to="/products" className="inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft">
+            {ctaStrip.button_label} <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
 
       <SiteFooter />
     </div>
