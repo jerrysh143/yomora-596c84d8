@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -21,6 +21,8 @@ import {
   type OrderStatus,
   type OrderItem,
 } from "@/lib/orders.functions";
+import { updateSubscriptionPlanFn, type SubscriptionPlan } from "@/lib/subscription.functions";
+import { subscriptionPlanQuery } from "@/lib/subscription.queries";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -65,6 +67,7 @@ function AdminPage() {
   const listOrders = useServerFn(listOrdersFn);
   const updateOrder = useServerFn(updateOrderStatusFn);
   const removeOrder = useServerFn(deleteOrderFn);
+  const savePlan = useServerFn(updateSubscriptionPlanFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -78,8 +81,9 @@ function AdminPage() {
     queryFn: () => listOrders(),
     enabled: !!adminInfo?.isAdmin,
   });
+  const { data: plan } = useQuery(subscriptionPlanQuery());
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -188,6 +192,61 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [planForm, setPlanForm] = useState<{
+    name: string;
+    tagline: string;
+    price: string;
+    duration_label: string;
+    benefits: string;
+    cta_label: string;
+    is_active: boolean;
+  } | null>(null);
+
+  const planLoaded = plan?.id ?? null;
+  const activePlanId = planForm && plan ? plan.id : null;
+  if (plan && planForm === null) {
+    setPlanForm({
+      name: plan.name,
+      tagline: plan.tagline,
+      price: String(plan.price),
+      duration_label: plan.duration_label,
+      benefits: (plan.benefits ?? []).join("\n"),
+      cta_label: plan.cta_label,
+      is_active: plan.is_active,
+    });
+  }
+  void planLoaded;
+  void activePlanId;
+
+  const planMut = useMutation({
+    mutationFn: (data: Parameters<typeof savePlan>[0]["data"]) => savePlan({ data }),
+    onSuccess: () => {
+      toast.success("Subscription plan saved");
+      qc.invalidateQueries({ queryKey: ["subscription_plan"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handlePlanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!plan || !planForm) return;
+    const price = Number(planForm.price);
+    if (!Number.isFinite(price) || price < 0) {
+      toast.error("Price must be a positive number");
+      return;
+    }
+    planMut.mutate({
+      id: plan.id,
+      name: planForm.name.trim(),
+      tagline: planForm.tagline.trim(),
+      price,
+      duration_label: planForm.duration_label.trim(),
+      benefits: planForm.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
+      cta_label: planForm.cta_label.trim(),
+      is_active: planForm.is_active,
+    });
+  };
+
   const filteredOrders = useMemo(
     () => orders.filter((o) => o.status === orderFilter),
     [orders, orderFilter],
@@ -283,17 +342,19 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : "Manage orders"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : "Manage subscription"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
                 ? `${products.length} pieces in the catalog.`
                 : tab === "categories"
                 ? `${categories.length} categories.`
-                : `${orderCounts.pending} pending · ${orderCounts.completed} completed`}
+                : tab === "orders"
+                ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
+                : plan ? (plan.is_active ? "Live on the storefront." : "Currently hidden from the storefront.") : "Loading plan…"}
             </p>
           </div>
-          {tab !== "orders" && (
+          {tab !== "orders" && tab !== "subscription" && (
             <button
               onClick={() => (tab === "products" ? open(null) : openCat(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
@@ -308,6 +369,7 @@ on conflict do nothing;`}
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
+            { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
           ]).map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
