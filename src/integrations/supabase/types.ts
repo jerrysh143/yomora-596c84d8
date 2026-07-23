@@ -119,6 +119,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plan: {
+        Row: {
+          benefits: Json
+          created_at: string
+          cta_label: string
+          duration_label: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          tagline: string
+          updated_at: string
+        }
+        Insert: {
+          benefits?: Json
+          created_at?: string
+          cta_label?: string
+          duration_label?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          tagline?: string
+          updated_at?: string
+        }
+        Update: {
+          benefits?: Json
+          created_at?: string
+          cta_label?: string
+          duration_label?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          tagline?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
