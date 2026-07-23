@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/orders.functions";
 import { updateSubscriptionPlanFn, type SubscriptionPlan } from "@/lib/subscription.functions";
 import { subscriptionPlanQuery } from "@/lib/subscription.queries";
+import { SiteContentEditor } from "@/components/admin/site-content-editor";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -83,7 +84,7 @@ function AdminPage() {
   });
   const { data: plan } = useQuery(subscriptionPlanQuery());
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -340,7 +341,7 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : "Manage subscription"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
@@ -349,10 +350,12 @@ on conflict do nothing;`}
                 ? `${categories.length} categories.`
                 : tab === "orders"
                 ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
-                : plan ? (plan.is_active ? "Live on the storefront." : "Currently hidden from the storefront.") : "Loading plan…"}
+                : tab === "subscription"
+                ? (plan ? (plan.is_active ? "Live on the storefront." : "Currently hidden from the storefront.") : "Loading plan…")
+                : "Edit every homepage section, header and footer."}
             </p>
           </div>
-          {tab !== "orders" && tab !== "subscription" && (
+          {(tab === "products" || tab === "categories") && (
             <button
               onClick={() => (tab === "products" ? open(null) : openCat(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
@@ -368,6 +371,7 @@ on conflict do nothing;`}
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
+            { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
           ]).map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
@@ -588,6 +592,8 @@ on conflict do nothing;`}
           )}
         </div>
         )}
+
+        {tab === "site" && <SiteContentEditor />}
       </section>
 
       {tab === "subscription" && plan && planForm && (
