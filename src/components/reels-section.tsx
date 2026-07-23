@@ -58,6 +58,14 @@ export function ReelsSection() {
         if (reels.autoplay) f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
         else f.removeAttribute("allow");
         f.dataset.reelLoop = reels.loop ? "1" : "0";
+        // Crop Instagram chrome (header with profile + footer with like/caption/link)
+        // so only the video itself is visible inside the tile.
+        f.style.position = "absolute";
+        f.style.left = "0";
+        f.style.top = "-54px";
+        f.style.width = "100%";
+        f.style.height = "calc(100% + 54px + 140px)";
+        f.style.border = "0";
       });
     };
 
