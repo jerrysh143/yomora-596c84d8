@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -14,6 +14,13 @@ import {
   upsertProductFn,
 } from "@/lib/products.functions";
 import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
+import {
+  listOrdersFn,
+  updateOrderStatusFn,
+  deleteOrderFn,
+  type OrderStatus,
+  type OrderItem,
+} from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -55,6 +62,9 @@ function AdminPage() {
   const del = useServerFn(deleteProductFn);
   const upsertCat = useServerFn(upsertCategoryFn);
   const delCat = useServerFn(deleteCategoryFn);
+  const listOrders = useServerFn(listOrdersFn);
+  const updateOrder = useServerFn(updateOrderStatusFn);
+  const removeOrder = useServerFn(deleteOrderFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -63,8 +73,14 @@ function AdminPage() {
 
   const { data: products = [] } = useQuery(productsQuery());
   const { data: categories = [] } = useQuery(categoriesQuery());
+  const { data: orders = [] } = useQuery({
+    queryKey: ["orders"],
+    queryFn: () => listOrders(),
+    enabled: !!adminInfo?.isAdmin,
+  });
 
-  const [tab, setTab] = useState<"products" | "categories">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders">("products");
+  const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
@@ -154,6 +170,34 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const orderStatusMut = useMutation({
+    mutationFn: (v: { id: string; status: OrderStatus }) => updateOrder({ data: v }),
+    onSuccess: () => {
+      toast.success("Order updated");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const orderDeleteMut = useMutation({
+    mutationFn: (id: string) => removeOrder({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Order deleted");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => o.status === orderFilter),
+    [orders, orderFilter],
+  );
+  const orderCounts = useMemo(() => ({
+    pending: orders.filter((o) => o.status === "pending").length,
+    completed: orders.filter((o) => o.status === "completed").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
+  }), [orders]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const price = Number(form.price);
@@ -239,26 +283,31 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : "Manage categories"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : "Manage orders"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
                 ? `${products.length} pieces in the catalog.`
-                : `${categories.length} categories.`}
+                : tab === "categories"
+                ? `${categories.length} categories.`
+                : `${orderCounts.pending} pending · ${orderCounts.completed} completed`}
             </p>
           </div>
-          <button
-            onClick={() => (tab === "products" ? open(null) : openCat(null))}
-            className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-          >
-            <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
-          </button>
+          {tab !== "orders" && (
+            <button
+              onClick={() => (tab === "products" ? open(null) : openCat(null))}
+              className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+            >
+              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : "NEW CATEGORY"}
+            </button>
+          )}
         </div>
 
         <div className="mt-6 flex gap-2 border-b border-border">
           {([
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
+            { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
           ]).map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
