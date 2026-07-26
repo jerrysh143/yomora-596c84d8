@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIdRouteImport } from './routes/products.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const TrackOrderRoute = TrackOrderRouteImport.update({
+  id: '/track-order',
+  path: '/track-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/membership'
     | '/products'
+    | '/track-order'
     | '/admin'
     | '/products/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/membership'
     | '/products'
+    | '/track-order'
     | '/admin'
     | '/products/$id'
   id:
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/membership'
     | '/products'
+    | '/track-order'
     | '/_authenticated/admin'
     | '/products/$id'
   fileRoutesById: FileRoutesById
@@ -164,10 +176,18 @@ export interface RootRouteChildren {
   CustomJewelleryRoute: typeof CustomJewelleryRoute
   MembershipRoute: typeof MembershipRoute
   ProductsRoute: typeof ProductsRouteWithChildren
+  TrackOrderRoute: typeof TrackOrderRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/track-order': {
+      id: '/track-order'
+      path: '/track-order'
+      fullPath: '/track-order'
+      preLoaderRoute: typeof TrackOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products': {
       id: '/products'
       path: '/products'
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomJewelleryRoute: CustomJewelleryRoute,
   MembershipRoute: MembershipRoute,
   ProductsRoute: ProductsRouteWithChildren,
+  TrackOrderRoute: TrackOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
