@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, User, ShoppingBag, Menu } from "lucide-react";
+import { Search, User, ShoppingBag, Menu, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { SiteIcon } from "@/lib/site-icons";
 import { SocialLinks } from "@/components/social-links";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -23,6 +24,7 @@ export function SiteHeader() {
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
   const { count } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const nav: { label: string; to: string; hash: string }[] = [
     ...(headerNav.include_categories
       ? categories.map((c) => ({ label: c.label.toUpperCase(), to: "/products", hash: c.slug }))
@@ -66,6 +68,12 @@ export function SiteHeader() {
         <div className="flex items-center gap-3 text-cream/85">
           <SocialLinks placement="header" className="mr-1 hidden sm:flex" iconClassName="h-4 w-4" />
           <button aria-label="Search" className="rounded-full p-2 hover:text-gold"><Search className="h-5 w-5" /></button>
+          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-2 hover:text-gold">
+            <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{wishlistCount}</span>
+            )}
+          </Link>
           <Link
             to={signedIn ? "/admin" : "/auth"}
             aria-label={signedIn ? "Admin dashboard" : "Sign in"}

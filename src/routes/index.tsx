@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, PencilLine, Check } from "lucide-react";
+import { Heart } from "lucide-react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +15,7 @@ import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SiteIcon } from "@/lib/site-icons";
 import { Sparkles } from "lucide-react";
+import { useWishlist, wishlist } from "@/lib/wishlist";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -38,6 +40,8 @@ function Index() {
   const featuredSection = content.featured_section;
   const ctaStrip = content.cta_strip;
   const featured = products.slice(0, 4);
+  const { items: wishItems } = useWishlist();
+  const wishSet = new Set(wishItems.map((w) => w.id));
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -160,6 +164,16 @@ function Index() {
                   {p.is_new && (
                     <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      wishlist.toggle({ id: p.id, name: p.name, price: p.price, image: productImage(p), category: p.category });
+                    }}
+                    aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
+                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                  >
+                    <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
+                  </button>
                 </div>
                 <div className="pt-4">
                   <h3 className="font-display text-lg text-foreground">{p.name}</h3>

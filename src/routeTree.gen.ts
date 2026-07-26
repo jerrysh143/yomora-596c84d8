@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -25,6 +26,11 @@ import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsIdRouteImport } from './routes/products.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackOrderRoute = TrackOrderRouteImport.update({
   id: '/track-order',
   path: '/track-order',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/track-order': typeof TrackOrderRoute
+  '/wishlist': typeof WishlistRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/track-order': typeof TrackOrderRoute
+  '/wishlist': typeof WishlistRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
   '/products': typeof ProductsIndexRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/track-order': typeof TrackOrderRoute
+  '/wishlist': typeof WishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/membership'
     | '/track-order'
+    | '/wishlist'
     | '/admin'
     | '/products/$id'
     | '/products/'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/membership'
     | '/track-order'
+    | '/wishlist'
     | '/admin'
     | '/products/$id'
     | '/products'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/membership'
     | '/track-order'
+    | '/wishlist'
     | '/_authenticated/admin'
     | '/products/$id'
     | '/products/'
@@ -215,12 +227,20 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   MembershipRoute: typeof MembershipRoute
   TrackOrderRoute: typeof TrackOrderRoute
+  WishlistRoute: typeof WishlistRoute
   ProductsIdRoute: typeof ProductsIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/track-order': {
       id: '/track-order'
       path: '/track-order'
@@ -353,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   MembershipRoute: MembershipRoute,
   TrackOrderRoute: TrackOrderRoute,
+  WishlistRoute: WishlistRoute,
   ProductsIdRoute: ProductsIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }
