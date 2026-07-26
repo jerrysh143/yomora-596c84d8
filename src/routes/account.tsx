@@ -59,9 +59,21 @@ function AccountPage() {
             <ul className="mt-6 space-y-1 text-sm">
               {menu.map(([k, l, I]) => (
                 <li key={k}>
-                  <button onClick={() => setTab(k)} className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left ${tab === k ? "bg-gold text-onyx" : "hover:bg-secondary/60"}`}>
-                    <I className="h-4 w-4" /> {l}
-                  </button>
+                  {k === "membership" ? (
+                    <Link
+                      to="/membership-dashboard"
+                      className="flex w-full items-center gap-3 rounded px-3 py-2 text-left hover:bg-secondary/60"
+                    >
+                      <I className="h-4 w-4" /> {l}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => setTab(k)}
+                      className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left ${tab === k ? "bg-gold text-onyx" : "hover:bg-secondary/60"}`}
+                    >
+                      <I className="h-4 w-4" /> {l}
+                    </button>
+                  )}
                 </li>
               ))}
               <li>

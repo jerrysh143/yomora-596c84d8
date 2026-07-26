@@ -38,6 +38,56 @@ export type Database = {
         }
         Relationships: []
       }
+      memberships: {
+        Row: {
+          activated_at: string | null
+          auto_renew: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          member_number: string | null
+          notes: string | null
+          plan_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          auto_renew?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          member_number?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          auto_renew?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          member_number?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string
