@@ -20,6 +20,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage } from "@/lib/products";
 import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
+import { wishlist, useWishlist } from "@/lib/wishlist";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/products/$id")({
@@ -75,6 +76,10 @@ function ProductPage() {
   const [engraving, setEngraving] = useState(false);
   const [tab, setTab] = useState<"description" | "details" | "shipping" | "reviews">("description");
   const add = () => cart.add({ id: product.id, name: product.name, price: product.price, image: img });
+  const { items: wishItems } = useWishlist();
+  const wished = wishItems.some((w) => w.id === product.id);
+  const toggleWish = () =>
+    wishlist.toggle({ id: product.id, name: product.name, price: product.price, image: img, category: product.category });
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,8 +127,8 @@ function ProductPage() {
           {/* Main image */}
           <div className="relative order-1 bg-onyx md:order-2">
             <img src={gallery[activeImg]} alt={product.name} className="aspect-square w-full object-cover" />
-            <button aria-label="Wishlist" className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
-              <Heart className="h-4 w-4" />
+            <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
+              <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
             </button>
             <button className="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-background/90 px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold">
               <Box className="h-3.5 w-3.5" /> VIEW IN 3D
