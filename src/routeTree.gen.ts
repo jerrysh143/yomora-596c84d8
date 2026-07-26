@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
@@ -35,6 +36,11 @@ const WishlistRoute = WishlistRouteImport.update({
 const TrackOrderRoute = TrackOrderRouteImport.update({
   id: '/track-order',
   path: '/track-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembershipRoute = MembershipRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/faq'
     | '/membership'
+    | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
     | '/admin'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/faq'
     | '/membership'
+    | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
     | '/admin'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/custom-jewellery'
     | '/faq'
     | '/membership'
+    | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
     | '/_authenticated/admin'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   CustomJewelleryRoute: typeof CustomJewelleryRoute
   FaqRoute: typeof FaqRoute
   MembershipRoute: typeof MembershipRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   ProductsIdRoute: typeof ProductsIdRoute
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       path: '/track-order'
       fullPath: '/track-order'
       preLoaderRoute: typeof TrackOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/membership': {
@@ -394,6 +414,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomJewelleryRoute: CustomJewelleryRoute,
   FaqRoute: FaqRoute,
   MembershipRoute: MembershipRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   ProductsIdRoute: ProductsIdRoute,

@@ -21,8 +21,15 @@ export function SiteFooter() {
           <div className="text-xs font-semibold tracking-[0.24em] text-gold">{f.newsletter_title}</div>
           <p className="mt-3 text-xs text-cream/60">{f.newsletter_body}</p>
           <form className="mt-4 flex overflow-hidden rounded-sm border border-white/15">
-            <input placeholder="Email address" className="flex-1 bg-transparent px-3 py-2 text-xs outline-none placeholder:text-cream/40" />
-            <button className="bg-gold px-4 text-[11px] font-semibold tracking-[0.18em] text-onyx hover:bg-gold-soft">JOIN</button>
+            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              aria-label="Email address"
+              placeholder="Email address"
+              className="flex-1 bg-transparent px-3 py-2 text-xs outline-none placeholder:text-cream/70"
+            />
+            <button type="submit" className="bg-gold px-4 text-[11px] font-semibold tracking-[0.18em] text-onyx hover:bg-gold-soft">JOIN</button>
           </form>
         </div>
       </div>

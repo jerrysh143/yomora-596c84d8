@@ -53,6 +53,8 @@ function Index() {
             src={heroImg}
             width={1600}
             height={1200}
+            fetchPriority="high"
+            decoding="async"
             alt="925 sterling silver diamond jewellery on dark textured stone"
             className="h-full w-full object-cover object-right opacity-90"
           />
@@ -132,7 +134,7 @@ function Index() {
               const img = p ? productImage(p) : "";
               return (
                 <Link key={c.slug} to="/products" hash={c.slug} className="group relative block overflow-hidden bg-onyx">
-                  <img src={img} width={900} height={900} loading="lazy" alt={c.label} className="h-72 w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
+                  <img src={img} width={900} height={900} loading="lazy" alt={`${c.label} — 925 sterling silver collection`} className="h-72 w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-onyx/85 via-onyx/20 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-5 text-cream">
                     <span className="font-display text-xl">{c.label}</span>
@@ -160,7 +162,7 @@ function Index() {
             {featured.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
-                  <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img src={productImage(p)} width={900} height={900} loading="lazy" alt={`${p.name} — 925 sterling silver`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   {p.is_new && (
                     <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
                   )}

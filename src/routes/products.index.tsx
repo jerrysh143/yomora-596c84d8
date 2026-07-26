@@ -72,6 +72,7 @@ function ProductsPage() {
       </section>
 
       <section className="container-x mx-auto max-w-[1400px] py-10">
+        <h2 className="sr-only">Product listing</h2>
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
           <div className="flex flex-wrap gap-2">
             {filters.map((f) => (
@@ -98,7 +99,7 @@ function ProductsPage() {
           {items.map((p) => (
             <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
-                <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img src={productImage(p)} width={900} height={900} loading="lazy" alt={`${p.name} — 925 sterling silver ${p.category}`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 {p.is_new && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
                 <button
                   onClick={(e) => {
