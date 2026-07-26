@@ -167,6 +167,7 @@ function Index() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       wishlist.toggle({ id: p.id, name: p.name, price: p.price, image: productImage(p), category: p.category });
                     }}
                     aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
