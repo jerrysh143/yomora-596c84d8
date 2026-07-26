@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift, Minus, Plus, X } from "lucide-react";
+import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift, Minus, Plus, X, Eye } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useWishlist, wishlist, type WishlistItem } from "@/lib/wishlist";
@@ -116,8 +116,21 @@ function WishlistCard({ item }: { item: WishlistItem }) {
       </div>
 
       <div className="flex flex-1 flex-col pt-4">
-        <h3 className="font-display text-lg text-foreground">{item.name}</h3>
+        <Link
+          to="/products/$id"
+          params={{ id: item.id }}
+          className="font-display text-lg text-foreground transition-colors hover:text-gold"
+        >
+          {item.name}
+        </Link>
         <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(item.price)}</p>
+        <Link
+          to="/products/$id"
+          params={{ id: item.id }}
+          className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.2em] text-gold hover:text-onyx"
+        >
+          <Eye className="h-3 w-3" /> VIEW DETAILS
+        </Link>
 
         <div className="mt-3 flex items-center justify-between">
           <div className="inline-flex items-center border border-border">
