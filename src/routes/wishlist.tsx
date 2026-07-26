@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useWishlist, wishlist } from "@/lib/wishlist";
@@ -39,16 +39,7 @@ function WishlistPage() {
 
       <section className="container-x mx-auto max-w-[1400px] py-12">
         {items.length === 0 ? (
-          <div className="py-20 text-center">
-            <Heart className="mx-auto h-12 w-12 text-gold" />
-            <p className="mt-6 text-sm text-muted-foreground">Your wishlist is empty.</p>
-            <Link
-              to="/products"
-              className="mt-6 inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-            >
-              EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          <EmptyWishlist />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {items.map((p) => (
@@ -92,6 +83,67 @@ function WishlistPage() {
       </section>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+function EmptyWishlist() {
+  const shortcuts: { to: string; label: string; icon: typeof Gem }[] = [
+    { to: "/products", label: "Shop all jewellery", icon: Gem },
+    { to: "/custom-jewellery", label: "Design a custom piece", icon: Sparkles },
+    { to: "/membership", label: "Join YOMORA Privilege", icon: Gift },
+  ];
+
+  return (
+    <div className="mx-auto max-w-3xl py-10 sm:py-16">
+      <div className="relative overflow-hidden border border-gold/30 bg-gradient-to-b from-secondary/40 to-background px-6 py-14 text-center sm:px-14 sm:py-20">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -bottom-24 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />
+
+        <div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full border border-gold/40 bg-background shadow-[0_0_40px_-10px_hsl(var(--gold)/0.6)]">
+          <Heart className="h-9 w-9 text-gold" />
+        </div>
+
+        <p className="relative mt-8 text-[11px] font-semibold tracking-[0.28em] text-gold">
+          A COLLECTION OF ONE
+        </p>
+        <h2 className="relative mt-3 font-display text-3xl sm:text-4xl text-foreground">
+          Your wishlist is waiting to shine
+        </h2>
+        <p className="relative mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+          Tap the heart on any piece you love and we'll keep it safe here — ready when you are.
+        </p>
+
+        <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-3 bg-gold px-7 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx transition-colors hover:bg-gold-soft"
+          >
+            EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-3 py-3 text-[11px] font-semibold tracking-[0.24em] text-foreground/80 hover:text-gold"
+          >
+            BACK TO HOME
+          </Link>
+        </div>
+
+        <div className="relative mt-12 grid gap-3 sm:grid-cols-3">
+          {shortcuts.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex items-center gap-3 border border-border/60 bg-background/60 px-4 py-3 text-left transition-colors hover:border-gold/60 hover:bg-secondary/40"
+            >
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-gold/10 text-gold group-hover:bg-gold group-hover:text-onyx">
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="text-xs font-medium tracking-wide text-foreground">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
