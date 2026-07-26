@@ -798,6 +798,223 @@ on conflict do nothing;`}
         {tab === "site" && <SiteContentEditor />}
       </section>
 
+      {tab === "memberships" && (
+        <section className="container-x mx-auto max-w-[1400px] pb-16">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <input
+              value={memSearch}
+              onChange={(e) => setMemSearch(e.target.value)}
+              placeholder="Search member ID, email, or user ID…"
+              className="min-w-[260px] flex-1 border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+            />
+            <div className="flex flex-wrap gap-1">
+              {(["all", "pending", "active", "expired", "cancelled"] as const).map((s) => {
+                const count = s === "all" ? memberships.length : memberships.filter((m) => m.status === s).length;
+                const active = memStatusFilter === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setMemStatusFilter(s)}
+                    className={`inline-flex items-center gap-2 border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] ${
+                      active ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground hover:border-foreground"
+                    }`}
+                  >
+                    {s} <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground/70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filteredMemberships.length === 0 ? (
+            <div className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              No memberships match.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {filteredMemberships.map((m) => (
+                <div key={m.id} className="grid gap-3 border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display text-lg text-foreground">
+                          {m.member_number || "—"}
+                        </span>
+                        <MembershipStatusBadge status={m.status} />
+                        {m.auto_renew && (
+                          <span className="rounded bg-secondary px-2 py-0.5 text-[10px] tracking-[0.2em] text-foreground/70">
+                            AUTO-RENEW
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {m.user_email ?? "unknown email"} · {m.plan_name ?? "no plan"}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        User {m.user_id.slice(0, 8)} · created {new Date(m.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      <div>Activated: {m.activated_at ? new Date(m.activated_at).toLocaleDateString() : "—"}</div>
+                      <div>Expires: {m.expires_at ? new Date(m.expires_at).toLocaleDateString() : "—"}</div>
+                    </div>
+                  </div>
+
+                  {m.notes && (
+                    <div className="border-t border-border pt-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {m.notes}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                    {m.status !== "active" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "active")}
+                        className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+                      >
+                        <Check className="h-3.5 w-3.5" /> ACTIVATE
+                      </button>
+                    )}
+                    {m.status !== "expired" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "expired")}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-foreground"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> EXPIRE
+                      </button>
+                    )}
+                    {m.status !== "cancelled" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "cancelled")}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-destructive hover:text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" /> CANCEL
+                      </button>
+                    )}
+                    <button onClick={() => openMembership(m)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm("Delete this membership?")) memDeleteMut.mutate(m.id); }}
+                      className="rounded p-2 text-muted-foreground hover:text-destructive"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isMemOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closeMembership}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleMembershipSubmit}
+            className="grid max-h-[90vh] w-full max-w-2xl gap-4 overflow-y-auto border border-border bg-background p-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl">{memEditing ? "Edit membership" : "New membership"}</h2>
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={memForm.auto_renew}
+                  onChange={(e) => setMemForm({ ...memForm, auto_renew: e.target.checked })}
+                />
+                Auto-renew
+              </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Customer email">
+                <input
+                  required
+                  type="email"
+                  disabled={!!memEditing}
+                  value={memForm.user_email}
+                  onChange={(e) => setMemForm({ ...memForm, user_email: e.target.value })}
+                  placeholder="customer@email.com"
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold disabled:opacity-70"
+                />
+              </Field>
+              <Field label="Member ID (member number)">
+                <input
+                  value={memForm.member_number}
+                  onChange={(e) => setMemForm({ ...memForm, member_number: e.target.value })}
+                  placeholder="YM-000123"
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+              <Field label="Plan">
+                <select
+                  value={memForm.plan_id}
+                  onChange={(e) => setMemForm({ ...memForm, plan_id: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                >
+                  <option value="">— No plan —</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Status">
+                <select
+                  value={memForm.status}
+                  onChange={(e) => setMemForm({ ...memForm, status: e.target.value as MembershipFormState["status"] })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </Field>
+              <Field label="Activated at">
+                <input
+                  type="date"
+                  value={memForm.activated_at}
+                  onChange={(e) => setMemForm({ ...memForm, activated_at: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+              <Field label="Expires at">
+                <input
+                  type="date"
+                  value={memForm.expires_at}
+                  onChange={(e) => setMemForm({ ...memForm, expires_at: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+            </div>
+
+            <Field label="Internal notes">
+              <textarea
+                rows={3}
+                value={memForm.notes}
+                onChange={(e) => setMemForm({ ...memForm, notes: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closeMembership} className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary">
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={memCreateMut.isPending || memUpdateMut.isPending}
+                className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
+              >
+                {(memCreateMut.isPending || memUpdateMut.isPending) ? "SAVING…" : memEditing ? "SAVE MEMBERSHIP" : "CREATE MEMBERSHIP"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {tab === "subscription" && (
         <section className="container-x mx-auto max-w-5xl pb-16">
           {plans.length === 0 ? (
