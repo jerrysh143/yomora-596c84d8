@@ -1,0 +1,14 @@
+# YOMORA
+
+> YOMORA by Nehalbhai Devika Jewellers — timeless 925 hallmarked sterling silver rings, earrings, neckwear, and bracelets, with a legacy of trust since 1994.
+
+## Pages
+
+- [Home](/): Featured collections, brand story, and membership highlights.
+- [Shop All](/products): Browse rings, earrings, neckwear, and bracelets in 925 sterling silver.
+- [Custom Jewellery](/custom-jewellery): Personalized 925 silver pieces designed and crafted to order.
+- [Black Signature Membership](/membership): Member benefits, pricing, and how to unlock the YOMORA membership.
+- [Our Story](/about): The legacy of Nehalbhai Devika Jewellers since 1994.
+- [FAQ](/faq): Answers on 925 silver, sizing, shipping, and returns.
+- [Contact](/contact): Phone, email, address, and enquiry form.
+- [Track Order](/track-order): Check the status of a YOMORA order.
