@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
@@ -21,6 +22,11 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MembershipRoute = MembershipRouteImport.update({
+  id: '/membership',
+  path: '/membership',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomJewelleryRoute = CustomJewelleryRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/custom-jewellery'
+    | '/membership'
     | '/products'
     | '/admin'
     | '/products/$id'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/custom-jewellery'
+    | '/membership'
     | '/products'
     | '/admin'
     | '/products/$id'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/custom-jewellery'
+    | '/membership'
     | '/products'
     | '/_authenticated/admin'
     | '/products/$id'
@@ -124,6 +136,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   CustomJewelleryRoute: typeof CustomJewelleryRoute
+  MembershipRoute: typeof MembershipRoute
   ProductsRoute: typeof ProductsRouteWithChildren
 }
 
@@ -134,6 +147,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/membership': {
+      id: '/membership'
+      path: '/membership'
+      fullPath: '/membership'
+      preLoaderRoute: typeof MembershipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/custom-jewellery': {
@@ -217,6 +237,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   CustomJewelleryRoute: CustomJewelleryRoute,
+  MembershipRoute: MembershipRoute,
   ProductsRoute: ProductsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
