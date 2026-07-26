@@ -540,7 +540,7 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : "Manage site content"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
@@ -551,15 +551,17 @@ on conflict do nothing;`}
                 ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
                 : tab === "subscription"
                 ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
+                : tab === "memberships"
+                ? `${memberships.length} member${memberships.length === 1 ? "" : "s"} · ${memberships.filter((m) => m.status === "active").length} active`
                 : "Edit every homepage section, header and footer."}
             </p>
           </div>
-          {(tab === "products" || tab === "categories" || tab === "subscription") && (
+          {(tab === "products" || tab === "categories" || tab === "subscription" || tab === "memberships") && (
             <button
-              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : openPlan(null))}
+              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : tab === "subscription" ? openPlan(null) : openMembership(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
             >
-              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : "ADD PLAN"}
+              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : tab === "subscription" ? "ADD PLAN" : "ADD MEMBERSHIP"}
             </button>
           )}
         </div>
@@ -570,6 +572,7 @@ on conflict do nothing;`}
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
+            { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
             { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
           ]).map((t) => {
             const Icon = t.icon;
