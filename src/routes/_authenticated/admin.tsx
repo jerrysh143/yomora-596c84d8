@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -29,6 +29,13 @@ import {
 } from "@/lib/subscription.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { SiteContentEditor } from "@/components/admin/site-content-editor";
+import {
+  listMembershipsFn,
+  updateMembershipFn,
+  deleteMembershipFn,
+  createMembershipFn,
+  type AdminMembership,
+} from "@/lib/memberships-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -76,6 +83,10 @@ function AdminPage() {
   const savePlan = useServerFn(updateSubscriptionPlanFn);
   const createPlan = useServerFn(createSubscriptionPlanFn);
   const removePlan = useServerFn(deleteSubscriptionPlanFn);
+  const listMemberships = useServerFn(listMembershipsFn);
+  const saveMembership = useServerFn(updateMembershipFn);
+  const removeMembership = useServerFn(deleteMembershipFn);
+  const addMembership = useServerFn(createMembershipFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -90,8 +101,13 @@ function AdminPage() {
     enabled: !!adminInfo?.isAdmin,
   });
   const { data: plans = [] } = useQuery(subscriptionPlansQuery());
+  const { data: memberships = [] } = useQuery({
+    queryKey: ["admin", "memberships"],
+    queryFn: () => listMemberships(),
+    enabled: !!adminInfo?.isAdmin,
+  });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "site">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "memberships" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -275,6 +291,137 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  type MembershipFormState = {
+    id: string | null;
+    user_email: string;
+    plan_id: string;
+    status: "pending" | "active" | "expired" | "cancelled";
+    activated_at: string;
+    expires_at: string;
+    auto_renew: boolean;
+    member_number: string;
+    notes: string;
+  };
+  const emptyMembershipForm: MembershipFormState = {
+    id: null,
+    user_email: "",
+    plan_id: "",
+    status: "pending",
+    activated_at: "",
+    expires_at: "",
+    auto_renew: false,
+    member_number: "",
+    notes: "",
+  };
+  const [memEditing, setMemEditing] = useState<AdminMembership | null>(null);
+  const [memCreating, setMemCreating] = useState(false);
+  const [memForm, setMemForm] = useState<MembershipFormState>(emptyMembershipForm);
+  const [memSearch, setMemSearch] = useState("");
+  const [memStatusFilter, setMemStatusFilter] = useState<"all" | "pending" | "active" | "expired" | "cancelled">("all");
+
+  const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
+  const toIso = (d: string) => (d ? new Date(d + "T00:00:00Z").toISOString() : null);
+
+  const openMembership = (m: AdminMembership | null) => {
+    if (m) {
+      setMemEditing(m);
+      setMemCreating(false);
+      setMemForm({
+        id: m.id,
+        user_email: m.user_email ?? "",
+        plan_id: m.plan_id ?? "",
+        status: m.status,
+        activated_at: toDateInput(m.activated_at),
+        expires_at: toDateInput(m.expires_at),
+        auto_renew: m.auto_renew,
+        member_number: m.member_number ?? "",
+        notes: m.notes ?? "",
+      });
+    } else {
+      setMemEditing(null);
+      setMemCreating(true);
+      setMemForm({ ...emptyMembershipForm, plan_id: plans[0]?.id ?? "" });
+    }
+  };
+  const closeMembership = () => { setMemEditing(null); setMemCreating(false); };
+  const isMemOpen = memEditing !== null || memCreating;
+
+  const memUpdateMut = useMutation({
+    mutationFn: (data: Parameters<typeof saveMembership>[0]["data"]) => saveMembership({ data }),
+    onSuccess: () => {
+      toast.success("Membership updated");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+      closeMembership();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const memCreateMut = useMutation({
+    mutationFn: (data: Parameters<typeof addMembership>[0]["data"]) => addMembership({ data }),
+    onSuccess: () => {
+      toast.success("Membership created");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+      closeMembership();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const memDeleteMut = useMutation({
+    mutationFn: (id: string) => removeMembership({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Membership deleted");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleMembershipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const shared = {
+      plan_id: memForm.plan_id || null,
+      status: memForm.status,
+      activated_at: toIso(memForm.activated_at),
+      expires_at: toIso(memForm.expires_at),
+      auto_renew: memForm.auto_renew,
+      member_number: memForm.member_number.trim() || null,
+      notes: memForm.notes.trim() || null,
+    };
+    if (memEditing) {
+      memUpdateMut.mutate({ id: memEditing.id, ...shared });
+    } else {
+      if (!memForm.user_email.trim()) {
+        toast.error("Customer email is required");
+        return;
+      }
+      memCreateMut.mutate({ user_email: memForm.user_email.trim(), ...shared });
+    }
+  };
+
+  const setMembershipStatusQuick = (m: AdminMembership, status: AdminMembership["status"]) => {
+    memUpdateMut.mutate({
+      id: m.id,
+      plan_id: m.plan_id,
+      status,
+      activated_at: status === "active" && !m.activated_at ? new Date().toISOString() : m.activated_at,
+      expires_at: m.expires_at,
+      auto_renew: m.auto_renew,
+      member_number: m.member_number,
+      notes: m.notes,
+    });
+  };
+
+  const filteredMemberships = useMemo(() => {
+    const q = memSearch.trim().toLowerCase();
+    return memberships.filter((m) => {
+      if (memStatusFilter !== "all" && m.status !== memStatusFilter) return false;
+      if (!q) return true;
+      return (
+        (m.member_number ?? "").toLowerCase().includes(q) ||
+        (m.user_email ?? "").toLowerCase().includes(q) ||
+        m.user_id.toLowerCase().includes(q) ||
+        (m.plan_name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [memberships, memSearch, memStatusFilter]);
+
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const price = Number(planForm.price);
@@ -393,7 +540,7 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : "Manage site content"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
@@ -404,15 +551,17 @@ on conflict do nothing;`}
                 ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
                 : tab === "subscription"
                 ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
+                : tab === "memberships"
+                ? `${memberships.length} member${memberships.length === 1 ? "" : "s"} · ${memberships.filter((m) => m.status === "active").length} active`
                 : "Edit every homepage section, header and footer."}
             </p>
           </div>
-          {(tab === "products" || tab === "categories" || tab === "subscription") && (
+          {(tab === "products" || tab === "categories" || tab === "subscription" || tab === "memberships") && (
             <button
-              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : openPlan(null))}
+              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : tab === "subscription" ? openPlan(null) : openMembership(null))}
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
             >
-              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : "ADD PLAN"}
+              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : tab === "subscription" ? "ADD PLAN" : "ADD MEMBERSHIP"}
             </button>
           )}
         </div>
@@ -423,6 +572,7 @@ on conflict do nothing;`}
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
+            { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
             { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
           ]).map((t) => {
             const Icon = t.icon;
@@ -647,6 +797,223 @@ on conflict do nothing;`}
 
         {tab === "site" && <SiteContentEditor />}
       </section>
+
+      {tab === "memberships" && (
+        <section className="container-x mx-auto max-w-[1400px] pb-16">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <input
+              value={memSearch}
+              onChange={(e) => setMemSearch(e.target.value)}
+              placeholder="Search member ID, email, or user ID…"
+              className="min-w-[260px] flex-1 border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+            />
+            <div className="flex flex-wrap gap-1">
+              {(["all", "pending", "active", "expired", "cancelled"] as const).map((s) => {
+                const count = s === "all" ? memberships.length : memberships.filter((m) => m.status === s).length;
+                const active = memStatusFilter === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setMemStatusFilter(s)}
+                    className={`inline-flex items-center gap-2 border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] ${
+                      active ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground hover:border-foreground"
+                    }`}
+                  >
+                    {s} <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground/70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filteredMemberships.length === 0 ? (
+            <div className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              No memberships match.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {filteredMemberships.map((m) => (
+                <div key={m.id} className="grid gap-3 border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display text-lg text-foreground">
+                          {m.member_number || "—"}
+                        </span>
+                        <MembershipStatusBadge status={m.status} />
+                        {m.auto_renew && (
+                          <span className="rounded bg-secondary px-2 py-0.5 text-[10px] tracking-[0.2em] text-foreground/70">
+                            AUTO-RENEW
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {m.user_email ?? "unknown email"} · {m.plan_name ?? "no plan"}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        User {m.user_id.slice(0, 8)} · created {new Date(m.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      <div>Activated: {m.activated_at ? new Date(m.activated_at).toLocaleDateString() : "—"}</div>
+                      <div>Expires: {m.expires_at ? new Date(m.expires_at).toLocaleDateString() : "—"}</div>
+                    </div>
+                  </div>
+
+                  {m.notes && (
+                    <div className="border-t border-border pt-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {m.notes}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                    {m.status !== "active" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "active")}
+                        className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+                      >
+                        <Check className="h-3.5 w-3.5" /> ACTIVATE
+                      </button>
+                    )}
+                    {m.status !== "expired" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "expired")}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-foreground"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> EXPIRE
+                      </button>
+                    )}
+                    {m.status !== "cancelled" && (
+                      <button
+                        onClick={() => setMembershipStatusQuick(m, "cancelled")}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-destructive hover:text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" /> CANCEL
+                      </button>
+                    )}
+                    <button onClick={() => openMembership(m)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm("Delete this membership?")) memDeleteMut.mutate(m.id); }}
+                      className="rounded p-2 text-muted-foreground hover:text-destructive"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isMemOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closeMembership}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleMembershipSubmit}
+            className="grid max-h-[90vh] w-full max-w-2xl gap-4 overflow-y-auto border border-border bg-background p-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl">{memEditing ? "Edit membership" : "New membership"}</h2>
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={memForm.auto_renew}
+                  onChange={(e) => setMemForm({ ...memForm, auto_renew: e.target.checked })}
+                />
+                Auto-renew
+              </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Customer email">
+                <input
+                  required
+                  type="email"
+                  disabled={!!memEditing}
+                  value={memForm.user_email}
+                  onChange={(e) => setMemForm({ ...memForm, user_email: e.target.value })}
+                  placeholder="customer@email.com"
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold disabled:opacity-70"
+                />
+              </Field>
+              <Field label="Member ID (member number)">
+                <input
+                  value={memForm.member_number}
+                  onChange={(e) => setMemForm({ ...memForm, member_number: e.target.value })}
+                  placeholder="YM-000123"
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+              <Field label="Plan">
+                <select
+                  value={memForm.plan_id}
+                  onChange={(e) => setMemForm({ ...memForm, plan_id: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                >
+                  <option value="">— No plan —</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Status">
+                <select
+                  value={memForm.status}
+                  onChange={(e) => setMemForm({ ...memForm, status: e.target.value as MembershipFormState["status"] })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </Field>
+              <Field label="Activated at">
+                <input
+                  type="date"
+                  value={memForm.activated_at}
+                  onChange={(e) => setMemForm({ ...memForm, activated_at: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+              <Field label="Expires at">
+                <input
+                  type="date"
+                  value={memForm.expires_at}
+                  onChange={(e) => setMemForm({ ...memForm, expires_at: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
+              </Field>
+            </div>
+
+            <Field label="Internal notes">
+              <textarea
+                rows={3}
+                value={memForm.notes}
+                onChange={(e) => setMemForm({ ...memForm, notes: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
+            </Field>
+
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closeMembership} className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary">
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={memCreateMut.isPending || memUpdateMut.isPending}
+                className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
+              >
+                {(memCreateMut.isPending || memUpdateMut.isPending) ? "SAVING…" : memEditing ? "SAVE MEMBERSHIP" : "CREATE MEMBERSHIP"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {tab === "subscription" && (
         <section className="container-x mx-auto max-w-5xl pb-16">
@@ -920,6 +1287,20 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   const styles: Record<OrderStatus, string> = {
     pending: "bg-gold text-onyx",
     completed: "bg-emerald-600 text-white",
+    cancelled: "bg-destructive text-destructive-foreground",
+  };
+  return (
+    <span className={`px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] ${styles[status]}`}>
+      {status.toUpperCase()}
+    </span>
+  );
+}
+
+function MembershipStatusBadge({ status }: { status: "pending" | "active" | "expired" | "cancelled" }) {
+  const styles: Record<string, string> = {
+    active: "bg-gold text-onyx",
+    pending: "bg-secondary text-foreground",
+    expired: "bg-muted text-muted-foreground",
     cancelled: "bg-destructive text-destructive-foreground",
   };
   return (
