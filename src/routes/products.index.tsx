@@ -7,7 +7,7 @@ import { formatINR, productImage, type Category } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 
-export const Route = createFileRoute("/products")({
+export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
       { title: "Shop All — YOMORA 925 Sterling Silver Jewellery" },
