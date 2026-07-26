@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, PencilLine, Check } from "lucide-react";
-import { Heart } from "lucide-react";
+import { Heart, Percent, Headphones, Gift, Truck, Crown } from "lucide-react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
