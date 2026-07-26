@@ -9,21 +9,75 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as MembershipRouteImport } from './routes/membership'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIdRouteImport } from './routes/products.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const TrackOrderRoute = TrackOrderRouteImport.update({
+  id: '/track-order',
+  path: '/track-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembershipRoute = MembershipRouteImport.update({
+  id: '/membership',
+  path: '/membership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomJewelleryRoute = CustomJewelleryRouteImport.update({
+  id: '/custom-jewellery',
+  path: '/custom-jewellery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -48,15 +102,33 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
+  '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
+  '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
@@ -64,22 +136,68 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
+  '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
+  '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
+  '/track-order': typeof TrackOrderRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/products/$id': typeof ProductsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/products' | '/admin' | '/products/$id'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/account'
+    | '/auth'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
+    | '/custom-jewellery'
+    | '/faq'
+    | '/membership'
+    | '/products'
+    | '/track-order'
+    | '/admin'
+    | '/products/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/products' | '/admin' | '/products/$id'
+  to:
+    | '/'
+    | '/about'
+    | '/account'
+    | '/auth'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
+    | '/custom-jewellery'
+    | '/faq'
+    | '/membership'
+    | '/products'
+    | '/track-order'
+    | '/admin'
+    | '/products/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/about'
+    | '/account'
     | '/auth'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
+    | '/custom-jewellery'
+    | '/faq'
+    | '/membership'
     | '/products'
+    | '/track-order'
     | '/_authenticated/admin'
     | '/products/$id'
   fileRoutesById: FileRoutesById
@@ -87,12 +205,28 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
+  AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRoute
+  ContactRoute: typeof ContactRoute
+  CustomJewelleryRoute: typeof CustomJewelleryRoute
+  FaqRoute: typeof FaqRoute
+  MembershipRoute: typeof MembershipRoute
   ProductsRoute: typeof ProductsRouteWithChildren
+  TrackOrderRoute: typeof TrackOrderRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/track-order': {
+      id: '/track-order'
+      path: '/track-order'
+      fullPath: '/track-order'
+      preLoaderRoute: typeof TrackOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products': {
       id: '/products'
       path: '/products'
@@ -100,11 +234,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/membership': {
+      id: '/membership'
+      path: '/membership'
+      fullPath: '/membership'
+      preLoaderRoute: typeof MembershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/custom-jewellery': {
+      id: '/custom-jewellery'
+      path: '/custom-jewellery'
+      fullPath: '/custom-jewellery'
+      preLoaderRoute: typeof CustomJewelleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -164,8 +354,17 @@ const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
+  AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRoute,
+  ContactRoute: ContactRoute,
+  CustomJewelleryRoute: CustomJewelleryRoute,
+  FaqRoute: FaqRoute,
+  MembershipRoute: MembershipRoute,
   ProductsRoute: ProductsRouteWithChildren,
+  TrackOrderRoute: TrackOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

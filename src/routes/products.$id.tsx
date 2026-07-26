@@ -5,6 +5,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage } from "@/lib/products";
 import { productQuery, productsQuery } from "@/lib/products.queries";
+import { cart } from "@/lib/cart";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/products/$id")({
   loader: ({ params }) => {
@@ -50,6 +52,8 @@ function ProductPage() {
   const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
   if (!product) throw notFound();
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const nav = useNavigate();
+  const add = () => cart.add({ id: product.id, name: product.name, price: product.price, image: productImage(product) });
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,8 +80,8 @@ function ProductPage() {
             <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">{product.description}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="bg-onyx px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90">ADD TO BAG</button>
-              <button className="border border-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold hover:text-onyx">BUY NOW</button>
+              <button onClick={add} className="bg-onyx px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90">ADD TO BAG</button>
+              <button onClick={() => { add(); nav({ to: "/checkout" }); }} className="border border-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold hover:text-onyx">BUY NOW</button>
             </div>
 
             <ul className="mt-8 grid gap-2 border-t border-border pt-6 text-sm text-foreground">

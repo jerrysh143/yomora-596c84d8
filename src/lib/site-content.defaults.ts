@@ -143,6 +143,10 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     items: [
       { label: "COLLECTIONS", to: "/products", hash: "" },
       { label: "NEW ARRIVALS", to: "/products", hash: "new" },
+      { label: "CUSTOM", to: "/custom-jewellery", hash: "" },
+      { label: "MEMBERSHIP", to: "/membership", hash: "" },
+      { label: "ABOUT", to: "/about", hash: "" },
+      { label: "CONTACT", to: "/contact", hash: "" },
     ],
   },
   hero: {
@@ -200,10 +204,10 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       { label: "Bracelets", to: "/products" },
     ],
     help_links: [
-      { label: "Shipping", to: "/products" },
-      { label: "Returns", to: "/products" },
-      { label: "Care Guide", to: "/products" },
-      { label: "Contact", to: "/products" },
+      { label: "Track Order", to: "/track-order" },
+      { label: "FAQ", to: "/faq" },
+      { label: "Custom Jewellery", to: "/custom-jewellery" },
+      { label: "Contact", to: "/contact" },
     ],
     newsletter_title: "STAY IN TOUCH",
     newsletter_body: "New arrivals, quiet drops, and craft notes.",
