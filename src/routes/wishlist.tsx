@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift } from "lucide-react";
+import { useState } from "react";
+import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift, Minus, Plus, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { useWishlist, wishlist } from "@/lib/wishlist";
+import { useWishlist, wishlist, type WishlistItem } from "@/lib/wishlist";
 import { cart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/wishlist")({
   head: () => ({
@@ -27,13 +29,30 @@ function WishlistPage() {
 
       <section className="bg-onyx text-cream">
         <div className="container-x mx-auto max-w-[1400px] py-14">
-          <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">SAVED FOR LATER</p>
-          <h1 className="mt-3 font-display text-5xl">Your Wishlist</h1>
-          <p className="mt-3 max-w-xl text-sm text-cream/70">
-            {count === 0
-              ? "Nothing saved yet. Tap the heart on any piece to add it here."
-              : `${count} piece${count > 1 ? "s" : ""} saved.`}
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">SAVED FOR LATER</p>
+              <h1 className="mt-3 font-display text-5xl">Your Wishlist</h1>
+              <p className="mt-3 max-w-xl text-sm text-cream/70">
+                {count === 0
+                  ? "Nothing saved yet. Tap the heart on any piece to add it here."
+                  : `${count} piece${count > 1 ? "s" : ""} saved.`}
+              </p>
+            </div>
+            {count > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm("Remove all items from your wishlist?")) {
+                    wishlist.clear();
+                    toast.success("Wishlist cleared");
+                  }
+                }}
+                className="inline-flex items-center gap-2 border border-cream/30 px-4 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-cream/80 hover:border-gold hover:text-gold"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> CLEAR ALL
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -43,46 +62,119 @@ function WishlistPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {items.map((p) => (
-              <div key={p.id} className="group block">
-                <Link to="/products/$id" params={{ id: p.id }} className="relative block overflow-hidden bg-secondary/40">
-                  <img
-                    src={p.image}
-                    width={900}
-                    height={900}
-                    loading="lazy"
-                    alt={p.name}
-                    className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      wishlist.remove(p.id);
-                    }}
-                    aria-label="Remove from wishlist"
-                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </Link>
-                <div className="pt-4">
-                  <h3 className="font-display text-lg text-foreground">{p.name}</h3>
-                  <p className="mt-2 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
-                  <button
-                    onClick={() =>
-                      cart.add({ id: p.id, name: p.name, price: p.price, image: p.image })
-                    }
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 border border-onyx px-4 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-onyx hover:text-cream"
-                  >
-                    <ShoppingBag className="h-3.5 w-3.5" /> ADD TO CART
-                  </button>
-                </div>
-              </div>
+              <WishlistCard key={p.id} item={p} />
             ))}
           </div>
         )}
       </section>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+function WishlistCard({ item }: { item: WishlistItem }) {
+  const [qty, setQty] = useState(1);
+
+  const dec = () => setQty((q) => Math.max(1, q - 1));
+  const inc = () => setQty((q) => Math.min(99, q + 1));
+
+  const addToCart = () => {
+    cart.add({ id: item.id, name: item.name, price: item.price, image: item.image, qty });
+    toast.success(`Added ${qty} × ${item.name} to cart`);
+  };
+
+  const moveToCart = () => {
+    cart.add({ id: item.id, name: item.name, price: item.price, image: item.image, qty });
+    wishlist.remove(item.id);
+    toast.success(`Moved ${item.name} to cart`);
+  };
+
+  return (
+    <div className="group flex flex-col">
+      <div className="relative overflow-hidden bg-secondary/40">
+        <Link to="/products/$id" params={{ id: item.id }} className="block">
+          <img
+            src={item.image}
+            width={900}
+            height={900}
+            loading="lazy"
+            alt={item.name}
+            className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        </Link>
+        <button
+          onClick={() => {
+            wishlist.remove(item.id);
+            toast.success("Removed from wishlist");
+          }}
+          aria-label="Remove from wishlist"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx shadow-sm hover:bg-gold"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col pt-4">
+        <h3 className="font-display text-lg text-foreground">{item.name}</h3>
+        <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(item.price)}</p>
+
+        <div className="mt-3 flex items-center justify-between">
+          <div className="inline-flex items-center border border-border">
+            <button
+              onClick={dec}
+              aria-label="Decrease quantity"
+              className="grid h-9 w-9 place-items-center text-foreground hover:bg-secondary disabled:opacity-40"
+              disabled={qty <= 1}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span
+              aria-live="polite"
+              className="min-w-8 text-center text-sm font-semibold tabular-nums"
+            >
+              {qty}
+            </span>
+            <button
+              onClick={inc}
+              aria-label="Increase quantity"
+              className="grid h-9 w-9 place-items-center text-foreground hover:bg-secondary disabled:opacity-40"
+              disabled={qty >= 99}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Total <span className="font-semibold text-foreground">{formatINR(item.price * qty)}</span>
+          </p>
+        </div>
+
+        <div className="mt-3 grid gap-2">
+          <button
+            onClick={addToCart}
+            className="inline-flex items-center justify-center gap-2 bg-onyx px-4 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90"
+          >
+            <ShoppingBag className="h-3.5 w-3.5" /> ADD TO CART
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={moveToCart}
+              className="inline-flex items-center justify-center gap-2 border border-onyx px-3 py-2 text-[10px] font-semibold tracking-[0.22em] text-onyx hover:bg-onyx hover:text-cream"
+            >
+              <ArrowRight className="h-3.5 w-3.5" /> MOVE
+            </button>
+            <button
+              onClick={() => {
+                wishlist.remove(item.id);
+                toast.success("Removed from wishlist");
+              }}
+              className="inline-flex items-center justify-center gap-2 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.22em] text-muted-foreground hover:border-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> REMOVE
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
