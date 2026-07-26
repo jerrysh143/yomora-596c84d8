@@ -114,6 +114,76 @@ export type SocialContent = {
   items: { platform: SocialPlatform; url: string; label: string }[];
 };
 
+export type AboutPageContent = {
+  eyebrow: string;
+  title: string;
+  paragraphs: string[];
+  stats: { value: string; label: string }[];
+  store_title: string;
+};
+
+export type CustomPageContent = {
+  hero_title: string;
+  hero_subtitle: string;
+  hero_description: string;
+  features: string[];
+  steps_eyebrow: string;
+  steps: { title: string; description: string; icon: IconName }[];
+  form_title: string;
+  form_button_label: string;
+  form_success_message: string;
+};
+
+export type ContactPageContent = {
+  title: string;
+  subtitle: string;
+  phone_lines: string[];
+  email: string;
+  address_lines: string[];
+  form_button_label: string;
+  form_success_message: string;
+};
+
+export type FaqPageContent = {
+  title: string;
+  items: { question: string; answer: string }[];
+  aside_title: string;
+  aside_body: string;
+  aside_button_label: string;
+};
+
+export type MembershipPageContent = {
+  eyebrow: string;
+  title_line_1: string;
+  title_line_2: string;
+  tagline_fallback: string;
+  unlock_title: string;
+  pay_label: string;
+  pay_note: string;
+  or_label: string;
+  shop_amount_label: string;
+  shop_note: string;
+  validity_note: string;
+  card_title: string;
+  card_subtitle: string;
+  card_line_1: string;
+  card_line_2: string;
+  card_line_3: string;
+  privileges_title: string;
+  privileges_footer: string;
+  privileges: { icon: IconName; title: string; description: string }[];
+};
+
+export type TrackOrderPageContent = {
+  title: string;
+  description: string;
+  order_id_label: string;
+  email_label: string;
+  button_label: string;
+  help_text: string;
+  empty_message: string;
+};
+
 export type SiteContentMap = {
   header: HeaderContent;
   header_nav: HeaderNavContent;
@@ -126,6 +196,12 @@ export type SiteContentMap = {
   footer: FooterContent;
   reels: ReelsContent;
   social: SocialContent;
+  page_about: AboutPageContent;
+  page_custom: CustomPageContent;
+  page_contact: ContactPageContent;
+  page_faq: FaqPageContent;
+  page_membership: MembershipPageContent;
+  page_track_order: TrackOrderPageContent;
 };
 
 export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
@@ -231,6 +307,106 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     items: [
       { platform: "Instagram", url: "https://instagram.com/", label: "Instagram" },
     ],
+  },
+  page_about: {
+    eyebrow: "OUR STORY",
+    title: "A Legacy Built on Trust",
+    paragraphs: [
+      "It all began in 1994 when Late Shri Nehalbhai Devjibhai and Smt. Devikaben Nehalbhai laid the foundation of trust, purity and craftsmanship.",
+      "For over 32 years, we have earned the trust of thousands of families. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA.",
+      "Every piece we make is a promise — of hallmarked purity, timeless design and the warmth of a family business that has always put its customers first.",
+    ],
+    stats: [
+      { value: "32+", label: "Years of Legacy" },
+      { value: "1000+", label: "Happy Customers Daily" },
+      { value: "5★", label: "Customer Rating" },
+      { value: "100%", label: "Hallmarked Purity" },
+    ],
+    store_title: "Our Flagship Store",
+  },
+  page_custom: {
+    hero_title: "CUSTOM JEWELLERY",
+    hero_subtitle: "Made Just For You",
+    hero_description:
+      "Have a design in mind? We make personalised 925 silver jewellery as per your style and requirements.",
+    features: ["Personalized Designs", "Premium 925 Silver", "Expert Craftsmanship", "Timely Delivery"],
+    steps_eyebrow: "HOW IT WORKS",
+    steps: [
+      { icon: "Sparkles", title: "SHARE YOUR IDEA", description: "Share your design or inspiration with us" },
+      { icon: "Star", title: "GET QUOTE", description: "We will send you the best quote" },
+      { icon: "Hammer", title: "WE CRAFT IT", description: "Our experts craft it with perfection" },
+      { icon: "Truck", title: "DELIVERED TO YOU", description: "Delivered safely to your doorstep" },
+    ],
+    form_title: "Enquire Now",
+    form_button_label: "SUBMIT ENQUIRY",
+    form_success_message: "Thank you — our team will contact you shortly.",
+  },
+  page_contact: {
+    title: "Get in Touch",
+    subtitle: "We're here to help you.",
+    phone_lines: ["+91 98765 43210", "Mon – Sat: 10:00 AM – 7:00 PM"],
+    email: "support@yomora.in",
+    address_lines: [
+      "YOMORA by Nehalbhai Devika Jewellers,",
+      "122, NR Road, Andheri West,",
+      "Mumbai, Maharashtra – 400058",
+    ],
+    form_button_label: "SEND MESSAGE",
+    form_success_message: "Thank you — we'll be in touch shortly.",
+  },
+  page_faq: {
+    title: "Frequently Asked Questions",
+    items: [
+      { question: "What is 925 Sterling Silver?", answer: "925 Sterling Silver is an alloy containing 92.5% pure silver — the international standard for high-quality silver jewellery." },
+      { question: "How do I know my ring size?", answer: "You can measure the inner diameter of a well-fitting ring or request our free ring sizer." },
+      { question: "Do you offer Cash on Delivery?", answer: "Yes, Cash on Delivery is available on all orders across India." },
+      { question: "How long does shipping take?", answer: "Orders are dispatched within 24 hours and delivered in 3–7 business days depending on location." },
+      { question: "What is your return policy?", answer: "We offer easy 7-day returns on all purchases in original condition." },
+      { question: "Can I customize my jewellery?", answer: "Yes — visit our Custom Jewellery page and share your design with us." },
+      { question: "How do I care for my silver jewellery?", answer: "Store in an airtight pouch, avoid perfumes and polish gently with a soft cloth." },
+    ],
+    aside_title: "Still have questions?",
+    aside_body: "We're here to help!",
+    aside_button_label: "CONTACT US",
+  },
+  page_membership: {
+    eyebrow: "YOMORA",
+    title_line_1: "BLACK SIGNATURE",
+    title_line_2: "MEMBERSHIP",
+    tagline_fallback: "Exclusive. Rewarded. Always.",
+    unlock_title: "HOW TO UNLOCK YOUR MEMBERSHIP",
+    pay_label: "PAY",
+    pay_note: "one-time membership fee (non-refundable)",
+    or_label: "OR",
+    shop_amount_label: "SHOP FOR ₹25,000",
+    shop_note: "or more in a single transaction",
+    validity_note: "Your membership is valid for 1 year from the date of activation.",
+    card_title: "YOMORA",
+    card_subtitle: "BY NEHALBHAI DEVIKA JEWELLERS",
+    card_line_1: "BLACK SIGNATURE",
+    card_line_2: "MEMBERSHIP",
+    card_line_3: "EXCLUSIVE MEMBERS ONLY",
+    privileges_title: "ONE MEMBERSHIP. ENDLESS PRIVILEGES.",
+    privileges_footer:
+      "A PRIVILEGE RESERVED FOR THOSE WHO VALUE QUALITY, TRUST & TIMELESS ELEGANCE.",
+    privileges: [
+      { icon: "Sparkles", title: "15% OFF", description: "on everything you order for 1 year" },
+      { icon: "Star", title: "EARLY ACCESS", description: "to new arrivals & exclusive collections" },
+      { icon: "Gem", title: "MEMBER-ONLY OFFERS", description: "special discounts all year long" },
+      { icon: "Heart", title: "BIRTHDAY SURPRISE", description: "a special treat just for you" },
+      { icon: "Truck", title: "PRIORITY DISPATCH", description: "faster processing & shipping" },
+      { icon: "Award", title: "DEDICATED SUPPORT", description: "priority customer assistance" },
+      { icon: "Hammer", title: "CUSTOM JEWELLERY", description: "personalized designs crafted for you" },
+    ],
+  },
+  page_track_order: {
+    title: "Track Your Order",
+    description: "Enter your Order ID and Email to track your order.",
+    order_id_label: "ORDER ID",
+    email_label: "EMAIL",
+    button_label: "TRACK ORDER",
+    help_text: "Need help? Contact us on +91 98765 43210",
+    empty_message: "Enter your order details to see its status.",
   },
 };
 
