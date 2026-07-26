@@ -8,6 +8,7 @@ import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { SiteIcon } from "@/lib/site-icons";
 import { SocialLinks } from "@/components/social-links";
+import { useCart } from "@/lib/cart";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -21,6 +22,7 @@ export function SiteHeader() {
   const { data: siteContent } = useQuery(siteContentQuery());
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
+  const { count } = useCart();
   const nav: { label: string; to: string; hash: string }[] = [
     ...(headerNav.include_categories
       ? categories.map((c) => ({ label: c.label.toUpperCase(), to: "/products", hash: c.slug }))
@@ -71,10 +73,10 @@ export function SiteHeader() {
           >
             <User className="h-5 w-5" />
           </Link>
-          <button aria-label="Cart" className="relative rounded-full p-2 hover:text-gold">
+          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2 hover:text-gold">
             <ShoppingBag className="h-5 w-5" />
-            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">0</span>
-          </button>
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
+          </Link>
           <button aria-label="Menu" onClick={() => setOpen((v) => !v)} className="rounded-full p-2 hover:text-gold lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
