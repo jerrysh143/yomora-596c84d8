@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as MembershipRouteImport } from './routes/membership'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -35,6 +36,11 @@ const ProductsRoute = ProductsRouteImport.update({
 const MembershipRoute = MembershipRouteImport.update({
   id: '/membership',
   path: '/membership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomJewelleryRoute = CustomJewelleryRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/track-order': typeof TrackOrderRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/track-order': typeof TrackOrderRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
+  '/faq': typeof FaqRoute
   '/membership': typeof MembershipRoute
   '/products': typeof ProductsRouteWithChildren
   '/track-order': typeof TrackOrderRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/custom-jewellery'
+    | '/faq'
     | '/membership'
     | '/products'
     | '/track-order'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/custom-jewellery'
+    | '/faq'
     | '/membership'
     | '/products'
     | '/track-order'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/custom-jewellery'
+    | '/faq'
     | '/membership'
     | '/products'
     | '/track-order'
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   CustomJewelleryRoute: typeof CustomJewelleryRoute
+  FaqRoute: typeof FaqRoute
   MembershipRoute: typeof MembershipRoute
   ProductsRoute: typeof ProductsRouteWithChildren
   TrackOrderRoute: typeof TrackOrderRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/membership'
       fullPath: '/membership'
       preLoaderRoute: typeof MembershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/custom-jewellery': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   CustomJewelleryRoute: CustomJewelleryRoute,
+  FaqRoute: FaqRoute,
   MembershipRoute: MembershipRoute,
   ProductsRoute: ProductsRouteWithChildren,
   TrackOrderRoute: TrackOrderRoute,
