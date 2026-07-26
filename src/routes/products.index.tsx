@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Heart } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage, type Category } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
+import { useWishlist, wishlist } from "@/lib/wishlist";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -28,6 +30,8 @@ type Filter = Category | "all";
 function ProductsPage() {
   const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
   const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
+  const { items: wishItems } = useWishlist();
+  const wishSet = new Set(wishItems.map((w) => w.id));
   const [filter, setFilter] = useState<Filter>("all");
   const [sortNew, setSortNew] = useState(false);
 
@@ -96,6 +100,16 @@ function ProductsPage() {
               <div className="relative overflow-hidden bg-secondary/40">
                 <img src={productImage(p)} width={900} height={900} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 {p.is_new && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    wishlist.toggle({ id: p.id, name: p.name, price: p.price, image: productImage(p), category: p.category });
+                  }}
+                  aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                >
+                  <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
+                </button>
               </div>
               <div className="pt-4">
                 <h3 className="font-display text-lg text-foreground">{p.name}</h3>
