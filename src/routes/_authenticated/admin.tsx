@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
@@ -29,6 +29,13 @@ import {
 } from "@/lib/subscription.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { SiteContentEditor } from "@/components/admin/site-content-editor";
+import {
+  listMembershipsFn,
+  updateMembershipFn,
+  deleteMembershipFn,
+  createMembershipFn,
+  type AdminMembership,
+} from "@/lib/memberships-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -76,6 +83,10 @@ function AdminPage() {
   const savePlan = useServerFn(updateSubscriptionPlanFn);
   const createPlan = useServerFn(createSubscriptionPlanFn);
   const removePlan = useServerFn(deleteSubscriptionPlanFn);
+  const listMemberships = useServerFn(listMembershipsFn);
+  const saveMembership = useServerFn(updateMembershipFn);
+  const removeMembership = useServerFn(deleteMembershipFn);
+  const addMembership = useServerFn(createMembershipFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -90,8 +101,13 @@ function AdminPage() {
     enabled: !!adminInfo?.isAdmin,
   });
   const { data: plans = [] } = useQuery(subscriptionPlansQuery());
+  const { data: memberships = [] } = useQuery({
+    queryKey: ["admin", "memberships"],
+    queryFn: () => listMemberships(),
+    enabled: !!adminInfo?.isAdmin,
+  });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "site">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "memberships" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -274,6 +290,137 @@ function AdminPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  type MembershipFormState = {
+    id: string | null;
+    user_email: string;
+    plan_id: string;
+    status: "pending" | "active" | "expired" | "cancelled";
+    activated_at: string;
+    expires_at: string;
+    auto_renew: boolean;
+    member_number: string;
+    notes: string;
+  };
+  const emptyMembershipForm: MembershipFormState = {
+    id: null,
+    user_email: "",
+    plan_id: "",
+    status: "pending",
+    activated_at: "",
+    expires_at: "",
+    auto_renew: false,
+    member_number: "",
+    notes: "",
+  };
+  const [memEditing, setMemEditing] = useState<AdminMembership | null>(null);
+  const [memCreating, setMemCreating] = useState(false);
+  const [memForm, setMemForm] = useState<MembershipFormState>(emptyMembershipForm);
+  const [memSearch, setMemSearch] = useState("");
+  const [memStatusFilter, setMemStatusFilter] = useState<"all" | "pending" | "active" | "expired" | "cancelled">("all");
+
+  const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
+  const toIso = (d: string) => (d ? new Date(d + "T00:00:00Z").toISOString() : null);
+
+  const openMembership = (m: AdminMembership | null) => {
+    if (m) {
+      setMemEditing(m);
+      setMemCreating(false);
+      setMemForm({
+        id: m.id,
+        user_email: m.user_email ?? "",
+        plan_id: m.plan_id ?? "",
+        status: m.status,
+        activated_at: toDateInput(m.activated_at),
+        expires_at: toDateInput(m.expires_at),
+        auto_renew: m.auto_renew,
+        member_number: m.member_number ?? "",
+        notes: m.notes ?? "",
+      });
+    } else {
+      setMemEditing(null);
+      setMemCreating(true);
+      setMemForm({ ...emptyMembershipForm, plan_id: plans[0]?.id ?? "" });
+    }
+  };
+  const closeMembership = () => { setMemEditing(null); setMemCreating(false); };
+  const isMemOpen = memEditing !== null || memCreating;
+
+  const memUpdateMut = useMutation({
+    mutationFn: (data: Parameters<typeof saveMembership>[0]["data"]) => saveMembership({ data }),
+    onSuccess: () => {
+      toast.success("Membership updated");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+      closeMembership();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const memCreateMut = useMutation({
+    mutationFn: (data: Parameters<typeof addMembership>[0]["data"]) => addMembership({ data }),
+    onSuccess: () => {
+      toast.success("Membership created");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+      closeMembership();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const memDeleteMut = useMutation({
+    mutationFn: (id: string) => removeMembership({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Membership deleted");
+      qc.invalidateQueries({ queryKey: ["admin", "memberships"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleMembershipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const shared = {
+      plan_id: memForm.plan_id || null,
+      status: memForm.status,
+      activated_at: toIso(memForm.activated_at),
+      expires_at: toIso(memForm.expires_at),
+      auto_renew: memForm.auto_renew,
+      member_number: memForm.member_number.trim() || null,
+      notes: memForm.notes.trim() || null,
+    };
+    if (memEditing) {
+      memUpdateMut.mutate({ id: memEditing.id, ...shared });
+    } else {
+      if (!memForm.user_email.trim()) {
+        toast.error("Customer email is required");
+        return;
+      }
+      memCreateMut.mutate({ user_email: memForm.user_email.trim(), ...shared });
+    }
+  };
+
+  const setMembershipStatusQuick = (m: AdminMembership, status: AdminMembership["status"]) => {
+    memUpdateMut.mutate({
+      id: m.id,
+      plan_id: m.plan_id,
+      status,
+      activated_at: status === "active" && !m.activated_at ? new Date().toISOString() : m.activated_at,
+      expires_at: m.expires_at,
+      auto_renew: m.auto_renew,
+      member_number: m.member_number,
+      notes: m.notes,
+    });
+  };
+
+  const filteredMemberships = useMemo(() => {
+    const q = memSearch.trim().toLowerCase();
+    return memberships.filter((m) => {
+      if (memStatusFilter !== "all" && m.status !== memStatusFilter) return false;
+      if (!q) return true;
+      return (
+        (m.member_number ?? "").toLowerCase().includes(q) ||
+        (m.user_email ?? "").toLowerCase().includes(q) ||
+        m.user_id.toLowerCase().includes(q) ||
+        (m.plan_name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [memberships, memSearch, memStatusFilter]);
 
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
