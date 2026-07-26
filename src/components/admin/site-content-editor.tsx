@@ -611,7 +611,7 @@ export function SiteContentEditor() {
               <Field label="Card subtitle"><input className={inputCls} value={s.card_subtitle} onChange={(e) => set({ card_subtitle: e.target.value })} /></Field>
               <Field label="Card line 1"><input className={inputCls} value={s.card_line_1} onChange={(e) => set({ card_line_1: e.target.value })} /></Field>
               <Field label="Card line 2"><input className={inputCls} value={s.card_line_2} onChange={(e) => set({ card_line_2: e.target.value })} /></Field>
-              <Field label="Card line 3"><input className={inputCls} value={s.card_line_3: e.target.value })} /></Field>
+              <Field label="Card line 3"><input className={inputCls} value={s.card_line_3} onChange={(e) => set({ card_line_3: e.target.value })} /></Field>
             </div>
             <Field label="Privileges section title"><input className={inputCls} value={s.privileges_title} onChange={(e) => set({ privileges_title: e.target.value })} /></Field>
             <Field label="Privileges footer"><input className={inputCls} value={s.privileges_footer} onChange={(e) => set({ privileges_footer: e.target.value })} /></Field>
