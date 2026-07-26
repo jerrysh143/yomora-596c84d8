@@ -1295,3 +1295,17 @@ function StatusBadge({ status }: { status: OrderStatus }) {
     </span>
   );
 }
+
+function MembershipStatusBadge({ status }: { status: "pending" | "active" | "expired" | "cancelled" }) {
+  const styles: Record<string, string> = {
+    active: "bg-gold text-onyx",
+    pending: "bg-secondary text-foreground",
+    expired: "bg-muted text-muted-foreground",
+    cancelled: "bg-destructive text-destructive-foreground",
+  };
+  return (
+    <span className={`px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] ${styles[status]}`}>
+      {status.toUpperCase()}
+    </span>
+  );
+}
