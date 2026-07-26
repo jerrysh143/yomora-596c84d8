@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SocialLinks } from "@/components/social-links";
+import { siteContentQuery } from "@/lib/site-content.queries";
+import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -19,17 +22,19 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [sent, setSent] = useState(false);
+  const { data } = useQuery(siteContentQuery());
+  const c = data?.page_contact ?? SITE_CONTENT_DEFAULTS.page_contact;
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <section className="container-x mx-auto max-w-[1200px] py-12">
-        <h1 className="font-display text-5xl">Get in Touch</h1>
-        <p className="mt-2 text-sm text-muted-foreground">We're here to help you.</p>
+        <h1 className="font-display text-5xl">{c.title}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{c.subtitle}</p>
         <div className="mt-10 grid gap-10 md:grid-cols-2">
           <div className="space-y-6">
-            <Info icon={Phone} title="PHONE" lines={["+91 98765 43210", "Mon – Sat: 10:00 AM – 7:00 PM"]} />
-            <Info icon={Mail} title="EMAIL" lines={["support@yomora.in"]} />
-            <Info icon={MapPin} title="ADDRESS" lines={["YOMORA by Nehalbhai Devika Jewellers,", "122, NR Road, Andheri West,", "Mumbai, Maharashtra – 400058"]} />
+            <Info icon={Phone} title="PHONE" lines={c.phone_lines} />
+            <Info icon={Mail} title="EMAIL" lines={[c.email]} />
+            <Info icon={MapPin} title="ADDRESS" lines={c.address_lines} />
             <div>
               <p className="text-[11px] font-semibold tracking-[0.24em] text-gold">FOLLOW US</p>
               <SocialLinks placement="footer" className="mt-3" />
@@ -40,8 +45,8 @@ function ContactPage() {
             <Field label="Email"><input required type="email" placeholder="Enter your email" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
             <Field label="Phone"><input required placeholder="Enter your phone number" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
             <Field label="Message"><textarea required rows={5} placeholder="How can we help you?" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
-            <button className="w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx">SEND MESSAGE</button>
-            {sent && <p className="text-xs text-gold">Thank you — we'll be in touch shortly.</p>}
+            <button className="w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx">{c.form_button_label}</button>
+            {sent && <p className="text-xs text-gold">{c.form_success_message}</p>}
           </form>
         </div>
       </section>

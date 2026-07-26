@@ -440,6 +440,222 @@ export function SiteContentEditor() {
           </>
         )}
       />
+
+      {/* ABOUT PAGE */}
+      <SectionCard
+        title="About page"
+        description="Story, stats and store title on /about."
+        value={content.page_about}
+        saving={isSaving("page_about")}
+        onSave={(v) => persist("page_about", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Eyebrow"><input className={inputCls} value={s.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
+              <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+            </div>
+            <Field label="Story paragraphs (one per line, blank line separates)">
+              <textarea rows={8} className={inputCls} value={s.paragraphs.join("\n\n")} onChange={(e) => set({ paragraphs: e.target.value.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean) })} />
+            </Field>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">STATS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, stats: [...p.stats, { value: "", label: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add</button>
+              </div>
+              <div className="grid gap-2">
+                {s.stats.map((st, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_2fr_auto] gap-2">
+                    <input className={inputCls} placeholder="Value" value={st.value} onChange={(e) => set((p) => ({ ...p, stats: p.stats.map((x, ix) => ix === i ? { ...x, value: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="Label" value={st.label} onChange={(e) => set((p) => ({ ...p, stats: p.stats.map((x, ix) => ix === i ? { ...x, label: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, stats: p.stats.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Field label="Store section title"><input className={inputCls} value={s.store_title} onChange={(e) => set({ store_title: e.target.value })} /></Field>
+          </>
+        )}
+      />
+
+      {/* CUSTOM JEWELLERY PAGE */}
+      <SectionCard
+        title="Custom jewellery page"
+        description="Hero, steps and enquiry form on /custom-jewellery."
+        value={content.page_custom}
+        saving={isSaving("page_custom")}
+        onSave={(v) => persist("page_custom", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Hero title"><input className={inputCls} value={s.hero_title} onChange={(e) => set({ hero_title: e.target.value })} /></Field>
+              <Field label="Hero subtitle"><input className={inputCls} value={s.hero_subtitle} onChange={(e) => set({ hero_subtitle: e.target.value })} /></Field>
+            </div>
+            <Field label="Hero description"><textarea rows={3} className={inputCls} value={s.hero_description} onChange={(e) => set({ hero_description: e.target.value })} /></Field>
+            <Field label="Feature bullets (one per line)">
+              <textarea rows={4} className={inputCls} value={s.features.join("\n")} onChange={(e) => set({ features: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
+            </Field>
+            <Field label="Steps eyebrow"><input className={inputCls} value={s.steps_eyebrow} onChange={(e) => set({ steps_eyebrow: e.target.value })} /></Field>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">STEPS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, steps: [...p.steps, { icon: "Sparkles" as IconName, title: "", description: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add</button>
+              </div>
+              <div className="grid gap-2">
+                {s.steps.map((st, i) => (
+                  <div key={i} className="grid grid-cols-[140px_1fr_2fr_auto] gap-2">
+                    <IconPicker value={st.icon} onChange={(v) => set((p) => ({ ...p, steps: p.steps.map((x, ix) => ix === i ? { ...x, icon: v } : x) }))} />
+                    <input className={inputCls} placeholder="Title" value={st.title} onChange={(e) => set((p) => ({ ...p, steps: p.steps.map((x, ix) => ix === i ? { ...x, title: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="Description" value={st.description} onChange={(e) => set((p) => ({ ...p, steps: p.steps.map((x, ix) => ix === i ? { ...x, description: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, steps: p.steps.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Form title"><input className={inputCls} value={s.form_title} onChange={(e) => set({ form_title: e.target.value })} /></Field>
+              <Field label="Button label"><input className={inputCls} value={s.form_button_label} onChange={(e) => set({ form_button_label: e.target.value })} /></Field>
+            </div>
+            <Field label="Success message"><input className={inputCls} value={s.form_success_message} onChange={(e) => set({ form_success_message: e.target.value })} /></Field>
+          </>
+        )}
+      />
+
+      {/* CONTACT PAGE */}
+      <SectionCard
+        title="Contact page"
+        description="Contact info and form labels on /contact."
+        value={content.page_contact}
+        saving={isSaving("page_contact")}
+        onSave={(v) => persist("page_contact", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+              <Field label="Subtitle"><input className={inputCls} value={s.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>
+            </div>
+            <Field label="Phone lines (one per line)">
+              <textarea rows={3} className={inputCls} value={s.phone_lines.join("\n")} onChange={(e) => set({ phone_lines: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
+            </Field>
+            <Field label="Email"><input className={inputCls} value={s.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+            <Field label="Address lines (one per line)">
+              <textarea rows={4} className={inputCls} value={s.address_lines.join("\n")} onChange={(e) => set({ address_lines: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Button label"><input className={inputCls} value={s.form_button_label} onChange={(e) => set({ form_button_label: e.target.value })} /></Field>
+              <Field label="Success message"><input className={inputCls} value={s.form_success_message} onChange={(e) => set({ form_success_message: e.target.value })} /></Field>
+            </div>
+          </>
+        )}
+      />
+
+      {/* FAQ PAGE */}
+      <SectionCard
+        title="FAQ page"
+        description="Questions, answers and help card on /faq."
+        value={content.page_faq}
+        saving={isSaving("page_faq")}
+        onSave={(v) => persist("page_faq", v)}
+        render={(s, set) => (
+          <>
+            <Field label="Page title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">QUESTIONS</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, items: [...p.items, { question: "", answer: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add</button>
+              </div>
+              <div className="grid gap-3">
+                {s.items.map((it, i) => (
+                  <div key={i} className="grid gap-2 border border-border p-3">
+                    <input className={inputCls} placeholder="Question" value={it.question} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, question: e.target.value } : x) }))} />
+                    <textarea rows={2} className={inputCls} placeholder="Answer" value={it.answer} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, answer: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, items: p.items.filter((_, ix) => ix !== i) }))} className="justify-self-end text-xs text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Aside title"><input className={inputCls} value={s.aside_title} onChange={(e) => set({ aside_title: e.target.value })} /></Field>
+              <Field label="Aside body"><input className={inputCls} value={s.aside_body} onChange={(e) => set({ aside_body: e.target.value })} /></Field>
+              <Field label="Aside button"><input className={inputCls} value={s.aside_button_label} onChange={(e) => set({ aside_button_label: e.target.value })} /></Field>
+            </div>
+          </>
+        )}
+      />
+
+      {/* MEMBERSHIP PAGE */}
+      <SectionCard
+        title="Membership page"
+        description="Copy on /membership (uses your subscription plan for pricing)."
+        value={content.page_membership}
+        saving={isSaving("page_membership")}
+        onSave={(v) => persist("page_membership", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Eyebrow"><input className={inputCls} value={s.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
+              <Field label="Title line 1"><input className={inputCls} value={s.title_line_1} onChange={(e) => set({ title_line_1: e.target.value })} /></Field>
+              <Field label="Title line 2"><input className={inputCls} value={s.title_line_2} onChange={(e) => set({ title_line_2: e.target.value })} /></Field>
+            </div>
+            <Field label="Tagline fallback"><input className={inputCls} value={s.tagline_fallback} onChange={(e) => set({ tagline_fallback: e.target.value })} /></Field>
+            <Field label="Unlock box title"><input className={inputCls} value={s.unlock_title} onChange={(e) => set({ unlock_title: e.target.value })} /></Field>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Pay label"><input className={inputCls} value={s.pay_label} onChange={(e) => set({ pay_label: e.target.value })} /></Field>
+              <Field label="Pay note"><input className={inputCls} value={s.pay_note} onChange={(e) => set({ pay_note: e.target.value })} /></Field>
+              <Field label="Or label"><input className={inputCls} value={s.or_label} onChange={(e) => set({ or_label: e.target.value })} /></Field>
+              <Field label="Shop amount label"><input className={inputCls} value={s.shop_amount_label} onChange={(e) => set({ shop_amount_label: e.target.value })} /></Field>
+              <Field label="Shop note"><input className={inputCls} value={s.shop_note} onChange={(e) => set({ shop_note: e.target.value })} /></Field>
+              <Field label="Validity note"><input className={inputCls} value={s.validity_note} onChange={(e) => set({ validity_note: e.target.value })} /></Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Card title"><input className={inputCls} value={s.card_title} onChange={(e) => set({ card_title: e.target.value })} /></Field>
+              <Field label="Card subtitle"><input className={inputCls} value={s.card_subtitle} onChange={(e) => set({ card_subtitle: e.target.value })} /></Field>
+              <Field label="Card line 1"><input className={inputCls} value={s.card_line_1} onChange={(e) => set({ card_line_1: e.target.value })} /></Field>
+              <Field label="Card line 2"><input className={inputCls} value={s.card_line_2} onChange={(e) => set({ card_line_2: e.target.value })} /></Field>
+              <Field label="Card line 3"><input className={inputCls} value={s.card_line_3} onChange={(e) => set({ card_line_3: e.target.value })} /></Field>
+            </div>
+            <Field label="Privileges section title"><input className={inputCls} value={s.privileges_title} onChange={(e) => set({ privileges_title: e.target.value })} /></Field>
+            <Field label="Privileges footer"><input className={inputCls} value={s.privileges_footer} onChange={(e) => set({ privileges_footer: e.target.value })} /></Field>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.2em] text-muted-foreground">PRIVILEGES</span>
+                <button type="button" onClick={() => set((p) => ({ ...p, privileges: [...p.privileges, { icon: "Sparkles" as IconName, title: "", description: "" }] }))} className="inline-flex items-center gap-1 text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add</button>
+              </div>
+              <div className="grid gap-2">
+                {s.privileges.map((pr, i) => (
+                  <div key={i} className="grid grid-cols-[140px_1fr_2fr_auto] gap-2">
+                    <IconPicker value={pr.icon} onChange={(v) => set((p) => ({ ...p, privileges: p.privileges.map((x, ix) => ix === i ? { ...x, icon: v } : x) }))} />
+                    <input className={inputCls} placeholder="Title" value={pr.title} onChange={(e) => set((p) => ({ ...p, privileges: p.privileges.map((x, ix) => ix === i ? { ...x, title: e.target.value } : x) }))} />
+                    <input className={inputCls} placeholder="Description" value={pr.description} onChange={(e) => set((p) => ({ ...p, privileges: p.privileges.map((x, ix) => ix === i ? { ...x, description: e.target.value } : x) }))} />
+                    <button type="button" onClick={() => set((p) => ({ ...p, privileges: p.privileges.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      />
+
+      {/* TRACK ORDER PAGE */}
+      <SectionCard
+        title="Track order page"
+        description="Copy shown on /track-order."
+        value={content.page_track_order}
+        saving={isSaving("page_track_order")}
+        onSave={(v) => persist("page_track_order", v)}
+        render={(s, set) => (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+              <Field label="Description"><input className={inputCls} value={s.description} onChange={(e) => set({ description: e.target.value })} /></Field>
+              <Field label="Order ID label"><input className={inputCls} value={s.order_id_label} onChange={(e) => set({ order_id_label: e.target.value })} /></Field>
+              <Field label="Email label"><input className={inputCls} value={s.email_label} onChange={(e) => set({ email_label: e.target.value })} /></Field>
+              <Field label="Button label"><input className={inputCls} value={s.button_label} onChange={(e) => set({ button_label: e.target.value })} /></Field>
+              <Field label="Help text"><input className={inputCls} value={s.help_text} onChange={(e) => set({ help_text: e.target.value })} /></Field>
+            </div>
+            <Field label="Empty state message"><input className={inputCls} value={s.empty_message} onChange={(e) => set({ empty_message: e.target.value })} /></Field>
+          </>
+        )}
+      />
     </div>
   );
 }
