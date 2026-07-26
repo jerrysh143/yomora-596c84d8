@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { getSupabaseServerClient } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_URL = "https://yomora.lovable.app";
 
@@ -26,8 +26,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         ];
 
         try {
-          const supabase = getSupabaseServerClient();
-          const { data: products } = await supabase.from("products").select("id");
+          const { data: products } = await supabaseAdmin.from("products").select("id");
           for (const p of products ?? []) {
             entries.push({ path: `/products/${p.id}`, changefreq: "weekly", priority: "0.7" });
           }
