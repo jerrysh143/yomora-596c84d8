@@ -17,7 +17,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage } from "@/lib/products";
+import { formatINR, productImage, isProductNew } from "@/lib/products";
 import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
