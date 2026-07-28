@@ -8,7 +8,7 @@ import legacyImg from "@/assets/legacy-showroom.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
-import { formatINR, productImage } from "@/lib/products";
+import { formatINR, productImage, isProductNew } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
@@ -163,7 +163,7 @@ function Index() {
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img src={productImage(p)} width={900} height={900} loading="lazy" alt={`${p.name} — 925 sterling silver`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  {p.is_new && (
+                  {isProductNew(p) && (
                     <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
                   )}
                   <button
