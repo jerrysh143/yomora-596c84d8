@@ -16,6 +16,7 @@ export type Product = {
   description: string;
   image_url: string | null;
   is_new: boolean;
+  created_at?: string | null;
 };
 
 const CATEGORY_FALLBACK: Record<string, string> = {
@@ -34,3 +35,14 @@ export const formatINR = (value: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+
+// A product is treated as "new" when the admin flagged it, OR when it was
+// created within the last 7 days (auto-tag for a week).
+export const NEW_WINDOW_DAYS = 7;
+export const isProductNew = (p: Pick<Product, "is_new" | "created_at">) => {
+  if (p.is_new) return true;
+  if (!p.created_at) return false;
+  const created = new Date(p.created_at).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created < NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+};
