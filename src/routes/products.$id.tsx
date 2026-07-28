@@ -17,7 +17,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage } from "@/lib/products";
+import { formatINR, productImage, isProductNew } from "@/lib/products";
 import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
@@ -138,8 +138,8 @@ function ProductPage() {
           {/* Details */}
           <div className="order-3">
             <div className="flex flex-wrap gap-2">
-              {product.is_new && (
-                <span className="bg-gold px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">BESTSELLER</span>
+              {isProductNew(product) && (
+                <span className="bg-gold px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">NEW</span>
               )}
               <span className="border border-onyx/20 px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">925 HALLMARKED</span>
             </div>

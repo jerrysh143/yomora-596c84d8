@@ -22,6 +22,7 @@ const mapRow = (r: any): Product => ({
   description: r.description ?? "",
   image_url: r.image_url,
   is_new: !!r.is_new,
+  created_at: r.created_at ?? null,
 });
 
 export const listProductsFn = createServerFn({ method: "GET" }).handler(async () => {
@@ -40,7 +41,7 @@ export const getProductFn = createServerFn({ method: "GET" })
     const sb = serverPublicClient();
     const { data: row, error } = await sb
       .from("products")
-      .select("id,name,price,category,tagline,description,image_url,is_new")
+      .select("id,name,price,category,tagline,description,image_url,is_new,created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);

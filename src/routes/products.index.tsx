@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage, type Category } from "@/lib/products";
+import { formatINR, productImage, isProductNew, type Category } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
@@ -33,15 +33,15 @@ function ProductsPage() {
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
   const [filter, setFilter] = useState<Filter>("all");
-  const [sortNew, setSortNew] = useState(false);
+  const [onlyNew, setOnlyNew] = useState(false);
 
   // Sync from URL hash (set by header links: #rings, #new, etc.)
   useEffect(() => {
     const apply = () => {
       const h = window.location.hash.replace("#", "");
-      if (h === "new") { setSortNew(true); setFilter("all"); }
-      else if (CATEGORIES.some((c) => c.slug === h)) { setFilter(h as Category); setSortNew(false); }
-      else { setFilter("all"); setSortNew(false); }
+      if (h === "new") { setOnlyNew(true); setFilter("all"); }
+      else if (CATEGORIES.some((c) => c.slug === h)) { setFilter(h as Category); setOnlyNew(false); }
+      else { setFilter("all"); setOnlyNew(false); }
     };
     apply();
     window.addEventListener("hashchange", apply);
@@ -50,9 +50,9 @@ function ProductsPage() {
 
   const items = useMemo(() => {
     let list = filter === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === filter);
-    if (sortNew) list = [...list].sort((a, b) => Number(!!b.is_new) - Number(!!a.is_new));
+    if (onlyNew) list = list.filter((p) => isProductNew(p));
     return list;
-  }, [filter, sortNew, PRODUCTS]);
+  }, [filter, onlyNew, PRODUCTS]);
 
   const filters: { key: Filter; label: string }[] = [
     { key: "all", label: "All" },
@@ -90,8 +90,8 @@ function ProductsPage() {
             ))}
           </div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input type="checkbox" checked={sortNew} onChange={(e) => setSortNew(e.target.checked)} className="accent-[color:var(--gold)]" />
-            New arrivals first
+            <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} className="accent-[color:var(--gold)]" />
+            New arrivals only
           </label>
         </div>
 
@@ -100,7 +100,7 @@ function ProductsPage() {
             <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
               <img src={productImage(p)} width={900} height={900} loading="lazy" alt={`${p.name} — 925 sterling silver ${p.category}`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                {p.is_new && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                {isProductNew(p) && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
