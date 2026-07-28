@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export type WishlistItem = {
   id: string;
@@ -13,6 +14,22 @@ const KEY = "yomora_wishlist_v1";
 
 let currentUserId: string | null = null;
 let syncing = false;
+
+function requireAuth(): boolean {
+  if (currentUserId) return true;
+  if (typeof window !== "undefined") {
+    toast.error("Please sign in to save items to your wishlist", {
+      action: {
+        label: "Sign in",
+        onClick: () => {
+          const redirect = window.location.pathname + window.location.search;
+          window.location.href = `/auth?redirect=${encodeURIComponent(redirect)}`;
+        },
+      },
+    });
+  }
+  return false;
+}
 
 function read(): WishlistItem[] {
   if (typeof window === "undefined") return [];
@@ -133,6 +150,7 @@ export const wishlist = {
     return read().some((i) => i.id === id);
   },
   add(item: WishlistItem) {
+    if (!requireAuth()) return;
     const items = read();
     if (items.some((i) => i.id === item.id)) return;
     items.push(item);
@@ -140,14 +158,17 @@ export const wishlist = {
     if (currentUserId) pushToServer(currentUserId, item).catch(() => {});
   },
   remove(id: string) {
+    if (!requireAuth()) return;
     write(read().filter((i) => i.id !== id));
     if (currentUserId) removeFromServer(currentUserId, id).catch(() => {});
   },
   toggle(item: WishlistItem) {
+    if (!requireAuth()) return;
     if (this.has(item.id)) this.remove(item.id);
     else this.add(item);
   },
   clear() {
+    if (!requireAuth()) return;
     write([]);
     if (currentUserId) clearOnServer(currentUserId).catch(() => {});
   },
