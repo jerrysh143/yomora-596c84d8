@@ -183,18 +183,6 @@ function Index() {
   );
 }
 
-function TrustItem({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="flex items-center gap-3 px-4">
-      <span className="grid h-11 w-11 shrink-0 place-items-center border border-gold/50 text-gold">{icon}</span>
-      <div className="min-w-0">
-        <div className="text-[11px] font-semibold tracking-[0.2em] text-gold">{title}</div>
-        <div className="mt-0.5 text-[11px] text-cream/70">{body}</div>
-      </div>
-    </div>
-  );
-}
-
 function BlackSignatureBlock({
   price,
   duration,
