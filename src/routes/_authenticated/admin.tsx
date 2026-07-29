@@ -1182,15 +1182,11 @@ on conflict do nothing;`}
               <Field label="Tagline">
                 <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
               </Field>
-              <Field label="Image URL (paste a hosted image link)">
-                <input
-                  type="url"
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="https://…"
-                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
-                />
-              </Field>
+              <ImageUploadField
+                label="Product image"
+                value={form.image_url}
+                onChange={(url) => setForm({ ...form, image_url: url })}
+              />
             </div>
 
             <Field label="Description">
