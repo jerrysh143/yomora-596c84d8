@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import type { Product, Category } from "./products";
+import type { Product, Category, Audience } from "./products";
 
 function serverPublicClient() {
   const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
@@ -20,6 +20,7 @@ const mapRow = (r: any): Product => ({
   name: r.name,
   price: r.price,
   category: r.category as Category,
+  audience: (r.audience ?? "unisex") as Audience,
   tagline: r.tagline ?? "",
   description: r.description ?? "",
   image_url: r.image_url,
@@ -31,7 +32,7 @@ export const listProductsFn = createServerFn({ method: "GET" }).handler(async ()
   const sb = serverPublicClient();
   const { data, error } = await sb
     .from("products")
-    .select("id,name,price,category,tagline,description,image_url,is_new,created_at")
+    .select("id,name,price,category,audience,tagline,description,image_url,is_new,created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(mapRow);
@@ -43,7 +44,7 @@ export const getProductFn = createServerFn({ method: "GET" })
     const sb = serverPublicClient();
     const { data: row, error } = await sb
       .from("products")
-      .select("id,name,price,category,tagline,description,image_url,is_new,created_at")
+      .select("id,name,price,category,audience,tagline,description,image_url,is_new,created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -55,6 +56,7 @@ const productInput = z.object({
   name: z.string().min(1).max(120),
   price: z.number().int().min(0).max(10_000_000),
   category: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, "Invalid category slug"),
+  audience: z.enum(["men", "women", "kids", "unisex"]).default("unisex"),
   tagline: z.string().max(200).default(""),
   description: z.string().max(4000).default(""),
   image_url: z

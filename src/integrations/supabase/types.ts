@@ -132,6 +132,7 @@ export type Database = {
       }
       products: {
         Row: {
+          audience: string
           category: string
           created_at: string
           description: string
@@ -144,6 +145,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audience?: string
           category: string
           created_at?: string
           description?: string
@@ -156,6 +158,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audience?: string
           category?: string
           created_at?: string
           description?: string
