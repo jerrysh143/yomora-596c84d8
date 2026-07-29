@@ -28,7 +28,7 @@ export function SiteHeader() {
   ];
 
   return (
-    <header className="w-full bg-onyx text-cream">
+    <header className="sticky top-0 z-50 w-full bg-onyx/95 text-cream backdrop-blur supports-[backdrop-filter]:bg-onyx/80">
       {/* Utility strip */}
       <div className="border-b border-white/5">
         <div className="container-x mx-auto max-w-[1400px] flex flex-wrap items-center justify-center gap-x-8 gap-y-1 py-2 text-[11px] tracking-wide text-cream/80">
