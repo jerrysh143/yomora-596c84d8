@@ -126,6 +126,17 @@ function Index() {
             </div>
             <button
               type="button"
+              aria-label="Scroll categories left"
+              onClick={() => {
+                const el = document.getElementById("category-rail");
+                el?.scrollBy({ left: -el.clientWidth * 0.8, behavior: "smooth" });
+              }}
+              className="absolute left-1 top-[38%] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-border bg-background text-foreground shadow-md hover:border-gold hover:text-gold sm:grid"
+            >
+              <ArrowRight className="h-4 w-4 rotate-180" />
+            </button>
+            <button
+              type="button"
               aria-label="Scroll categories right"
               onClick={() => {
                 const el = document.getElementById("category-rail");
