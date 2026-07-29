@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 
 export const Route = createFileRoute("/api/public/img/$")({
   server: {
@@ -6,8 +7,14 @@ export const Route = createFileRoute("/api/public/img/$")({
       GET: async ({ params }) => {
         const path = (params as Record<string, string>)._splat;
         if (!path) return new Response("Not found", { status: 404 });
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.storage.from("site-images").download(path);
+        const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+        const key =
+          process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!url || !key) return new Response("Not configured", { status: 404 });
+        const sb = createClient(url, key, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data, error } = await sb.storage.from("site-images").download(path);
         if (error || !data) return new Response("Not found", { status: 404 });
         return new Response(data, {
           headers: {
