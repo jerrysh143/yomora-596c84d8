@@ -1,20 +1,25 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
+import { MessageCircle, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { requestPhoneOtpFn, verifyPhoneOtpFn } from "@/lib/phone-auth.functions";
 import { toast } from "sonner";
 
-const searchSchema = z.object({ redirect: z.string().optional() });
+const searchSchema = z.object({
+  redirect: z.string().optional(),
+  admin: z.string().optional(),
+});
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Sign In — YOMORA" },
-      { name: "description", content: "Sign in to manage the YOMORA store." },
+      { name: "description", content: "Sign in to YOMORA with your mobile number." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -23,123 +28,229 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/auth" });
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { redirect, admin } = useSearch({ from: "/auth" });
+  const isAdminAccess = admin === "1" || (redirect ?? "").includes("/admin");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: redirect ?? "/admin", replace: true });
+      if (data.session) navigate({ to: redirect ?? "/account", replace: true });
     });
   }, [navigate, redirect]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Account created. Check your inbox to confirm your email.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: redirect ?? "/admin", replace: true });
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const google = async () => {
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message || "Google sign-in failed");
-      setLoading(false);
-      return;
-    }
-    if (!("redirected" in result) || !result.redirected) {
-      navigate({ to: redirect ?? "/admin", replace: true });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <section className="container-x mx-auto grid max-w-md gap-6 py-20">
-        <div>
-          <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">ADMIN ACCESS</p>
-          <h1 className="mt-3 font-display text-4xl text-foreground">
-            {mode === "signin" ? "Sign in" : "Create account"}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "signin" ? "Access the YOMORA dashboard." : "Register to access the dashboard."}
-          </p>
-        </div>
+        {isAdminAccess ? <AdminLogin redirect={redirect} /> : <PhoneLogin redirect={redirect} />}
+      </section>
+      <SiteFooter />
+    </div>
+  );
+}
 
-        <button
-          onClick={google}
-          disabled={loading}
-          className="flex items-center justify-center gap-3 border border-border bg-background px-5 py-3 text-sm font-medium text-foreground hover:border-gold hover:text-gold disabled:opacity-50"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Continue with Google
-        </button>
+function PhoneLogin({ redirect }: { redirect?: string }) {
+  const navigate = useNavigate();
+  const requestOtp = useServerFn(requestPhoneOtpFn);
+  const verifyOtp = useServerFn(verifyPhoneOtpFn);
+  const [step, setStep] = useState<"phone" | "code">("phone");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-        <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> OR <span className="h-px flex-1 bg-border" />
-        </div>
+  const startCooldown = () => {
+    setCooldown(30);
+    if (timer.current) clearInterval(timer.current);
+    timer.current = setInterval(() => {
+      setCooldown((c) => {
+        if (c <= 1 && timer.current) clearInterval(timer.current);
+        return c <= 1 ? 0 : c - 1;
+      });
+    }, 1000);
+  };
+  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
 
-        <form onSubmit={submit} className="grid gap-4">
+  const send = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setLoading(true);
+    try {
+      const res = await requestOtp({ data: { phone } });
+      setPhone(res.phone);
+      setStep("code");
+      startCooldown();
+      if (res.devCode) {
+        toast.info(`WhatsApp is not connected yet — your code is ${res.devCode}`, { duration: 15000 });
+      } else {
+        toast.success("Code sent to your WhatsApp");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send the code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { email, password } = await verifyOtp({ data: { phone, code } });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Signed in");
+      navigate({ to: redirect ?? "/account", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not verify the code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div>
+        <p className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.28em] text-gold">
+          <MessageCircle className="h-3.5 w-3.5" /> WHATSAPP LOGIN
+        </p>
+        <h1 className="mt-3 font-display text-4xl text-foreground">
+          {step === "phone" ? "Sign in with mobile" : "Enter your code"}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {step === "phone"
+            ? "We'll send a 6-digit code to your WhatsApp. No password needed."
+            : `Code sent to ${phone} on WhatsApp.`}
+        </p>
+      </div>
+
+      {step === "phone" ? (
+        <form onSubmit={send} className="grid gap-4">
           <label className="grid gap-1.5 text-sm">
-            <span className="text-xs tracking-[0.16em] text-muted-foreground">EMAIL</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-xs tracking-[0.16em] text-muted-foreground">PASSWORD</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
-            />
+            <span className="text-xs tracking-[0.16em] text-muted-foreground">MOBILE NUMBER</span>
+            <div className="flex items-center border border-border bg-background focus-within:border-gold">
+              <span className="px-3 text-sm text-muted-foreground">+91</span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                required
+                placeholder="98765 43210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full bg-transparent px-1 py-2.5 text-sm outline-none"
+              />
+            </div>
           </label>
           <button
             type="submit"
             disabled={loading}
             className="bg-onyx px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90 disabled:opacity-50"
           >
-            {loading ? "PLEASE WAIT…" : mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
+            {loading ? "SENDING…" : "SEND CODE ON WHATSAPP"}
           </button>
         </form>
+      ) : (
+        <form onSubmit={verify} className="grid gap-4">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-xs tracking-[0.16em] text-muted-foreground">6-DIGIT CODE</span>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              className="border border-border bg-background px-3 py-2.5 text-center text-lg tracking-[0.5em] outline-none focus:border-gold"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading || code.length !== 6}
+            className="bg-onyx px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90 disabled:opacity-50"
+          >
+            {loading ? "VERIFYING…" : "VERIFY & SIGN IN"}
+          </button>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <button type="button" onClick={() => setStep("phone")} className="hover:text-gold">
+              Change number
+            </button>
+            <button
+              type="button"
+              disabled={cooldown > 0 || loading}
+              onClick={() => send()}
+              className="hover:text-gold disabled:opacity-50"
+            >
+              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+            </button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+}
 
+function AdminLogin({ redirect }: { redirect?: string }) {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: redirect ?? "/admin", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div>
+        <p className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.28em] text-gold">
+          <ShieldCheck className="h-3.5 w-3.5" /> STAFF ACCESS
+        </p>
+        <h1 className="mt-3 font-display text-4xl text-foreground">Admin sign in</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Restricted area. Use your administrator credentials.
+        </p>
+      </div>
+      <form onSubmit={submit} className="grid gap-4">
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-xs tracking-[0.16em] text-muted-foreground">EMAIL</span>
+          <input
+            type="email"
+            required
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-xs tracking-[0.16em] text-muted-foreground">PASSWORD</span>
+          <input
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+          />
+        </label>
         <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="text-xs text-muted-foreground hover:text-gold"
+          type="submit"
+          disabled={loading}
+          className="bg-onyx px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90 disabled:opacity-50"
         >
-          {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
+          {loading ? "PLEASE WAIT…" : "SIGN IN"}
         </button>
-      </section>
-      <SiteFooter />
-    </div>
+      </form>
+    </>
   );
 }
