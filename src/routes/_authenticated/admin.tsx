@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
-import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
+import { formatINR, isValidImageUrl, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import {
