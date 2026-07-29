@@ -73,6 +73,25 @@ function Index() {
             <Link to="/products" className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex">VIEW ALL →</Link>
           </div>
 
+          {/* Shop by audience */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              { to: "/men" as const, label: "Shop for Him" },
+              { to: "/women" as const, label: "Shop for Her" },
+              { to: "/kids" as const, label: "Shop for Kids" },
+            ].map((a) => (
+              <Link
+                key={a.to}
+                to={a.to}
+                className="group relative flex items-center justify-between overflow-hidden border border-gold/30 bg-onyx px-6 py-5 text-cream transition-colors hover:border-gold"
+              >
+                <span className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_right,color-mix(in_oklab,var(--gold)_22%,transparent),transparent_70%)] opacity-70 transition-opacity group-hover:opacity-100" />
+                <span className="relative font-display text-lg uppercase tracking-[0.16em]">{a.label}</span>
+                <ArrowRight className="relative h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
+              </Link>
+            ))}
+          </div>
+
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {CATEGORIES.map((c) => {
               const p = products.find((x) => x.category === c.slug);
