@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
-import { formatINR, isValidImageUrl, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
+import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import {
@@ -53,6 +53,7 @@ type FormState = {
   name: string;
   price: string;
   category: Category;
+  audience: Audience;
   tagline: string;
   description: string;
   image_url: string;
@@ -64,6 +65,7 @@ const emptyForm: FormState = {
   name: "",
   price: "",
   category: "rings",
+  audience: "unisex",
   tagline: "",
   description: "",
   image_url: "",
@@ -150,6 +152,7 @@ function AdminPage() {
         name: p.name,
         price: String(p.price),
         category: p.category,
+        audience: p.audience ?? "unisex",
         tagline: p.tagline,
         description: p.description,
         image_url: p.image_url ?? "",
@@ -495,6 +498,7 @@ function AdminPage() {
       name: form.name.trim(),
       price,
       category: form.category,
+      audience: form.audience,
       tagline: form.tagline.trim(),
       description: form.description.trim(),
       image_url: imageUrl || null,
@@ -1182,6 +1186,17 @@ on conflict do nothing;`}
                 >
                   {categories.map((c) => (
                     <option key={c.slug} value={c.slug}>{c.label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Shop for">
+                <select
+                  value={form.audience}
+                  onChange={(e) => setForm({ ...form, audience: e.target.value as Audience })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                >
+                  {AUDIENCES.map((a) => (
+                    <option key={a.value} value={a.value}>{a.label}</option>
                   ))}
                 </select>
               </Field>
