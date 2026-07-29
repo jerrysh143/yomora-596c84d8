@@ -293,6 +293,8 @@ export function SiteContentEditor() {
             <Field label="Title"><input className={inputCls} value={s.title} onChange={(e) => set({ title: e.target.value })} /></Field>
             <Field label="Body"><textarea rows={2} className={inputCls} value={s.body} onChange={(e) => set({ body: e.target.value })} /></Field>
             <Field label="Button label"><input className={inputCls} value={s.button_label} onChange={(e) => set({ button_label: e.target.value })} /></Field>
+            <Field label="WhatsApp number (with country code, digits only)"><input className={inputCls} placeholder="919000000000" value={s.whatsapp_number} onChange={(e) => set({ whatsapp_number: e.target.value })} /></Field>
+            <Field label="Prefilled WhatsApp message"><textarea rows={2} className={inputCls} value={s.whatsapp_message} onChange={(e) => set({ whatsapp_message: e.target.value })} /></Field>
           </>
         )}
       />

@@ -241,9 +241,14 @@ function Index() {
             <h3 className="font-display text-3xl md:text-4xl">{ctaStrip.title}</h3>
             <p className="mt-2 max-w-xl text-sm text-cream/70">{ctaStrip.body}</p>
           </div>
-          <Link to="/products" className="inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft">
+          <a
+            href={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+          >
             {ctaStrip.button_label} <ArrowRight className="h-4 w-4" />
-          </Link>
+          </a>
         </div>
       </section>
 
