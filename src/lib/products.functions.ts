@@ -57,7 +57,12 @@ const productInput = z.object({
   category: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, "Invalid category slug"),
   tagline: z.string().max(200).default(""),
   description: z.string().max(4000).default(""),
-  image_url: z.string().url().max(1000).nullable().or(z.literal("").transform(() => null)),
+  image_url: z
+    .string()
+    .max(1000)
+    .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//.test(v), "Invalid image URL")
+    .transform((v) => (v === "" ? null : v))
+    .nullable(),
   is_new: z.boolean().default(false),
 });
 
