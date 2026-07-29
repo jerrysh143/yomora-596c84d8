@@ -125,8 +125,8 @@ function ProductPage() {
           </div>
 
           {/* Main image */}
-          <div className="relative order-1 bg-onyx md:order-2">
-            <img src={gallery[activeImg]} alt={product.name} className="aspect-square w-full object-cover" />
+          <div className="relative order-1 self-start bg-onyx md:order-2">
+            <img src={gallery[activeImg]} alt={product.name} className="block aspect-square w-full object-cover" />
             <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
               <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
             </button>
