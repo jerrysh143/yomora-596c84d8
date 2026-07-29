@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
-import { formatINR, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
+import { formatINR, isValidImageUrl, productImage, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import {
@@ -485,6 +485,11 @@ function AdminPage() {
       toast.error("Price must be a positive number");
       return;
     }
+    const imageUrl = form.image_url.trim();
+    if (!isValidImageUrl(imageUrl)) {
+      toast.error("Image must be an uploaded image or a valid http(s) URL");
+      return;
+    }
     saveMut.mutate({
       id: form.id.trim(),
       name: form.name.trim(),
@@ -492,7 +497,7 @@ function AdminPage() {
       category: form.category,
       tagline: form.tagline.trim(),
       description: form.description.trim(),
-      image_url: form.image_url.trim() || null,
+      image_url: imageUrl || null,
       is_new: form.is_new,
     });
   };
