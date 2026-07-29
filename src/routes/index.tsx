@@ -95,7 +95,7 @@ function Index() {
           <div className="relative mt-10">
             <div
               id="category-rail"
-              className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 sm:mx-0 sm:gap-6 sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORIES.map((c) => {
                 const p = products.find((x) => x.category === c.slug);
@@ -105,7 +105,7 @@ function Index() {
                     key={c.slug}
                     to="/products"
                     hash={c.slug}
-                    className="group w-[45%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
+                    className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
                     <div className="overflow-hidden rounded-[2rem] bg-secondary/40">
                       <img
@@ -117,7 +117,7 @@ function Index() {
                         className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     </div>
-                    <span className="mt-4 block font-display text-lg text-foreground transition-colors group-hover:text-gold">
+                    <span className="mt-3 block font-display text-base text-foreground transition-colors group-hover:text-gold sm:mt-4 sm:text-lg">
                       {c.label}
                     </span>
                   </Link>
@@ -131,7 +131,7 @@ function Index() {
                 const el = document.getElementById("category-rail");
                 el?.scrollBy({ left: -el.clientWidth * 0.8, behavior: "smooth" });
               }}
-              className="absolute left-1 top-[38%] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-border bg-background text-foreground shadow-md hover:border-gold hover:text-gold sm:grid"
+              className="absolute left-0 top-[38%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/90 text-foreground shadow-md backdrop-blur hover:border-gold hover:text-gold sm:left-1 sm:h-11 sm:w-11"
             >
               <ArrowRight className="h-4 w-4 rotate-180" />
             </button>
@@ -142,7 +142,7 @@ function Index() {
                 const el = document.getElementById("category-rail");
                 el?.scrollBy({ left: el.clientWidth * 0.8, behavior: "smooth" });
               }}
-              className="absolute right-1 top-[38%] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-border bg-background text-foreground shadow-md hover:border-gold hover:text-gold sm:grid"
+              className="absolute right-0 top-[38%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/90 text-foreground shadow-md backdrop-blur hover:border-gold hover:text-gold sm:right-1 sm:h-11 sm:w-11"
             >
               <ArrowRight className="h-4 w-4" />
             </button>
