@@ -9,9 +9,11 @@ import { SiteIcon } from "@/lib/site-icons";
 import { SocialLinks } from "@/components/social-links";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { SearchOverlay } from "@/components/search-overlay";
 
 export function SiteHeader() {
   const [signedIn, setSignedIn] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerH, setHeaderH] = useState(0);
@@ -87,7 +89,7 @@ export function SiteHeader() {
 
         <div className="flex shrink-0 items-center gap-1 text-cream/85 sm:gap-2 lg:gap-3">
           <SocialLinks placement="header" className="mr-1 hidden xl:flex" iconClassName="h-4 w-4" />
-          <button aria-label="Search" className="rounded-full p-1.5 hover:text-gold sm:p-2"><Search className="h-5 w-5" /></button>
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="rounded-full p-1.5 hover:text-gold sm:p-2"><Search className="h-5 w-5" /></button>
           <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
             <Heart className="h-5 w-5" />
             {wishlistCount > 0 && (
@@ -109,6 +111,7 @@ export function SiteHeader() {
       </div>
 
     </header>
+    <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }
