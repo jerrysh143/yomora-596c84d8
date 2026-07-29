@@ -485,6 +485,11 @@ function AdminPage() {
       toast.error("Price must be a positive number");
       return;
     }
+    const imageUrl = form.image_url.trim();
+    if (!isValidImageUrl(imageUrl)) {
+      toast.error("Image must be an uploaded image or a valid http(s) URL");
+      return;
+    }
     saveMut.mutate({
       id: form.id.trim(),
       name: form.name.trim(),
@@ -492,7 +497,7 @@ function AdminPage() {
       category: form.category,
       tagline: form.tagline.trim(),
       description: form.description.trim(),
-      image_url: form.image_url.trim() || null,
+      image_url: imageUrl || null,
       is_new: form.is_new,
     });
   };
