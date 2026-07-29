@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, PencilLine, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Heart, Percent, Headphones, Gift, Truck, Crown, Rocket, Cake, BadgeCheck, Gem, Banknote, ShoppingBag } from "lucide-react";
-import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
 import { formatINR, productImage, isProductNew } from "@/lib/products";
@@ -32,7 +32,6 @@ function Index() {
   const { data: plans } = useSuspenseQuery(subscriptionPlansQuery());
   const activePlans = plans.filter((p) => p.is_active);
   const { data: content } = useSuspenseQuery(siteContentQuery());
-  const hero = content.hero;
   const trust = content.trust_bar;
   const legacy = content.legacy;
   const catsSection = content.categories_section;
@@ -43,67 +42,7 @@ function Index() {
   const wishSet = new Set(wishItems.map((w) => w.id));
   return (
     <div className="min-h-screen bg-background">
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-onyx text-cream">
-        <div className="absolute inset-0">
-          <img
-            src={heroImg}
-            width={1600}
-            height={1200}
-            fetchPriority="high"
-            decoding="async"
-            alt="925 sterling silver diamond jewellery on dark textured stone"
-            className="h-full w-full object-cover object-right opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-onyx via-onyx/85 to-transparent md:from-onyx md:via-onyx/70" />
-        </div>
-
-        <div className="container-x relative mx-auto max-w-[1400px] py-20 md:py-28 lg:py-36">
-          <div className="max-w-2xl">
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{hero.eyebrow}</p>
-            <h1 className="mt-6 font-display text-5xl leading-[1.05] text-cream sm:text-6xl lg:text-7xl">
-              {hero.title_line_1}<br />{hero.title_line_2}
-            </h1>
-            <div className="mt-5 flex items-center gap-3">
-              <span className="h-px w-16 bg-gold" />
-              <span className="text-gold">✦</span>
-            </div>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-cream/75">{hero.description}</p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/products"
-                hash={hero.primary_cta_hash || undefined}
-                className="group inline-flex items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx transition-colors hover:bg-gold-soft"
-              >
-                {hero.primary_cta_label}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                to="/products"
-                hash={hero.secondary_cta_hash || undefined}
-                className="inline-flex items-center gap-3 border border-gold/70 px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-gold/10"
-              >
-                {hero.secondary_cta_label}
-              </Link>
-            </div>
-
-            <Link
-              to="/products"
-              className="mt-6 flex max-w-md items-center gap-4 border border-gold/40 bg-onyx/40 px-5 py-4 backdrop-blur transition-colors hover:border-gold/70"
-            >
-              <span className="grid h-11 w-11 shrink-0 place-items-center border border-gold/60 text-gold">
-                <PencilLine className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-semibold tracking-[0.22em] text-gold">{hero.custom_card_title}</div>
-                <p className="mt-1 text-[11px] leading-relaxed text-cream/70">{hero.custom_card_body}</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gold" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <SiteHeader />
 
       {/* TRUST BAR */}
       <section className="border-t border-white/5 bg-onyx text-cream">
