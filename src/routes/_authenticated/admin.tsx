@@ -493,11 +493,20 @@ function AdminPage() {
       toast.error("Image must be an uploaded image or a valid http(s) URL");
       return;
     }
+    const category = form.category?.trim();
+    if (!category || !categories.some((c) => c.slug === category)) {
+      toast.error("Select a valid category for this product");
+      return;
+    }
+    if (!AUDIENCES.some((a) => a.value === form.audience)) {
+      toast.error("Select who this product is for (Men, Women, Kids or Unisex)");
+      return;
+    }
     saveMut.mutate({
       id: form.id.trim(),
       name: form.name.trim(),
       price,
-      category: form.category,
+      category: category as Category,
       audience: form.audience,
       tagline: form.tagline.trim(),
       description: form.description.trim(),
