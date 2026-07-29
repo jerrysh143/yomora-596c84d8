@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WomenRouteImport } from './routes/women'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as MenRouteImport } from './routes/men'
 import { Route as MembershipRouteImport } from './routes/membership'
+import { Route as KidsRouteImport } from './routes/kids'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomJewelleryRouteImport } from './routes/custom-jewellery'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -29,6 +32,11 @@ import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
 
+const WomenRoute = WomenRouteImport.update({
+  id: '/women',
+  path: '/women',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
@@ -44,9 +52,19 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MenRoute = MenRouteImport.update({
+  id: '/men',
+  path: '/men',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembershipRoute = MembershipRouteImport.update({
   id: '/membership',
   path: '/membership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KidsRoute = KidsRouteImport.update({
+  id: '/kids',
+  path: '/kids',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -135,10 +153,13 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
+  '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
+  '/men': typeof MenRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
+  '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
@@ -155,10 +176,13 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
+  '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
+  '/men': typeof MenRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
+  '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
@@ -177,10 +201,13 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/custom-jewellery': typeof CustomJewelleryRoute
   '/faq': typeof FaqRoute
+  '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
+  '/men': typeof MenRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
+  '/women': typeof WomenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
@@ -199,10 +226,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-jewellery'
     | '/faq'
+    | '/kids'
     | '/membership'
+    | '/men'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
+    | '/women'
     | '/admin'
     | '/membership-dashboard'
     | '/products/$id'
@@ -219,10 +249,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-jewellery'
     | '/faq'
+    | '/kids'
     | '/membership'
+    | '/men'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
+    | '/women'
     | '/admin'
     | '/membership-dashboard'
     | '/products/$id'
@@ -240,10 +273,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-jewellery'
     | '/faq'
+    | '/kids'
     | '/membership'
+    | '/men'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
+    | '/women'
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
     | '/products/$id'
@@ -262,10 +298,13 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CustomJewelleryRoute: typeof CustomJewelleryRoute
   FaqRoute: typeof FaqRoute
+  KidsRoute: typeof KidsRoute
   MembershipRoute: typeof MembershipRoute
+  MenRoute: typeof MenRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
+  WomenRoute: typeof WomenRoute
   ProductsIdRoute: typeof ProductsIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
@@ -273,6 +312,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/women': {
+      id: '/women'
+      path: '/women'
+      fullPath: '/women'
+      preLoaderRoute: typeof WomenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wishlist': {
       id: '/wishlist'
       path: '/wishlist'
@@ -294,11 +340,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/men': {
+      id: '/men'
+      path: '/men'
+      fullPath: '/men'
+      preLoaderRoute: typeof MenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/membership': {
       id: '/membership'
       path: '/membership'
       fullPath: '/membership'
       preLoaderRoute: typeof MembershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kids': {
+      id: '/kids'
+      path: '/kids'
+      fullPath: '/kids'
+      preLoaderRoute: typeof KidsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -433,10 +493,13 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CustomJewelleryRoute: CustomJewelleryRoute,
   FaqRoute: FaqRoute,
+  KidsRoute: KidsRoute,
   MembershipRoute: MembershipRoute,
+  MenRoute: MenRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
+  WomenRoute: WomenRoute,
   ProductsIdRoute: ProductsIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
