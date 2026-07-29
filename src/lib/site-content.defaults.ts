@@ -423,7 +423,15 @@ export function mergeSiteContent(
   for (const r of rows) map[r.key] = r.data;
   const out = { ...SITE_CONTENT_DEFAULTS };
   (Object.keys(SITE_CONTENT_DEFAULTS) as SiteContentKey[]).forEach((k) => {
-    if (map[k]) (out as Record<string, unknown>)[k] = map[k];
+    if (map[k]) {
+      const def = SITE_CONTENT_DEFAULTS[k];
+      const val = map[k];
+      if (def && typeof def === "object" && !Array.isArray(def) && val && typeof val === "object" && !Array.isArray(val)) {
+        (out as Record<string, unknown>)[k] = { ...(def as object), ...(val as object) };
+      } else {
+        (out as Record<string, unknown>)[k] = val;
+      }
+    }
   });
   return out;
 }
