@@ -123,7 +123,7 @@ function AdminPage() {
       timer = setTimeout(async () => {
         await supabase.auth.signOut();
         toast.info("Signed out after 10 minutes of inactivity");
-        navigate({ to: "/auth" });
+        navigate({ to: "/auth", search: { admin: "1" } });
       }, TIMEOUT_MS);
     };
     const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
@@ -519,7 +519,7 @@ function AdminPage() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/auth", search: { admin: "1" }, replace: true });
   };
 
   const grouped = useMemo(() => {
