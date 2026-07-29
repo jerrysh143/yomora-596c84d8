@@ -67,13 +67,13 @@ export function SiteHeader() {
       </div>
 
       {/* Main nav */}
-      <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[auto_1fr_auto] items-center gap-6 py-5">
-        <Link to="/" className="flex flex-col leading-none">
-          <span className="font-display text-3xl tracking-[0.18em] text-gold">{header.brand_name}</span>
-          <span className="mt-1 text-[10px] tracking-[0.28em] text-cream/60">{header.brand_tagline}</span>
+      <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 lg:grid-cols-[auto_1fr_auto] lg:gap-6 lg:py-5">
+        <Link to="/" className="flex min-w-0 flex-col leading-none">
+          <span className="truncate font-display text-2xl tracking-[0.18em] text-gold sm:text-3xl">{header.brand_name}</span>
+          <span className="mt-1 truncate text-[9px] tracking-[0.24em] text-cream/60 sm:text-[10px] sm:tracking-[0.28em]">{header.brand_tagline}</span>
         </Link>
 
-        <nav className="hidden items-center justify-center gap-8 text-xs font-medium tracking-[0.18em] lg:flex">
+        <nav className="hidden items-center justify-center gap-6 text-xs font-medium tracking-[0.18em] lg:flex xl:gap-8">
           {nav.map((n) => (
             <Link
               key={n.label}
@@ -86,10 +86,10 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3 text-cream/85">
-          <SocialLinks placement="header" className="mr-1 hidden sm:flex" iconClassName="h-4 w-4" />
-          <button aria-label="Search" className="rounded-full p-2 hover:text-gold"><Search className="h-5 w-5" /></button>
-          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-2 hover:text-gold">
+        <div className="flex shrink-0 items-center gap-1 text-cream/85 sm:gap-2 lg:gap-3">
+          <SocialLinks placement="header" className="mr-1 hidden xl:flex" iconClassName="h-4 w-4" />
+          <button aria-label="Search" className="rounded-full p-1.5 hover:text-gold sm:p-2"><Search className="h-5 w-5" /></button>
+          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
             <Heart className="h-5 w-5" />
             {wishlistCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{wishlistCount}</span>
@@ -98,15 +98,15 @@ export function SiteHeader() {
           <Link
             to={signedIn ? "/admin" : "/auth"}
             aria-label={signedIn ? "Admin dashboard" : "Sign in"}
-            className="rounded-full p-2 hover:text-gold"
+            className="rounded-full p-1.5 hover:text-gold sm:p-2"
           >
             <User className="h-5 w-5" />
           </Link>
-          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2 hover:text-gold">
+          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
           </Link>
-          <button aria-label="Menu" onClick={() => setOpen((v) => !v)} className="rounded-full p-2 hover:text-gold lg:hidden">
+          <button aria-label="Menu" onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:text-gold sm:p-2 lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
         </div>

@@ -100,13 +100,13 @@ function ProductPage() {
 
       {/* Main product */}
       <section className="container-x mx-auto max-w-[1400px] py-10">
-        <div className="grid gap-10 md:grid-cols-[90px_1fr_1fr] md:gap-8">
+        <div className="grid gap-8 lg:grid-cols-[90px_1fr_1fr] lg:gap-8">
           {/* Thumbnails */}
-          <div className="order-2 flex md:order-1 md:flex-col">
-            <button className="hidden h-8 w-full items-center justify-center text-muted-foreground hover:text-gold md:flex">
+          <div className="order-2 flex lg:order-1 lg:flex-col">
+            <button className="hidden h-8 w-full items-center justify-center text-muted-foreground hover:text-gold lg:flex">
               <ChevronUp className="h-4 w-4" />
             </button>
-            <div className="flex gap-3 overflow-x-auto md:flex-col md:gap-3 md:overflow-visible">
+            <div className="flex gap-3 overflow-x-auto lg:flex-col lg:gap-3 lg:overflow-visible">
               {gallery.map((src, i) => (
                 <button
                   key={i}
@@ -119,13 +119,13 @@ function ProductPage() {
                 </button>
               ))}
             </div>
-            <button className="hidden h-8 w-full items-center justify-center text-muted-foreground hover:text-gold md:flex">
+            <button className="hidden h-8 w-full items-center justify-center text-muted-foreground hover:text-gold lg:flex">
               <ChevronDown className="h-4 w-4" />
             </button>
           </div>
 
           {/* Main image */}
-          <div className="relative order-1 self-start bg-onyx md:order-2">
+          <div className="relative order-1 self-start bg-onyx lg:order-2">
             <img src={gallery[activeImg]} alt={product.name} className="block aspect-square w-full object-cover" />
             <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
               <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
@@ -136,7 +136,7 @@ function ProductPage() {
           </div>
 
           {/* Details */}
-          <div className="order-3">
+          <div className="order-3 min-w-0">
             <div className="flex flex-wrap gap-2">
               {isProductNew(product) && (
                 <span className="bg-gold px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">NEW</span>
@@ -233,7 +233,7 @@ function ProductPage() {
 
       {/* Trust bar strip */}
       <section className="border-y border-border bg-secondary/30">
-        <div className="container-x mx-auto grid max-w-[1400px] grid-cols-2 gap-6 py-6 md:grid-cols-5">
+        <div className="container-x mx-auto grid max-w-[1400px] grid-cols-2 gap-6 py-6 sm:grid-cols-3 lg:grid-cols-5">
           {[
             { icon: Truck, t: "FREE SHIPPING", s: "On All Orders" },
             { icon: RotateCcw, t: "EASY RETURNS", s: "Within 7 Days" },
@@ -254,7 +254,7 @@ function ProductPage() {
 
       {/* Tabs + gift box */}
       <section className="container-x mx-auto max-w-[1400px] py-14">
-        <div className="grid gap-10 md:grid-cols-[1fr_400px]">
+        <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
           <div>
             <div className="flex flex-wrap gap-6 border-b border-border">
               {(["description", "details", "shipping", "reviews"] as const).map((k) => (
