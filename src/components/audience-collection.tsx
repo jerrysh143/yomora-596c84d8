@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Heart } from "lucide-react";
+import { Heart, Search, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatINR, isProductNew, productImage, type Audience } from "@/lib/products";
@@ -23,15 +23,22 @@ export function AudienceCollection({
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
   const [cat, setCat] = useState<string>("all");
+  const [q, setQ] = useState("");
 
   const scoped = useMemo(
     () => PRODUCTS.filter((p) => p.audience === audience || p.audience === "unisex"),
     [PRODUCTS, audience],
   );
-  const items = useMemo(
-    () => (cat === "all" ? scoped : scoped.filter((p) => p.category === cat)),
-    [scoped, cat],
-  );
+  const items = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return scoped.filter((p) => {
+      if (cat !== "all" && p.category !== cat) return false;
+      if (!term) return true;
+      return [p.name, p.tagline, p.description, p.category]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term));
+    });
+  }, [scoped, cat, q]);
   const cats = CATEGORIES.filter((c) => scoped.some((p) => p.category === c.slug));
 
   return (
@@ -48,6 +55,27 @@ export function AudienceCollection({
 
       <section className="container-x mx-auto max-w-[1400px] py-10">
         <h2 className="sr-only">Product listing</h2>
+        <div className="relative mb-6">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label={`Search ${title}`}
+            placeholder="Search this collection…"
+            className="w-full border border-border bg-background py-3 pl-11 pr-11 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-gold"
+          />
+          {q && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-gold"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         {cats.length > 0 && (
           <div className="flex flex-wrap gap-2 border-b border-border pb-6">
             {[{ slug: "all", label: "All" }, ...cats].map((c) => (
@@ -68,8 +96,12 @@ export function AudienceCollection({
 
         {items.length === 0 ? (
           <div className="py-20 text-center">
-            <p className="font-display text-2xl text-foreground">Nothing here yet</p>
-            <p className="mt-2 text-sm text-muted-foreground">New pieces are added every week.</p>
+            <p className="font-display text-2xl text-foreground">
+              {q.trim() ? `No results for “${q.trim()}”` : "Nothing here yet"}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {q.trim() ? "Try a different name, style or category." : "New pieces are added every week."}
+            </p>
             <Link to="/products" className="mt-6 inline-block bg-gold px-6 py-3 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold/90">
               SHOP ALL
             </Link>
