@@ -7,11 +7,21 @@ export type Category = string;
 
 export type CategoryRow = { slug: string; label: string; sort_order: number };
 
+export type Audience = "men" | "women" | "kids" | "unisex";
+
+export const AUDIENCES: { value: Audience; label: string }[] = [
+  { value: "men", label: "Men" },
+  { value: "women", label: "Women" },
+  { value: "kids", label: "Kids" },
+  { value: "unisex", label: "Unisex / All" },
+];
+
 export type Product = {
   id: string;
   name: string;
   price: number;
   category: Category;
+  audience: Audience;
   tagline: string;
   description: string;
   image_url: string | null;
