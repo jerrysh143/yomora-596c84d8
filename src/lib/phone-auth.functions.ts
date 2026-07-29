@@ -86,7 +86,6 @@ export const verifyPhoneOtpFn = createServerFn({ method: "POST" })
     if (existing) {
       const { error: upErr } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
         password,
-        phone_confirmed: true as never,
       });
       if (upErr) throw new Error(upErr.message);
     } else {
