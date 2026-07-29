@@ -3,7 +3,6 @@ import { Search, User, ShoppingBag, Menu, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { categoriesQuery } from "@/lib/categories.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { SiteIcon } from "@/lib/site-icons";
@@ -19,16 +18,12 @@ export function SiteHeader() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
     return () => sub.subscription.unsubscribe();
   }, []);
-  const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: siteContent } = useQuery(siteContentQuery());
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
   const nav: { label: string; to: string; hash: string }[] = [
-    ...(headerNav.include_categories
-      ? categories.map((c) => ({ label: c.label.toUpperCase(), to: "/products", hash: c.slug }))
-      : []),
     ...headerNav.items.map((i) => ({ label: i.label, to: i.to || "/products", hash: i.hash || "" })),
   ];
 
