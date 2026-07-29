@@ -5,7 +5,6 @@ import { ArrowRight, PencilLine, Check } from "lucide-react";
 import { Heart, Percent, Headphones, Gift, Truck, Crown, Rocket, Cake, BadgeCheck, Gem, Banknote, ShoppingBag } from "lucide-react";
 import heroImg from "@/assets/hero-jewelry.jpg";
 import legacyImg from "@/assets/legacy-showroom.jpg";
-import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
 import { formatINR, productImage, isProductNew } from "@/lib/products";
@@ -44,8 +43,6 @@ function Index() {
   const wishSet = new Set(wishItems.map((w) => w.id));
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
-
       {/* HERO */}
       <section className="relative overflow-hidden bg-onyx text-cream">
         <div className="absolute inset-0">
