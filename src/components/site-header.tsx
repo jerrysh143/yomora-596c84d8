@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Search, User, ShoppingBag, Menu, Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { siteContentQuery } from "@/lib/site-content.queries";
@@ -13,6 +13,23 @@ import { useWishlist } from "@/lib/wishlist";
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [stuck, setStuck] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const h = headerRef.current?.offsetHeight ?? 0;
+      if (h) setHeaderH(h);
+      setStuck(window.scrollY > h);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
@@ -28,7 +45,16 @@ export function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-onyx/95 text-cream backdrop-blur supports-[backdrop-filter]:bg-onyx/80">
+    <>
+      {stuck && <div style={{ height: headerH }} aria-hidden />}
+    <header
+      ref={headerRef}
+      className={
+        stuck
+          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx/95 text-cream shadow-lg backdrop-blur supports-[backdrop-filter]:bg-onyx/85"
+          : "relative z-50 w-full bg-onyx text-cream"
+      }
+    >
       {/* Utility strip */}
       <div className="border-b border-white/5">
         <div className="container-x mx-auto max-w-[1400px] flex flex-wrap items-center justify-center gap-x-8 gap-y-1 py-2 text-[11px] tracking-wide text-cream/80">
