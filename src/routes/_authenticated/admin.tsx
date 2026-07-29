@@ -110,6 +110,28 @@ function AdminPage() {
   const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "memberships" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
+  // Auto sign-out after 10 minutes of inactivity on the admin dashboard.
+  useEffect(() => {
+    if (!adminInfo?.isAdmin) return;
+    const TIMEOUT_MS = 10 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        await supabase.auth.signOut();
+        toast.info("Signed out after 10 minutes of inactivity");
+        navigate({ to: "/auth" });
+      }, TIMEOUT_MS);
+    };
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [adminInfo?.isAdmin, navigate]);
+
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
