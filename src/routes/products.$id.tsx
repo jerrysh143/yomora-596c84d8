@@ -100,7 +100,11 @@ function ProductPage() {
 
       {/* Main product */}
       <section className="container-x mx-auto max-w-[1400px] py-10">
-        <div className="grid gap-8 lg:grid-cols-[90px_1fr_1fr] lg:gap-8">
+        <div
+          className={`grid gap-8 lg:gap-8 ${
+            gallery.length > 1 ? "lg:grid-cols-[90px_1fr_1fr]" : "lg:grid-cols-2"
+          }`}
+        >
           {/* Thumbnails */}
           <div className={`order-2 lg:order-1 lg:flex-col ${gallery.length > 1 ? "flex" : "hidden"}`}>
             <button className="hidden h-8 w-full items-center justify-center text-muted-foreground hover:text-gold lg:flex">
