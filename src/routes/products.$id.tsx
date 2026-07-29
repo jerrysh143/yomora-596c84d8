@@ -69,7 +69,7 @@ function ProductPage() {
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 5);
   const nav = useNavigate();
   const img = productImage(product);
-  const gallery = [img, img, img, img, img];
+  const gallery = Array.from(new Set([img].filter(Boolean)));
   const sizes = ["6", "7", "8", "9", "10", "11", "12"];
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("8");
