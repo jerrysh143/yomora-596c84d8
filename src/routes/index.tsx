@@ -32,7 +32,6 @@ function Index() {
   const { data: plans } = useSuspenseQuery(subscriptionPlansQuery());
   const activePlans = plans.filter((p) => p.is_active);
   const { data: content } = useSuspenseQuery(siteContentQuery());
-  const trust = content.trust_bar;
   const legacy = content.legacy;
   const catsSection = content.categories_section;
   const featuredSection = content.featured_section;
@@ -43,15 +42,6 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-
-      {/* TRUST BAR */}
-      <section className="border-t border-white/5 bg-onyx text-cream">
-        <div className="container-x mx-auto grid max-w-[1400px] grid-cols-2 gap-y-6 py-8 md:grid-cols-5">
-          {trust.items.map((t, i) => (
-            <TrustItem key={i} icon={<SiteIcon name={t.icon} className="h-6 w-6" />} title={t.title} body={t.body} />
-          ))}
-        </div>
-      </section>
 
       {/* CATEGORIES */}
       <section className="bg-secondary/40">
@@ -189,18 +179,6 @@ function Index() {
       </section>
 
       <SiteFooter />
-    </div>
-  );
-}
-
-function TrustItem({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="flex items-center gap-3 px-4">
-      <span className="grid h-11 w-11 shrink-0 place-items-center border border-gold/50 text-gold">{icon}</span>
-      <div className="min-w-0">
-        <div className="text-[11px] font-semibold tracking-[0.2em] text-gold">{title}</div>
-        <div className="mt-0.5 text-[11px] text-cream/70">{body}</div>
-      </div>
     </div>
   );
 }
