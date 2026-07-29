@@ -271,6 +271,8 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     title: "Custom & Modified 925 Silver Jewellery",
     body: "Have something in mind? Our karigars craft made-to-order pieces to your exact specifications.",
     button_label: "REQUEST A CUSTOM PIECE",
+    whatsapp_number: "919000000000",
+    whatsapp_message: "Hi! I'd like to request a custom 925 silver jewellery piece.",
   },
   footer: {
     brand_blurb:
