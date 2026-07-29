@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, User, ShoppingBag, Menu, Heart } from "lucide-react";
+import { Search, User, ShoppingBag, Heart } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,6 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 
 export function SiteHeader() {
-  const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [stuck, setStuck] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
@@ -106,29 +105,9 @@ export function SiteHeader() {
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
           </Link>
-          <button aria-label="Menu" onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:text-gold sm:p-2 lg:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
-      {open && (
-        <div className="border-t border-white/10 lg:hidden">
-          <nav className="container-x mx-auto flex flex-col gap-1 py-3 text-sm">
-            {nav.map((n) => (
-              <Link
-                key={n.label}
-                to={n.to}
-                hash={n.hash || undefined}
-                onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2 tracking-[0.16em] text-cream/85 hover:bg-white/5 hover:text-gold"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      )}
     </header>
     </>
   );
