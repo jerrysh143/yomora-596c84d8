@@ -64,6 +64,8 @@ export type CtaStripContent = {
   title: string;
   body: string;
   button_label: string;
+  whatsapp_number: string;
+  whatsapp_message: string;
 };
 
 export type FooterContent = {
