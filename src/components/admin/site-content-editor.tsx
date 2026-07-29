@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { updateSiteContentFn } from "@/lib/site-content.functions";
 import {
@@ -246,7 +247,7 @@ export function SiteContentEditor() {
               <Field label="Title line 2"><input className={inputCls} value={s.title_line_2} onChange={(e) => set({ title_line_2: e.target.value })} /></Field>
             </div>
             <Field label="Description"><textarea rows={3} className={inputCls} value={s.description} onChange={(e) => set({ description: e.target.value })} /></Field>
-            <Field label="Image URL (leave blank for default)"><input className={inputCls} value={s.image_url} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://…" /></Field>
+            <ImageUploadField label="Image (leave blank for default)" value={s.image_url} onChange={(url) => set({ image_url: url })} />
             <Field label="Bullet points (one per line)">
               <textarea rows={5} className={inputCls} value={s.bullets.join("\n")} onChange={(e) => set({ bullets: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
             </Field>
