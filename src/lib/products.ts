@@ -29,6 +29,11 @@ const CATEGORY_FALLBACK: Record<string, string> = {
 export const productImage = (p: Pick<Product, "image_url" | "category">) =>
   p.image_url || CATEGORY_FALLBACK[p.category] || ringImg;
 
+// Accepts: empty (cleared), an uploaded relative path (/api/public/img/...),
+// or an absolute http(s) URL.
+export const isValidImageUrl = (value: string) =>
+  value === "" || value.startsWith("/") || /^https?:\/\/\S+$/.test(value);
+
 export const formatINR = (value: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
