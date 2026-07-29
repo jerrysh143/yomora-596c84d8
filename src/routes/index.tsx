@@ -92,7 +92,7 @@ function Index() {
             ))}
           </div>
 
-          <div className="relative mt-10">
+          <div className="mt-10">
             <div
               id="category-rail"
               className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 sm:mx-0 sm:gap-6 sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
@@ -124,28 +124,30 @@ function Index() {
                 );
               })}
             </div>
-            <button
-              type="button"
-              aria-label="Scroll categories left"
-              onClick={() => {
-                const el = document.getElementById("category-rail");
-                el?.scrollBy({ left: -el.clientWidth * 0.8, behavior: "smooth" });
-              }}
-              className="absolute left-0 top-[38%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/90 text-foreground shadow-md backdrop-blur hover:border-gold hover:text-gold sm:left-1 sm:h-11 sm:w-11"
-            >
-              <ArrowRight className="h-4 w-4 rotate-180" />
-            </button>
-            <button
-              type="button"
-              aria-label="Scroll categories right"
-              onClick={() => {
-                const el = document.getElementById("category-rail");
-                el?.scrollBy({ left: el.clientWidth * 0.8, behavior: "smooth" });
-              }}
-              className="absolute right-0 top-[38%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/90 text-foreground shadow-md backdrop-blur hover:border-gold hover:text-gold sm:right-1 sm:h-11 sm:w-11"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                aria-label="Scroll categories left"
+                onClick={() => {
+                  const el = document.getElementById("category-rail");
+                  el?.scrollBy({ left: -el.clientWidth * 0.8, behavior: "smooth" });
+                }}
+                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground hover:border-gold hover:text-gold"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+              </button>
+              <button
+                type="button"
+                aria-label="Scroll categories right"
+                onClick={() => {
+                  const el = document.getElementById("category-rail");
+                  el?.scrollBy({ left: el.clientWidth * 0.8, behavior: "smooth" });
+                }}
+                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground hover:border-gold hover:text-gold"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
