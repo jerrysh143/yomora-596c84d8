@@ -349,7 +349,7 @@ function ProductPage() {
             <h2 className="text-center font-display text-2xl uppercase tracking-[0.2em] text-foreground">You May Also Like</h2>
             <span className="h-px w-10 bg-gold/50" />
           </div>
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-5">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {related.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block bg-background">
                 <div className="relative overflow-hidden bg-secondary/40">
