@@ -199,6 +199,16 @@ function AdminPage() {
   const closeCat = () => { setCatEditing(null); setCatCreating(false); };
   const catOpen = catEditing !== null || catCreating;
 
+  const friendlyProductError = (msg: string) => {
+    if (/products_category_fkey|violates foreign key constraint/i.test(msg)) {
+      return "That category no longer exists. Pick a category from the list (or create it under Categories first).";
+    }
+    if (/products_category_check/i.test(msg)) {
+      return "This category isn't allowed by the database yet. Create it under Categories first.";
+    }
+    return msg;
+  };
+
   const saveMut = useMutation({
     mutationFn: (data: Product & { image_url: string | null }) =>
       upsert({ data }),
