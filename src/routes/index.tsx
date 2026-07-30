@@ -36,7 +36,10 @@ function Index() {
   const catsSection = content.categories_section;
   const featuredSection = content.featured_section;
   const ctaStrip = content.cta_strip;
-  const featured = products.slice(0, 4);
+  // 3 products per category, in category order; categories without products are skipped
+  const featured = CATEGORIES.flatMap((c) =>
+    products.filter((p) => p.category === c.slug).slice(0, 3),
+  );
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
   return (
