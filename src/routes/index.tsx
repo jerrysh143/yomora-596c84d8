@@ -47,6 +47,7 @@ function Index() {
   const { data: content } = useSuspenseQuery(siteContentQuery());
   const legacy = content.legacy;
   const catsSection = content.categories_section;
+  const assurance = content.assurance_bar;
   const featuredSection = content.featured_section;
   const ctaStrip = content.cta_strip;
   // 3 products per category, in category order; categories without products are skipped
