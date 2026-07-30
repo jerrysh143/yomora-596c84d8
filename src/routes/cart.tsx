@@ -42,7 +42,7 @@ function CartPage() {
               {items.map((i) => (
                 <div key={i.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b border-border px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <img src={i.image} alt={i.name} className="h-16 w-16 object-cover" />
+                    <img src={i.image} alt={i.name} width={64} height={64} loading="lazy" decoding="async" className="h-16 w-16 object-cover" />
                     <div>
                       <div className="font-display text-base">{i.name}</div>
                       {i.variant && <div className="text-xs text-muted-foreground">{i.variant}</div>}

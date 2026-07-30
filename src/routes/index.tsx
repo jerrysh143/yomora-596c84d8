@@ -113,6 +113,7 @@ function Index() {
                         width={600}
                         height={600}
                         loading="lazy"
+                    decoding="async"
                         alt={`${c.label} — 925 sterling silver collection`}
                         className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
@@ -205,6 +206,7 @@ function Index() {
             width={1200}
             height={900}
             loading="lazy"
+                    decoding="async"
             alt="Nehalbhai Devika Jewellers showroom"
             className="h-full w-full object-cover"
           />

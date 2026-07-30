@@ -2,27 +2,9 @@ import { useRef, useState } from "react";
 import { Plus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { compressForWeb } from "@/lib/image-compress";
 
-const MAX_DIM = 1600;
-const QUALITY = 0.82;
 const MAX_IMAGES = 8;
-
-async function compressForWeb(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas unsupported");
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  bitmap.close?.();
-  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", QUALITY));
-  if (!blob) throw new Error("Compression failed");
-  return blob;
-}
 
 /** Multi-image uploader. The first image is used as the main product image. */
 export function GalleryUploadField({
@@ -53,11 +35,11 @@ export function GalleryUploadField({
     const uploaded: string[] = [];
     try {
       for (const file of batch) {
-        const blob = await compressForWeb(file);
-        const path = `${crypto.randomUUID()}.webp`;
+        const { blob, ext, contentType } = await compressForWeb(file);
+        const path = `${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage
           .from("site-images")
-          .upload(path, blob, { contentType: "image/webp", cacheControl: "31536000" });
+          .upload(path, blob, { contentType, cacheControl: "31536000" });
         if (error) throw error;
         uploaded.push(`/api/public/img/${path}`);
       }
@@ -88,7 +70,7 @@ export function GalleryUploadField({
       <div className="flex flex-wrap items-center gap-3">
         {value.map((url, i) => (
           <div key={url + i} className="relative h-20 w-20 overflow-hidden border border-border bg-muted">
-            <img src={url} alt={`Product ${i + 1}`} className="h-full w-full object-cover" />
+            <img src={url} alt={`Product ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
             <button
               type="button"
               aria-label={`Remove image ${i + 1}`}

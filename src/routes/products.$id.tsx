@@ -119,7 +119,7 @@ function ProductPage() {
                     activeImg === i ? "border-gold" : "border-transparent hover:border-gold/40"
                   }`}
                 >
-                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <img src={src} alt="" width={160} height={160} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -130,7 +130,15 @@ function ProductPage() {
 
           {/* Main image */}
           <div className="relative order-1 self-start bg-onyx lg:order-2">
-            <img src={gallery[activeImg]} alt={product.name} className="block aspect-square w-full object-cover" />
+            <img
+              src={gallery[activeImg]}
+              alt={product.name}
+              width={900}
+              height={900}
+              fetchPriority="high"
+              decoding="async"
+              className="block aspect-square w-full object-cover"
+            />
             <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
               <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
             </button>
@@ -309,7 +317,7 @@ function ProductPage() {
             <p className="text-sm text-cream/80">Comes with a Premium</p>
             <p className="mt-1 font-display text-2xl text-gold">YOMORA Gift Box</p>
             <div className="mt-6 aspect-[16/10] w-full bg-secondary/10">
-              <img src={img} alt="Gift box" className="h-full w-full object-cover opacity-90" />
+              <img src={img} alt="Gift box" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-90" />
             </div>
           </div>
         </div>
