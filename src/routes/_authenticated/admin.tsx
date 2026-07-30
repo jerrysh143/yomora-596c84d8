@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -108,6 +108,12 @@ function AdminPage() {
     enabled: !!adminInfo?.isAdmin,
   });
   const { data: plans = [] } = useQuery(subscriptionPlansQuery());
+  const listAlerts = useServerFn(listNotifyRequestsFn);
+  const alertsQ = useQuery({
+    queryKey: ["admin", "notify-requests"],
+    queryFn: () => listAlerts(),
+    enabled: !!adminInfo?.isAdmin,
+  });
   const { data: memberships = [] } = useQuery({
     queryKey: ["admin", "memberships"],
     queryFn: () => listMemberships(),
