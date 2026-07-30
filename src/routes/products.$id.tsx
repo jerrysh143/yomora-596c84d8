@@ -17,7 +17,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage, isProductNew } from "@/lib/products";
+import { formatINR, productImage, productGallery, isProductNew } from "@/lib/products";
 import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
@@ -69,7 +69,7 @@ function ProductPage() {
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 5);
   const nav = useNavigate();
   const img = productImage(product);
-  const gallery = Array.from(new Set([img].filter(Boolean)));
+  const gallery = productGallery(product);
   const sizes = ["6", "7", "8", "9", "10", "11", "12"];
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("8");
