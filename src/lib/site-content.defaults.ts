@@ -280,6 +280,15 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     ],
   },
   categories_section: { eyebrow: "SHOP BY CATEGORY", title: "Explore Our Collections" },
+  assurance_bar: {
+    enabled: true,
+    items: [
+      { icon: "BadgeCheck", title: "925 Sterling Silver", subtitle: "Certified Authentic" },
+      { icon: "ShieldCheck", title: "6-Month Warranty", subtitle: "Quality You Can Trust" },
+      { icon: "Recycle", title: "Lifetime Replating", subtitle: "Lasting Brilliance" },
+      { icon: "PackageCheck", title: "15-Day Easy Returns", subtitle: "Simple & Hassle-Free" },
+    ],
+  },
   featured_section: { eyebrow: "FEATURED", title: "Signature Pieces" },
   cta_strip: {
     title: "Custom & Modified 925 Silver Jewellery",
