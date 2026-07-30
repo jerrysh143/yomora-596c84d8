@@ -21,6 +21,7 @@ import { formatINR, productImage, productGallery, isProductNew } from "@/lib/pro
 import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
+import { NotifyMeForm } from "@/components/notify-me-form";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/products/$id")({
@@ -137,8 +138,13 @@ function ProductPage() {
               height={900}
               fetchPriority="high"
               decoding="async"
-              className="block aspect-square w-full object-cover"
+              className={`block aspect-square w-full object-cover ${product.sold_out ? "opacity-70" : ""}`}
             />
+            {product.sold_out && (
+              <span className="absolute left-4 top-4 bg-onyx/90 px-3 py-1.5 text-[10px] font-bold tracking-[0.24em] text-cream">
+                SOLD OUT
+              </span>
+            )}
             <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
               <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
             </button>
@@ -152,6 +158,9 @@ function ProductPage() {
             <div className="flex flex-wrap gap-2">
               {isProductNew(product) && (
                 <span className="bg-gold px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">NEW</span>
+              )}
+              {product.sold_out && (
+                <span className="bg-onyx px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
               )}
               <span className="border border-onyx/20 px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">925 HALLMARKED</span>
             </div>
@@ -224,6 +233,14 @@ function ProductPage() {
             )}
 
             {/* CTAs */}
+            {product.sold_out ? (
+              <>
+                <p className="mt-5 text-sm text-muted-foreground">
+                  This piece is currently sold out. Leave your details and we'll alert you as soon as it's restocked.
+                </p>
+                <NotifyMeForm productId={product.id} />
+              </>
+            ) : (
             <div className="mt-5 space-y-3">
               <button onClick={add} className="w-full bg-gold px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold/90">
                 ADD TO CART
@@ -235,6 +252,7 @@ function ProductPage() {
                 BUY NOW
               </button>
             </div>
+            )}
 
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-gold" /> 100% Secure Payment
