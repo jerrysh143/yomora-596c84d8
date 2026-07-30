@@ -317,7 +317,6 @@ function ProductPage() {
                 <ul className="space-y-2">
                   <li><b className="text-foreground">Material:</b> 925 Sterling Silver</li>
                   <li><b className="text-foreground">Finish:</b> Oxidized Antique</li>
-                  <li><b className="text-foreground">Weight:</b> ~8g</li>
                   <li><b className="text-foreground">Hallmark:</b> BIS Certified</li>
                 </ul>
               )}
