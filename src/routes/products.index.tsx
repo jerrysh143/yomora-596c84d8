@@ -8,6 +8,7 @@ import { formatINR, productImage, isProductNew, type Category } from "@/lib/prod
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
+import { CollectionPageSkeleton } from "@/components/product-grid-skeleton";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -22,6 +23,9 @@ export const Route = createFileRoute("/products/")({
     context.queryClient.ensureQueryData(productsQuery());
     context.queryClient.ensureQueryData(categoriesQuery());
   },
+  pendingMs: 150,
+  pendingMinMs: 300,
+  pendingComponent: CollectionPageSkeleton,
   component: ProductsPage,
 });
 
@@ -95,7 +99,7 @@ function ProductsPage() {
           </label>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+        <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
           {items.map((p) => (
             <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
