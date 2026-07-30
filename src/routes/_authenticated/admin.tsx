@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
@@ -158,7 +158,9 @@ function AdminPage() {
         tagline: p.tagline,
         description: p.description,
         image_url: p.image_url ?? "",
-        gallery_urls: p.gallery_urls ?? [],
+        gallery_urls: Array.from(
+          new Set([p.image_url ?? "", ...(p.gallery_urls ?? [])].filter(Boolean)),
+        ),
         is_new: p.is_new,
       });
     } else {
@@ -1220,7 +1222,9 @@ on conflict do nothing;`}
               <GalleryUploadField
                 label="Product images"
                 value={form.gallery_urls}
-                onChange={(urls) => setForm({ ...form, gallery_urls: urls, image_url: urls[0] ?? "" })}
+                onChange={(urls: string[]) =>
+                  setForm({ ...form, gallery_urls: urls, image_url: urls[0] ?? "" })
+                }
               />
             </div>
 
