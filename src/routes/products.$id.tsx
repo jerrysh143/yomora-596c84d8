@@ -11,7 +11,6 @@ import {
   Gift,
   Award,
   Sparkles,
-  Box,
 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -74,7 +73,6 @@ function ProductPage() {
   const sizes = ["6", "7", "8", "9", "10", "11", "12"];
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("8");
-  const [engraving, setEngraving] = useState(false);
   const [tab, setTab] = useState<"description" | "details" | "shipping" | "reviews">("description");
   const add = () => cart.add({ id: product.id, name: product.name, price: product.price, image: img });
   const { items: wishItems } = useWishlist();
