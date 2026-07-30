@@ -86,11 +86,17 @@ function Index() {
               <Link
                 key={a.to}
                 to={a.to}
-                className="group relative flex items-center justify-between overflow-hidden border border-gold/30 bg-onyx px-6 py-5 text-cream transition-colors hover:border-gold"
+                className="group relative flex items-center justify-between overflow-hidden border border-gold/25 bg-onyx px-7 py-7 text-cream transition-all duration-500 hover:border-gold/60 hover:shadow-[0_18px_40px_-22px_color-mix(in_oklab,var(--color-gold)_70%,transparent)]"
               >
-                <span className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_right,color-mix(in_oklab,var(--gold)_22%,transparent),transparent_70%)] opacity-70 transition-opacity group-hover:opacity-100" />
-                <span className="relative font-display text-lg uppercase tracking-[0.16em]">{a.label}</span>
-                <ArrowRight className="relative h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
+                <span className="pointer-events-none absolute inset-[6px] border border-gold/15 transition-colors duration-500 group-hover:border-gold/35" />
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(105deg,transparent,color-mix(in_oklab,var(--color-gold)_18%,transparent),transparent)] transition-transform duration-[900ms] ease-out group-hover:translate-x-full" />
+                <span className="relative font-display text-base uppercase tracking-[0.26em] text-gold transition-[letter-spacing] duration-500 group-hover:tracking-[0.3em] sm:text-lg">
+                  {a.label}
+                </span>
+                <span className="relative flex items-center">
+                  <span className="mr-0 h-px w-0 bg-gold/70 transition-all duration-500 group-hover:mr-3 group-hover:w-7" />
+                  <ArrowRight className="h-4 w-4 text-gold transition-transform duration-500 group-hover:translate-x-1" strokeWidth={1.25} />
+                </span>
               </Link>
             ))}
           </div>
