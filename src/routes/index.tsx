@@ -110,19 +110,26 @@ function Index() {
                     hash={c.slug}
                     className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
-                    <div className="overflow-hidden rounded-[2rem] bg-secondary/40">
-                      <img
-                        src={img}
-                        width={600}
-                        height={600}
-                        loading="lazy"
-                        decoding="async"
-                        alt={`${c.label} — 925 sterling silver collection`}
-                        className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
+                    <div className="relative mx-auto aspect-square w-[86%] rounded-full p-[3px] ring-1 ring-gold/50 transition-shadow duration-500 group-hover:shadow-[0_18px_40px_-18px_color-mix(in_oklab,var(--color-gold)_65%,transparent)]">
+                      <div className="h-full w-full overflow-hidden rounded-full border border-gold/30 bg-secondary/40">
+                        <img
+                          src={img}
+                          width={600}
+                          height={600}
+                          loading="lazy"
+                          decoding="async"
+                          alt={`${c.label} — 925 sterling silver collection`}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
                     </div>
-                    <span className="mt-3 block font-display text-base text-foreground transition-colors group-hover:text-gold sm:mt-4 sm:text-lg">
+                    <span className="mx-auto mt-4 block text-gold/70">✦</span>
+                    <span className="mt-2 block font-display text-base uppercase tracking-[0.18em] text-foreground transition-colors group-hover:text-gold sm:text-lg">
                       {c.label}
+                    </span>
+                    <span className="mt-2 inline-flex items-center gap-2 text-[11px] tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-gold">
+                      View the collection
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Link>
                 );
