@@ -24,6 +24,7 @@ const mapRow = (r: any): Product => ({
   tagline: r.tagline ?? "",
   description: r.description ?? "",
   image_url: r.image_url,
+  gallery_urls: Array.isArray(r.gallery_urls) ? r.gallery_urls : [],
   is_new: !!r.is_new,
   created_at: r.created_at ?? null,
 });
@@ -32,7 +33,7 @@ export const listProductsFn = createServerFn({ method: "GET" }).handler(async ()
   const sb = serverPublicClient();
   const { data, error } = await sb
     .from("products")
-    .select("id,name,price,category,audience,tagline,description,image_url,is_new,created_at")
+    .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(mapRow);
@@ -44,7 +45,7 @@ export const getProductFn = createServerFn({ method: "GET" })
     const sb = serverPublicClient();
     const { data: row, error } = await sb
       .from("products")
-      .select("id,name,price,category,audience,tagline,description,image_url,is_new,created_at")
+      .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -65,6 +66,15 @@ const productInput = z.object({
     .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//.test(v), "Invalid image URL")
     .transform((v) => (v === "" ? null : v))
     .nullable(),
+  gallery_urls: z
+    .array(
+      z
+        .string()
+        .max(1000)
+        .refine((v) => v.startsWith("/") || /^https?:\/\//.test(v), "Invalid image URL"),
+    )
+    .max(12)
+    .default([]),
   is_new: z.boolean().default(false),
 });
 
