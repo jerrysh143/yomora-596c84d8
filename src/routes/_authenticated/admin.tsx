@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
@@ -57,6 +57,7 @@ type FormState = {
   tagline: string;
   description: string;
   image_url: string;
+  gallery_urls: string[];
   is_new: boolean;
 };
 
@@ -69,6 +70,7 @@ const emptyForm: FormState = {
   tagline: "",
   description: "",
   image_url: "",
+  gallery_urls: [],
   is_new: false,
 };
 
@@ -156,6 +158,9 @@ function AdminPage() {
         tagline: p.tagline,
         description: p.description,
         image_url: p.image_url ?? "",
+        gallery_urls: Array.from(
+          new Set([p.image_url ?? "", ...(p.gallery_urls ?? [])].filter(Boolean)),
+        ),
         is_new: p.is_new,
       });
     } else {
@@ -488,7 +493,8 @@ function AdminPage() {
       toast.error("Price must be a positive number");
       return;
     }
-    const imageUrl = form.image_url.trim();
+    const images = form.gallery_urls.map((u) => u.trim()).filter(Boolean);
+    const imageUrl = images[0] ?? "";
     if (!isValidImageUrl(imageUrl)) {
       toast.error("Image must be an uploaded image or a valid http(s) URL");
       return;
@@ -511,6 +517,7 @@ function AdminPage() {
       tagline: form.tagline.trim(),
       description: form.description.trim(),
       image_url: imageUrl || null,
+      gallery_urls: images.slice(1),
       is_new: form.is_new,
     });
   };
@@ -1212,10 +1219,12 @@ on conflict do nothing;`}
               <Field label="Tagline">
                 <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
               </Field>
-              <ImageUploadField
-                label="Product image"
-                value={form.image_url}
-                onChange={(url) => setForm({ ...form, image_url: url })}
+              <GalleryUploadField
+                label="Product images"
+                value={form.gallery_urls}
+                onChange={(urls: string[]) =>
+                  setForm({ ...form, gallery_urls: urls, image_url: urls[0] ?? "" })
+                }
               />
             </div>
 

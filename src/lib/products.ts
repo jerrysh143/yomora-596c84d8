@@ -25,6 +25,7 @@ export type Product = {
   tagline: string;
   description: string;
   image_url: string | null;
+  gallery_urls: string[];
   is_new: boolean;
   created_at?: string | null;
 };
@@ -38,6 +39,10 @@ const CATEGORY_FALLBACK: Record<string, string> = {
 
 export const productImage = (p: Pick<Product, "image_url" | "category">) =>
   p.image_url || CATEGORY_FALLBACK[p.category] || ringImg;
+
+/** All unique images for a product, main image first. */
+export const productGallery = (p: Pick<Product, "image_url" | "category" | "gallery_urls">) =>
+  Array.from(new Set([productImage(p), ...(p.gallery_urls ?? [])].filter(Boolean)));
 
 // Accepts: empty (cleared), an uploaded relative path (/api/public/img/...),
 // or an absolute http(s) URL.
