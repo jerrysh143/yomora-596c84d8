@@ -160,6 +160,39 @@ export type Database = {
         }
         Relationships: []
       }
+      product_notify_requests: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          notified: boolean
+          phone: string | null
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          notified?: boolean
+          phone?: string | null
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          notified?: boolean
+          phone?: string | null
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           audience: string
@@ -172,6 +205,7 @@ export type Database = {
           is_new: boolean
           name: string
           price: number
+          sold_out: boolean
           tagline: string
           updated_at: string
         }
@@ -186,6 +220,7 @@ export type Database = {
           is_new?: boolean
           name: string
           price: number
+          sold_out?: boolean
           tagline?: string
           updated_at?: string
         }
@@ -200,6 +235,7 @@ export type Database = {
           is_new?: boolean
           name?: string
           price?: number
+          sold_out?: boolean
           tagline?: string
           updated_at?: string
         }

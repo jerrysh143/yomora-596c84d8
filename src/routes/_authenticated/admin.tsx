@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown } from "lucide-react";
+import { listNotifyRequestsFn } from "@/lib/notify.functions";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -59,6 +60,7 @@ type FormState = {
   image_url: string;
   gallery_urls: string[];
   is_new: boolean;
+  sold_out: boolean;
 };
 
 const emptyForm: FormState = {
@@ -72,6 +74,7 @@ const emptyForm: FormState = {
   image_url: "",
   gallery_urls: [],
   is_new: false,
+  sold_out: false,
 };
 
 function AdminPage() {
@@ -106,13 +109,19 @@ function AdminPage() {
     enabled: !!adminInfo?.isAdmin,
   });
   const { data: plans = [] } = useQuery(subscriptionPlansQuery());
+  const listAlerts = useServerFn(listNotifyRequestsFn);
+  const alertsQ = useQuery({
+    queryKey: ["admin", "notify-requests"],
+    queryFn: () => listAlerts(),
+    enabled: !!adminInfo?.isAdmin,
+  });
   const { data: memberships = [] } = useQuery({
     queryKey: ["admin", "memberships"],
     queryFn: () => listMemberships(),
     enabled: !!adminInfo?.isAdmin,
   });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "subscription" | "memberships" | "site">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "alerts" | "subscription" | "memberships" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
 
   // Auto sign-out after 10 minutes of inactivity on the admin dashboard.
@@ -162,6 +171,7 @@ function AdminPage() {
           new Set([p.image_url ?? "", ...(p.gallery_urls ?? [])].filter(Boolean)),
         ),
         is_new: p.is_new,
+        sold_out: !!p.sold_out,
       });
     } else {
       setEditing(null);
@@ -519,6 +529,7 @@ function AdminPage() {
       image_url: imageUrl || null,
       gallery_urls: images.slice(1),
       is_new: form.is_new,
+      sold_out: form.sold_out,
     });
   };
 
@@ -619,6 +630,7 @@ on conflict do nothing;`}
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
+            { k: "alerts" as const, label: "RESTOCK ALERTS", icon: BellRing },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
             { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
             { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
@@ -695,6 +707,7 @@ on conflict do nothing;`}
                           <div className="flex items-center gap-2">
                             <span className="font-display text-lg text-foreground">{p.name}</span>
                             {p.is_new && <span className="bg-gold px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                            {p.sold_out && <span className="bg-onyx px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-cream">SOLD OUT</span>}
                           </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">{p.tagline || "—"}</div>
                           <div className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</div>
@@ -844,6 +857,30 @@ on conflict do nothing;`}
         )}
 
         {tab === "site" && <SiteContentEditor />}
+
+        {tab === "alerts" && (
+          <div className="mt-8 grid gap-2">
+            {alertsQ.isLoading && <p className="py-8 text-sm text-muted-foreground">Loading restock alerts…</p>}
+            {!alertsQ.isLoading && (alertsQ.data ?? []).length === 0 && (
+              <p className="py-8 text-sm text-muted-foreground">No restock alerts yet.</p>
+            )}
+            {(alertsQ.data ?? []).map((a: any) => (
+              <div key={a.id} className="grid grid-cols-[1fr_auto] items-center gap-4 border border-border p-3">
+                <div className="min-w-0">
+                  <div className="font-display text-lg text-foreground">
+                    {products.find((p) => p.id === a.product_id)?.name ?? a.product_id}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {[a.name, a.email, a.phone].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {a.created_at ? new Date(a.created_at).toLocaleDateString() : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {tab === "memberships" && (
@@ -1240,6 +1277,11 @@ on conflict do nothing;`}
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.is_new} onChange={(e) => setForm({ ...form, is_new: e.target.checked })} className="accent-[color:var(--gold)]" />
               Mark as New Arrival
+            </label>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.sold_out} onChange={(e) => setForm({ ...form, sold_out: e.target.checked })} className="accent-[color:var(--gold)]" />
+              Mark as Sold Out (shows a “Notify Me” button instead of Add to Cart)
             </label>
 
             <div className="mt-2 flex flex-wrap justify-end gap-2">
