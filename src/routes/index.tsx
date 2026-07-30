@@ -127,7 +127,7 @@ function Index() {
                     <span className="mt-2 block font-display text-base uppercase tracking-[0.18em] text-foreground transition-colors group-hover:text-gold sm:text-lg">
                       {c.label}
                     </span>
-                    <span className="mt-2 inline-flex items-center gap-2 text-[11px] tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-gold">
+                    <span className="mt-2 hidden items-center justify-center gap-2 whitespace-nowrap text-[11px] tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-gold sm:inline-flex">
                       View the collection
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
