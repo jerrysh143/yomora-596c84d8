@@ -164,7 +164,7 @@ function Index() {
             <Link to="/products" className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex">SHOP ALL →</Link>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
             {featured.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
