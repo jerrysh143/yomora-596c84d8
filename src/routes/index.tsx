@@ -135,7 +135,7 @@ function Index() {
                 );
               })}
             </div>
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 hidden items-center justify-center gap-3 md:flex">
               <button
                 type="button"
                 aria-label="Scroll categories left"
