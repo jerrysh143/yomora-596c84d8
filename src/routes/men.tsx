@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AudienceCollection } from "@/components/audience-collection";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
+import { CollectionPageSkeleton } from "@/components/product-grid-skeleton";
 
 export const Route = createFileRoute("/men")({
   head: () => ({
@@ -18,6 +19,9 @@ export const Route = createFileRoute("/men")({
     context.queryClient.ensureQueryData(productsQuery());
     context.queryClient.ensureQueryData(categoriesQuery());
   },
+  pendingMs: 150,
+  pendingMinMs: 300,
+  pendingComponent: CollectionPageSkeleton,
   component: () => (
     <AudienceCollection
       audience="men"

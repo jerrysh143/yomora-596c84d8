@@ -1,3 +1,5 @@
+import { SiteHeader } from "@/components/site-header";
+
 /** Placeholder grid that mirrors the real product grid so layout never jumps while data loads. */
 export function ProductGridSkeleton({ count = 10, className = "" }: { count?: number; className?: string }) {
   return (
@@ -23,6 +25,7 @@ export function ProductGridSkeleton({ count = 10, className = "" }: { count?: nu
 export function CollectionPageSkeleton() {
   return (
     <div className="min-h-screen bg-background">
+      <SiteHeader />
       <section className="bg-onyx text-cream">
         <div className="container-x mx-auto max-w-[1400px] py-12 md:py-14">
           <div className="h-3 w-32 animate-pulse rounded bg-cream/20" />

@@ -107,7 +107,7 @@ export function AudienceCollection({
             </Link>
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+          <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {items.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
