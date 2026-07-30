@@ -317,7 +317,7 @@ function ProductPage() {
             <p className="text-sm text-cream/80">Comes with a Premium</p>
             <p className="mt-1 font-display text-2xl text-gold">YOMORA Gift Box</p>
             <div className="mt-6 aspect-[16/10] w-full bg-secondary/10">
-              <img src={img} alt="Gift box" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-90" />
+              <img src={img} width={800} height={500} alt="Gift box" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-90" />
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@ function ProductPage() {
             {related.map((p) => (
               <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block bg-background">
                 <div className="relative overflow-hidden bg-secondary/40">
-                  <img src={productImage(p)} width={600} height={600} loading="lazy" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img src={productImage(p)} width={600} height={600} loading="lazy" decoding="async" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <button aria-label="Wishlist" onClick={(e) => e.preventDefault()} className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
                     <Heart className="h-3.5 w-3.5" />
                   </button>
