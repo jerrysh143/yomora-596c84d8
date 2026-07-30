@@ -190,6 +190,7 @@ function Index() {
       </section>
 
       {/* FEATURED */}
+*** noop
       <section className="bg-background">
         <div className="container-x mx-auto max-w-[1400px] py-20">
           <div className="flex items-end justify-between gap-6">
