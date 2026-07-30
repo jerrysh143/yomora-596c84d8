@@ -207,7 +207,7 @@ function AdminPage() {
       qc.invalidateQueries({ queryKey: ["products"] });
       close();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyProductError(e.message)),
   });
 
   const delMut = useMutation({
