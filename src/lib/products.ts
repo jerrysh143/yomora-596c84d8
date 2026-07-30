@@ -27,6 +27,7 @@ export type Product = {
   image_url: string | null;
   gallery_urls: string[];
   is_new: boolean;
+  sold_out: boolean;
   created_at?: string | null;
 };
 
