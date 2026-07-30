@@ -690,7 +690,7 @@ on conflict do nothing;`}
                   <div className="mt-4 grid gap-3">
                     {items.map((p) => (
                       <div key={p.id} className="grid grid-cols-[80px_1fr_auto] items-center gap-4 border border-border p-3">
-                        <img src={productImage(p)} alt={p.name} className="h-20 w-20 object-cover" />
+                        <img src={productImage(p)} alt={p.name} width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 object-cover" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-display text-lg text-foreground">{p.name}</span>

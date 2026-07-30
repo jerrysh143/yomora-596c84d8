@@ -116,6 +116,7 @@ export function AudienceCollection({
                     width={900}
                     height={900}
                     loading="lazy"
+                    decoding="async"
                     alt={`${p.name} — 925 sterling silver ${p.category}`}
                     className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />

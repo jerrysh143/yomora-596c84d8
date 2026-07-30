@@ -45,7 +45,7 @@ export function ImageUploadField({
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative h-20 w-20 overflow-hidden border border-border bg-muted">
-            <img src={value} alt="Selected" className="h-full w-full object-cover" />
+            <img src={value} alt="Selected" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             <button
               type="button"
               aria-label="Remove image"

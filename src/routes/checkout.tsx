@@ -77,7 +77,7 @@ function CheckoutPage() {
             <div className="mt-4 space-y-3">
               {items.map((i) => (
                 <div key={i.id} className="flex items-center gap-3">
-                  <img src={i.image} alt="" className="h-12 w-12 object-cover" />
+                  <img src={i.image} alt="" width={48} height={48} loading="lazy" decoding="async" className="h-12 w-12 object-cover" />
                   <div className="flex-1 text-sm">
                     <div className="font-display">{i.name}</div>
                     <div className="text-xs text-muted-foreground">Qty {i.qty}</div>
