@@ -100,6 +100,9 @@ function ProductsPage() {
             <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
               <img src={productImage(p)} width={900} height={900} loading="lazy" decoding="async" alt={`${p.name} — 925 sterling silver ${p.category}`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                {p.sold_out && (
+                  <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
+                )}
                 {isProductNew(p) && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
                 <button
                   onClick={(e) => {
