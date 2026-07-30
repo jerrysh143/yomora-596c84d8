@@ -148,9 +148,6 @@ function ProductPage() {
             <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
               <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
             </button>
-            <button className="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-background/90 px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold">
-              <Box className="h-3.5 w-3.5" /> VIEW IN 3D
-            </button>
           </div>
 
           {/* Details */}
@@ -209,27 +206,6 @@ function ProductPage() {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Engraving */}
-            <button
-              onClick={() => setEngraving((v) => !v)}
-              className="mt-5 flex w-full items-center justify-between border border-border px-4 py-3.5 text-left hover:border-gold"
-            >
-              <span className="text-[11px] font-semibold tracking-[0.24em] text-foreground">
-                ADD ENGRAVING <span className="text-muted-foreground">(Optional)</span>
-              </span>
-              <span className="flex items-center gap-3 text-xs text-foreground">
-                ₹150 <ChevronDown className={`h-4 w-4 transition-transform ${engraving ? "rotate-180" : ""}`} />
-              </span>
-            </button>
-            {engraving && (
-              <input
-                type="text"
-                maxLength={12}
-                placeholder="Enter up to 12 characters"
-                className="mt-2 w-full border border-border px-4 py-3 text-sm outline-none focus:border-gold"
-              />
             )}
 
             {/* CTAs */}
