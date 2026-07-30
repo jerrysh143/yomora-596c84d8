@@ -7,7 +7,11 @@ export type IconName =
   | "Hammer"
   | "Sparkles"
   | "Star"
-  | "Heart";
+  | "Heart"
+  | "BadgeCheck"
+  | "PackageCheck"
+  | "Recycle"
+  | "Clock";
 
 export const ICON_CHOICES: IconName[] = [
   "Truck",
@@ -19,6 +23,10 @@ export const ICON_CHOICES: IconName[] = [
   "Sparkles",
   "Star",
   "Heart",
+  "BadgeCheck",
+  "PackageCheck",
+  "Recycle",
+  "Clock",
 ];
 
 export type HeaderContent = {
@@ -47,6 +55,11 @@ export type HeroContent = {
 
 export type TrustBarContent = {
   items: { icon: IconName; title: string; body: string }[];
+};
+
+export type AssuranceBarContent = {
+  enabled: boolean;
+  items: { icon: IconName; title: string; subtitle: string }[];
 };
 
 export type LegacyContent = {
@@ -191,6 +204,7 @@ export type SiteContentMap = {
   header_nav: HeaderNavContent;
   hero: HeroContent;
   trust_bar: TrustBarContent;
+  assurance_bar: AssuranceBarContent;
   legacy: LegacyContent;
   categories_section: SectionHeadingContent;
   featured_section: SectionHeadingContent;
