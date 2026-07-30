@@ -93,7 +93,7 @@ function Index() {
           </div>
 
           {/* Shop by audience */}
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {[
               { to: "/men" as const, label: "Shop for Him" },
               { to: "/women" as const, label: "Shop for Her" },
