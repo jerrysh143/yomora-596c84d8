@@ -60,7 +60,7 @@ function WishlistPage() {
         {items.length === 0 ? (
           <EmptyWishlist />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-4">
             {items.map((p) => (
               <WishlistCard key={p.id} item={p} />
             ))}
