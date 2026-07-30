@@ -47,6 +47,7 @@ function Index() {
   const { data: content } = useSuspenseQuery(siteContentQuery());
   const legacy = content.legacy;
   const catsSection = content.categories_section;
+  const assurance = content.assurance_bar;
   const featuredSection = content.featured_section;
   const ctaStrip = content.cta_strip;
   // 3 products per category, in category order; categories without products are skipped
@@ -187,6 +188,32 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {/* FEATURED */}
+      {assurance.enabled && assurance.items.length > 0 ? (
+        <section className="bg-onyx text-cream">
+          <div className="container-x mx-auto max-w-[1400px] py-12">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {assurance.items.map((it, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 rounded-2xl border border-gold/25 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-gold)_6%,transparent),transparent)] px-5 py-5 transition-colors hover:border-gold/50"
+                >
+                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-gold/30 text-gold">
+                    <SiteIcon name={it.icon} className="h-7 w-7" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold tracking-[0.02em] text-cream sm:text-base">
+                      {it.title}
+                    </span>
+                    <span className="mt-1 block truncate text-xs text-cream/60 sm:text-sm">{it.subtitle}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* FEATURED */}
       <section className="bg-background">

@@ -7,7 +7,11 @@ export type IconName =
   | "Hammer"
   | "Sparkles"
   | "Star"
-  | "Heart";
+  | "Heart"
+  | "BadgeCheck"
+  | "PackageCheck"
+  | "Recycle"
+  | "Clock";
 
 export const ICON_CHOICES: IconName[] = [
   "Truck",
@@ -19,6 +23,10 @@ export const ICON_CHOICES: IconName[] = [
   "Sparkles",
   "Star",
   "Heart",
+  "BadgeCheck",
+  "PackageCheck",
+  "Recycle",
+  "Clock",
 ];
 
 export type HeaderContent = {
@@ -47,6 +55,11 @@ export type HeroContent = {
 
 export type TrustBarContent = {
   items: { icon: IconName; title: string; body: string }[];
+};
+
+export type AssuranceBarContent = {
+  enabled: boolean;
+  items: { icon: IconName; title: string; subtitle: string }[];
 };
 
 export type LegacyContent = {
@@ -191,6 +204,7 @@ export type SiteContentMap = {
   header_nav: HeaderNavContent;
   hero: HeroContent;
   trust_bar: TrustBarContent;
+  assurance_bar: AssuranceBarContent;
   legacy: LegacyContent;
   categories_section: SectionHeadingContent;
   featured_section: SectionHeadingContent;
@@ -266,6 +280,15 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     ],
   },
   categories_section: { eyebrow: "SHOP BY CATEGORY", title: "Explore Our Collections" },
+  assurance_bar: {
+    enabled: true,
+    items: [
+      { icon: "BadgeCheck", title: "925 Sterling Silver", subtitle: "Certified Authentic" },
+      { icon: "ShieldCheck", title: "6-Month Warranty", subtitle: "Quality You Can Trust" },
+      { icon: "Recycle", title: "Lifetime Replating", subtitle: "Lasting Brilliance" },
+      { icon: "PackageCheck", title: "15-Day Easy Returns", subtitle: "Simple & Hassle-Free" },
+    ],
+  },
   featured_section: { eyebrow: "FEATURED", title: "Signature Pieces" },
   cta_strip: {
     title: "Custom & Modified 925 Silver Jewellery",

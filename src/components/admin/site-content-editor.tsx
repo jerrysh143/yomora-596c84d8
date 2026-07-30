@@ -271,6 +271,32 @@ export function SiteContentEditor() {
 
       {/* FEATURED SECTION */}
       <SectionCard
+        title="Assurance bar (after categories)"
+        description="Gold icon cards shown right below the categories rail."
+        value={content.assurance_bar}
+        saving={isSaving("assurance_bar")}
+        onSave={(v) => persist("assurance_bar", v)}
+        render={(s, set) => (
+          <div className="grid gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={s.enabled} onChange={(e) => set({ enabled: e.target.checked })} />
+              Show this section
+            </label>
+            {s.items.map((it, i) => (
+              <div key={i} className="grid grid-cols-[140px_1fr_1fr_auto] gap-2">
+                <IconPicker value={it.icon} onChange={(v) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, icon: v } : x) }))} />
+                <input className={inputCls} placeholder="Title" value={it.title} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, title: e.target.value } : x) }))} />
+                <input className={inputCls} placeholder="Subtitle" value={it.subtitle} onChange={(e) => set((p) => ({ ...p, items: p.items.map((x, ix) => ix === i ? { ...x, subtitle: e.target.value } : x) }))} />
+                <button type="button" onClick={() => set((p) => ({ ...p, items: p.items.filter((_, ix) => ix !== i) }))} className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              </div>
+            ))}
+            <button type="button" onClick={() => set((p) => ({ ...p, items: [...p.items, { icon: "Sparkles" as IconName, title: "", subtitle: "" }] }))} className="inline-flex items-center gap-1 justify-self-start text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add card</button>
+          </div>
+        )}
+      />
+
+      {/* FEATURED SECTION */}
+      <SectionCard
         title="Featured section heading"
         value={content.featured_section}
         saving={isSaving("featured_section")}
