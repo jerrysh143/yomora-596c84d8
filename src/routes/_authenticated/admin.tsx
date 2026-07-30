@@ -59,6 +59,7 @@ type FormState = {
   image_url: string;
   gallery_urls: string[];
   is_new: boolean;
+  sold_out: boolean;
 };
 
 const emptyForm: FormState = {
@@ -72,6 +73,7 @@ const emptyForm: FormState = {
   image_url: "",
   gallery_urls: [],
   is_new: false,
+  sold_out: false,
 };
 
 function AdminPage() {
@@ -162,6 +164,7 @@ function AdminPage() {
           new Set([p.image_url ?? "", ...(p.gallery_urls ?? [])].filter(Boolean)),
         ),
         is_new: p.is_new,
+        sold_out: !!p.sold_out,
       });
     } else {
       setEditing(null);
@@ -519,6 +522,7 @@ function AdminPage() {
       image_url: imageUrl || null,
       gallery_urls: images.slice(1),
       is_new: form.is_new,
+      sold_out: form.sold_out,
     });
   };
 
@@ -1240,6 +1244,11 @@ on conflict do nothing;`}
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.is_new} onChange={(e) => setForm({ ...form, is_new: e.target.checked })} className="accent-[color:var(--gold)]" />
               Mark as New Arrival
+            </label>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.sold_out} onChange={(e) => setForm({ ...form, sold_out: e.target.checked })} className="accent-[color:var(--gold)]" />
+              Mark as Sold Out (shows a “Notify Me” button instead of Add to Cart)
             </label>
 
             <div className="mt-2 flex flex-wrap justify-end gap-2">
