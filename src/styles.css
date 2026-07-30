@@ -173,3 +173,16 @@
   -ms-overflow-style: none;
   &::-webkit-scrollbar { display: none; }
 }
+
+@utility fade-in-grid {
+  animation: yomora-fade-in 420ms ease-out both;
+}
+
+@keyframes yomora-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-grid { animation: none; }
+}
