@@ -99,7 +99,7 @@ function WishlistCard({ item }: { item: WishlistItem }) {
             width={900}
             height={900}
             loading="lazy"
-                    decoding="async"
+            decoding="async"
             alt={item.name}
             className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
