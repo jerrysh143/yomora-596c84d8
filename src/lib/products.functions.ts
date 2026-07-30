@@ -26,6 +26,7 @@ const mapRow = (r: any): Product => ({
   image_url: r.image_url,
   gallery_urls: Array.isArray(r.gallery_urls) ? r.gallery_urls : [],
   is_new: !!r.is_new,
+  sold_out: !!r.sold_out,
   created_at: r.created_at ?? null,
 });
 
@@ -33,7 +34,7 @@ export const listProductsFn = createServerFn({ method: "GET" }).handler(async ()
   const sb = serverPublicClient();
   const { data, error } = await sb
     .from("products")
-    .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,created_at")
+    .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(mapRow);
@@ -45,7 +46,7 @@ export const getProductFn = createServerFn({ method: "GET" })
     const sb = serverPublicClient();
     const { data: row, error } = await sb
       .from("products")
-      .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,created_at")
+      .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -76,6 +77,7 @@ const productInput = z.object({
     .max(12)
     .default([]),
   is_new: z.boolean().default(false),
+  sold_out: z.boolean().default(false),
 });
 
 export const upsertProductFn = createServerFn({ method: "POST" })
