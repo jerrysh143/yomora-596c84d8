@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /**
- * Streams images out of the private storage bucket without buffering them in
+ * Streams images from the public site-images bucket without buffering them in
  * memory, and forwards validators so browsers/CDNs can answer with 304s.
  */
 export const Route = createFileRoute("/api/public/img/$")({
@@ -12,17 +12,13 @@ export const Route = createFileRoute("/api/public/img/$")({
         if (!path || path.includes("..")) return new Response("Not found", { status: 404 });
 
         const base = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-        const key =
-          process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        if (!base || !key) return new Response("Not configured", { status: 404 });
+        if (!base) return new Response("Not configured", { status: 404 });
 
         const inm = request.headers.get("if-none-match");
         const upstream = await fetch(
-          `${base}/storage/v1/object/site-images/${path.split("/").map(encodeURIComponent).join("/")}`,
+          `${base}/storage/v1/object/public/site-images/${path.split("/").map(encodeURIComponent).join("/")}`,
           {
             headers: {
-              apikey: key,
-              Authorization: `Bearer ${key}`,
               ...(inm ? { "If-None-Match": inm } : {}),
               ...(request.headers.get("range") ? { Range: request.headers.get("range")! } : {}),
             },

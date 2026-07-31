@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { toast } from "sonner";
@@ -55,13 +54,13 @@ function EmailLogin({ redirect }: { redirect?: string }) {
   const google = async () => {
     try {
       const safeNext = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : undefined;
-      const res = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: safeNext ? `${window.location.origin}${safeNext}` : window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: safeNext ? `${window.location.origin}${safeNext}` : `${window.location.origin}/account`,
+        },
       });
-      if (res.error) throw res.error;
-      if (!("redirected" in res && res.redirected)) {
-        navigate({ to: redirect ?? "/account", replace: true });
-      }
+      if (error) throw error;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign in failed");
     }

@@ -6,4 +6,4 @@ Disallow: /account
 Disallow: /auth
 Disallow: /membership-dashboard
 
-Sitemap: https://yomora.lovable.app/sitemap.xml
+Sitemap: https://yomora.in/sitemap.xml
