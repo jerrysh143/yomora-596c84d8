@@ -7,9 +7,23 @@ import { SiteFooter } from "@/components/site-footer";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
-  redirect: z.string().optional(),
-  admin: z.string().optional(),
+  redirect: z.string().max(2048).optional(),
+  admin: z.string().max(20).optional(),
 });
+
+function safeInternalRedirect(value?: string): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return "/account";
+  }
+
+  try {
+    const parsed = new URL(value, "https://yomora.in");
+    if (parsed.origin !== "https://yomora.in") return "/account";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/account";
+  }
+}
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
@@ -26,25 +40,26 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/auth" });
+  const safeRedirect = safeInternalRedirect(redirect);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: redirect ?? "/account", replace: true });
+      if (data.session) navigate({ to: safeRedirect, replace: true });
     });
-  }, [navigate, redirect]);
+  }, [navigate, safeRedirect]);
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <section className="container-x mx-auto grid max-w-md gap-6 py-20">
-        <EmailLogin redirect={redirect} />
+        <EmailLogin redirect={safeRedirect} />
       </section>
       <SiteFooter />
     </div>
   );
 }
 
-function EmailLogin({ redirect }: { redirect?: string }) {
+function EmailLogin({ redirect }: { redirect: string }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -53,11 +68,10 @@ function EmailLogin({ redirect }: { redirect?: string }) {
 
   const google = async () => {
     try {
-      const safeNext = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : undefined;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: safeNext ? `${window.location.origin}${safeNext}` : `${window.location.origin}/account`,
+          redirectTo: `${window.location.origin}${redirect}`,
         },
       });
       if (error) throw error;
@@ -75,9 +89,7 @@ function EmailLogin({ redirect }: { redirect?: string }) {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${
-              redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account"
-            }`,
+            emailRedirectTo: `${window.location.origin}${redirect}`,
           },
         });
         if (error) throw error;
@@ -86,7 +98,7 @@ function EmailLogin({ redirect }: { redirect?: string }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: redirect ?? "/account", replace: true });
+      navigate({ to: redirect, replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -155,7 +167,9 @@ function EmailLogin({ redirect }: { redirect?: string }) {
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="text-xs text-muted-foreground hover:text-gold"
         >
-          {mode === "signin" ? "New to YOMORA? Create an account" : "Already have an account? Sign in"}
+          {mode === "signin"
+            ? "New to YOMORA? Create an account"
+            : "Already have an account? Sign in"}
         </button>
       </form>
     </>

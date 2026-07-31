@@ -169,6 +169,7 @@ export type Database = {
           notified: boolean
           phone: string | null
           product_id: string
+          request_fingerprint: string | null
           updated_at: string
         }
         Insert: {
@@ -179,6 +180,7 @@ export type Database = {
           notified?: boolean
           phone?: string | null
           product_id: string
+          request_fingerprint?: string | null
           updated_at?: string
         }
         Update: {
@@ -189,6 +191,7 @@ export type Database = {
           notified?: boolean
           phone?: string | null
           product_id?: string
+          request_fingerprint?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -365,6 +368,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_product_notify_request: {
+        Args: {
+          _email: string
+          _name: string
+          _phone: string
+          _product_id: string
+          _request_fingerprint: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -1,39 +1,74 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
-
-function serverPublicClient() {
-  const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    import.meta.env.VITE_SUPABASE_ANON_KEY;
-  return createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
-}
 
 const notifyInput = z
   .object({
-    product_id: z.string().min(1).max(80),
+    product_id: z
+      .string()
+      .min(1)
+      .max(80)
+      .regex(/^[a-z0-9-]+$/, "Invalid product"),
     name: z.string().max(120).default(""),
     email: z.string().max(200).email().or(z.literal("")).default(""),
-    phone: z.string().max(30).default(""),
+    phone: z
+      .string()
+      .max(30)
+      .regex(/^[0-9+()\-\s]*$/, "Invalid phone")
+      .default(""),
   })
+  .transform((v) => ({
+    product_id: v.product_id,
+    name: v.name.trim(),
+    email: v.email.trim().toLowerCase(),
+    phone: v.phone.trim(),
+  }))
   .refine((v) => v.email !== "" || v.phone !== "", "Enter an email or phone number");
+
+function getClientAddress(request: Request): string {
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
+async function createRequestFingerprint(request: Request, secret: string): Promise<string> {
+  const address = getClientAddress(request);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(address));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
 
 export const createNotifyRequestFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => notifyInput.parse(d))
   .handler(async ({ data }) => {
-    const sb = serverPublicClient();
-    const { error } = await sb.from("product_notify_requests").insert({
-      product_id: data.product_id,
-      name: data.name || null,
-      email: data.email || null,
-      phone: data.phone || null,
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) throw new Error("Restock notifications are not configured");
+
+    const [{ supabaseAdmin }, { getRequest }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@tanstack/react-start/server"),
+    ]);
+    const request = getRequest();
+    if (!request) throw new Error("Invalid request");
+
+    const fingerprint = await createRequestFingerprint(request, serviceRoleKey);
+    const { error } = await supabaseAdmin.rpc("create_product_notify_request", {
+      _product_id: data.product_id,
+      _name: data.name,
+      _email: data.email,
+      _phone: data.phone,
+      _request_fingerprint: fingerprint,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
