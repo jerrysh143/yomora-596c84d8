@@ -11,9 +11,11 @@ import {
   Gift,
   Award,
   Sparkles,
+  ArrowRight,
+  LoaderCircle,
 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage, productGallery, isProductNew } from "@/lib/products";
@@ -74,7 +76,46 @@ function ProductPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("8");
   const [tab, setTab] = useState<"description" | "details" | "shipping" | "reviews">("description");
+  const [cartAction, setCartAction] = useState<{
+    productId: string;
+    status: "idle" | "loading" | "ready";
+  }>({ productId: product.id, status: "idle" });
+  const cartButtonTimer = useRef<number | null>(null);
+  const cartActionStatus =
+    cartAction.productId === product.id ? cartAction.status : "idle";
   const add = () => cart.add({ id: product.id, name: product.name, price: product.price, image: img });
+
+  useEffect(
+    () => () => {
+      if (cartButtonTimer.current !== null) window.clearTimeout(cartButtonTimer.current);
+    },
+    [],
+  );
+
+  const handleCartAction = () => {
+    if (cartActionStatus === "ready") {
+      nav({ to: "/checkout" });
+      return;
+    }
+    if (cartActionStatus === "loading") return;
+
+    if (cartButtonTimer.current !== null) window.clearTimeout(cartButtonTimer.current);
+    add();
+    setCartAction({ productId: product.id, status: "loading" });
+    cartButtonTimer.current = window.setTimeout(() => {
+      setCartAction({ productId: product.id, status: "ready" });
+      cartButtonTimer.current = null;
+    }, 5000);
+  };
+
+  const handleBuyNow = () => {
+    if (cartActionStatus === "idle") add();
+    if (cartButtonTimer.current !== null) {
+      window.clearTimeout(cartButtonTimer.current);
+      cartButtonTimer.current = null;
+    }
+    nav({ to: "/checkout" });
+  };
   const { items: wishItems } = useWishlist();
   const wished = wishItems.some((w) => w.id === product.id);
   const toggleWish = () =>
@@ -216,11 +257,34 @@ function ProductPage() {
               </>
             ) : (
             <div className="mt-5 space-y-3">
-              <button onClick={add} className="w-full bg-gold px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold/90">
-                ADD TO CART
+              <button
+                type="button"
+                onClick={handleCartAction}
+                disabled={cartActionStatus === "loading"}
+                aria-busy={cartActionStatus === "loading"}
+                className={`relative flex w-full items-center justify-center gap-3 overflow-hidden border px-6 py-4 text-[11px] font-bold tracking-[0.24em] transition-all duration-300 ${
+                  cartActionStatus === "ready"
+                    ? "border-onyx bg-onyx text-cream hover:border-gold hover:bg-onyx/90"
+                    : "border-gold bg-gold text-onyx hover:bg-gold/90"
+                } ${cartActionStatus === "loading" ? "cursor-wait" : "cursor-pointer"}`}
+              >
+                {cartActionStatus === "loading" ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span aria-live="polite">ADDING TO CART</span>
+                  </>
+                ) : cartActionStatus === "ready" ? (
+                  <>
+                    <span aria-live="polite">PROCEED TO CHECKOUT</span>
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </>
+                ) : (
+                  <span>ADD TO CART</span>
+                )}
               </button>
               <button
-                onClick={() => { add(); nav({ to: "/checkout" }); }}
+                type="button"
+                onClick={handleBuyNow}
                 className="w-full border border-onyx px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-onyx hover:text-cream"
               >
                 BUY NOW
