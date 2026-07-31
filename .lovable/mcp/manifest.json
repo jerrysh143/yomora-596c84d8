@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://cqoaruoqdsnmubaqgexs.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "yomora",
+      "version": "0.1.0",
+      "title": "Yomora"
+    },
+    "tools": [
+      {
+        "name": "search_products",
+        "title": "Search products",
+        "description": "Search the YOMORA jewellery catalog by name, category slug, or audience (men/women/kids).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Text to match against product name or tagline.",
+              "type": "string"
+            },
+            "category": {
+              "description": "Category slug, e.g. 'rings'.",
+              "type": "string"
+            },
+            "audience": {
+              "description": "Target audience filter.",
+              "type": "string",
+              "enum": [
+                "men",
+                "women",
+                "kids",
+                "all"
+              ]
+            },
+            "in_stock_only": {
+              "description": "Only return products that are not sold out.",
+              "type": "boolean"
+            },
+            "limit": {
+              "description": "Max rows to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_product",
+        "title": "Get product",
+        "description": "Fetch one YOMORA product with full details by its product id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Product id."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_categories",
+        "title": "List categories",
+        "description": "List all YOMORA storefront categories with their slugs and display order.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_orders",
+        "title": "List orders",
+        "description": "List YOMORA orders visible to the signed-in user (store admins see all orders). Optionally filter by status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by order status.",
+              "type": "string",
+              "enum": [
+                "pending",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "limit": {
+              "description": "Max rows to return (default 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_order_status",
+        "title": "Update order status",
+        "description": "Change the status of a YOMORA order. Requires a store admin account.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Order id."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "completed",
+                "cancelled"
+              ],
+              "description": "New order status."
+            }
+          },
+          "required": [
+            "id",
+            "status"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_product_availability",
+        "title": "Set product availability",
+        "description": "Mark a YOMORA product as sold out or back in stock. Requires a store admin account.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Product id."
+            },
+            "sold_out": {
+              "type": "boolean",
+              "description": "True to mark sold out, false to mark available."
+            }
+          },
+          "required": [
+            "id",
+            "sold_out"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_my_membership",
+        "title": "Get my membership",
+        "description": "Return the signed-in user's YOMORA Black Signature membership status, if any.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

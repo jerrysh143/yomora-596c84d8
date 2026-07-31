@@ -54,8 +54,9 @@ function EmailLogin({ redirect }: { redirect?: string }) {
 
   const google = async () => {
     try {
+      const safeNext = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : undefined;
       const res = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: safeNext ? `${window.location.origin}${safeNext}` : window.location.origin,
       });
       if (res.error) throw res.error;
       if (!("redirected" in res && res.redirected)) {
@@ -74,7 +75,11 @@ function EmailLogin({ redirect }: { redirect?: string }) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/account` },
+          options: {
+            emailRedirectTo: `${window.location.origin}${
+              redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account"
+            }`,
+          },
         });
         if (error) throw error;
         toast.success("Account created. Check your email if confirmation is required.");
