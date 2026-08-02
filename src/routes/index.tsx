@@ -17,7 +17,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import legacyImg from "@/assets/legacy-showroom.jpg";
-import customJewelleryBanner from "@/assets/custom-jewellery-banner.jpg";
+import customJewelleryBanner from "@/assets/custom-jewellery-banner-wide.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
