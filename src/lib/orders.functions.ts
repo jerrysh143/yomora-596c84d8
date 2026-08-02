@@ -142,6 +142,26 @@ export const listOrdersFn = createServerFn({ method: "GET" })
     return (data ?? []) as Order[];
   });
 
+/** Returns only the orders belonging to the currently signed-in customer's email. */
+export const listMyOrdersFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: auth, error: authError } = await context.supabase.auth.getUser();
+    const email = auth.user?.email?.trim().toLowerCase();
+    if (authError || !email) throw new Error("Unable to identify your account");
+
+    // Orders were created before customer accounts existed, so they are safely matched
+    // on the authenticated email server-side rather than exposing the orders table.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("orders")
+      .select("id,customer_name,customer_email,customer_phone,shipping_address,items,total,status,notes,created_at,updated_at")
+      .eq("customer_email", email)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Order[];
+  });
+
 export const updateOrderStatusFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string; status: OrderStatus }) =>

@@ -1,32 +1,111 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { LayoutDashboard, ShoppingBag, MapPin, Heart, Star, Crown, LogOut } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { LayoutDashboard, ShoppingBag, MapPin, Heart, Star, Crown, LogOut, UserRound, Plus, Trash2, Save } from "lucide-react";
+import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { supabase } from "@/integrations/supabase/client";
+import { listMyOrdersFn, type Order } from "@/lib/orders.functions";
+import { formatINR } from "@/lib/products";
+import { useWishlist } from "@/lib/wishlist";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
       { title: "My Account — YOMORA" },
-      { name: "description", content: "Manage your YOMORA orders, addresses and membership." },
-      { property: "og:title", content: "My Account — YOMORA" },
-      { property: "og:description", content: "Your YOMORA dashboard." },
+      { name: "description", content: "Manage your YOMORA orders, addresses, wishlist and membership." },
+      { name: "robots", content: "noindex" },
     ],
   }),
   component: AccountPage,
 });
 
+type Address = { id: string; label: string; value: string };
+type Profile = { full_name: string; phone: string; addresses: Address[] };
+
+const emptyProfile: Profile = { full_name: "", phone: "", addresses: [] };
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function statusLabel(status: Order["status"]) {
+  return status === "completed" ? "Delivered" : status === "cancelled" ? "Cancelled" : "Pending";
+}
+
 function AccountPage() {
   const nav = useNavigate();
-  const [email, setEmail] = useState<string | null>(null);
-  const [tab, setTab] = useState("dashboard");
+  const listMyOrders = useServerFn(listMyOrdersFn);
+  const { items: wishlistItems } = useWishlist();
+  const [email, setEmail] = useState("");
+  const [profile, setProfile] = useState<Profile>(emptyProfile);
+  const [tab, setTab] = useState<"dashboard" | "orders" | "addresses" | "wishlist" | "reviews" | "details">("dashboard");
+  const [saving, setSaving] = useState(false);
+  const [newAddress, setNewAddress] = useState("");
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) nav({ to: "/auth" });
-      else setEmail(data.session.user.email ?? "");
+    let active = true;
+    const load = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        nav({ to: "/auth", search: { redirect: "/account" }, replace: true });
+        return;
+      }
+      if (!active) return;
+      const metadata = data.session.user.user_metadata ?? {};
+      const savedAddresses = Array.isArray(metadata.addresses)
+        ? metadata.addresses.filter((address: unknown): address is Address =>
+            !!address && typeof address === "object" && typeof (address as Address).id === "string" && typeof (address as Address).value === "string",
+          )
+        : [];
+      setEmail(data.session.user.email ?? "");
+      setProfile({
+        full_name: typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : "",
+        phone: typeof metadata.phone === "string" ? metadata.phone : "",
+        addresses: savedAddresses,
+      });
+    };
+    load();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) nav({ to: "/auth", search: { redirect: "/account" }, replace: true });
     });
+    return () => { active = false; listener.subscription.unsubscribe(); };
   }, [nav]);
+
+  const ordersQuery = useQuery({
+    queryKey: ["my-orders"],
+    queryFn: () => listMyOrders(),
+    enabled: !!email,
+    refetchInterval: 15_000,
+  });
+  const orders = ordersQuery.data ?? [];
+  const latestOrders = orders.slice(0, 3);
+
+  const memberLabel = useMemo(() => "Black Signature", []);
+
+  const saveProfile = async (next: Profile = profile) => {
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: next.full_name.trim(), phone: next.phone.trim(), addresses: next.addresses },
+    });
+    setSaving(false);
+    if (error) { toast.error(error.message); return false; }
+    setProfile(next);
+    toast.success("Account details saved");
+    return true;
+  };
+
+  const addAddress = async () => {
+    const value = newAddress.trim();
+    if (value.length < 10) { toast.error("Enter a complete address"); return; }
+    const next = { ...profile, addresses: [...profile.addresses, { id: crypto.randomUUID(), label: `Address ${profile.addresses.length + 1}`, value }] };
+    if (await saveProfile(next)) setNewAddress("");
+  };
+
+  const removeAddress = (id: string) => saveProfile({ ...profile, addresses: profile.addresses.filter((address) => address.id !== id) });
+
   const menu = [
     ["dashboard", "Dashboard", LayoutDashboard],
     ["orders", "My Orders", ShoppingBag],
@@ -34,14 +113,10 @@ function AccountPage() {
     ["wishlist", "My Wishlist", Heart],
     ["reviews", "My Reviews", Star],
     ["membership", "Black Signature Membership", Crown],
-    ["details", "Account Details", LayoutDashboard],
+    ["details", "Account Details", UserRound],
   ] as const;
 
-  const orders = [
-    { id: "YOM1234", d: "12 May 2024", s: "Delivered", a: 1888 },
-    { id: "YOM1187", d: "28 Apr 2024", s: "Delivered", a: 2499 },
-    { id: "YOM1056", d: "10 Apr 2024", s: "Delivered", a: 999 },
-  ];
+  const signOut = async () => { await supabase.auth.signOut(); nav({ to: "/" }); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,76 +125,37 @@ function AccountPage() {
         <div className="grid gap-8 md:grid-cols-[260px_1fr]">
           <aside className="border border-border p-5 h-max">
             <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-gold text-onyx font-display text-xl">{(email?.[0] ?? "Y").toUpperCase()}</div>
-              <div>
-                <div className="font-display text-sm">Welcome</div>
-                <div className="text-xs text-muted-foreground truncate max-w-[160px]">{email}</div>
-              </div>
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-gold text-onyx font-display text-xl">{(profile.full_name?.[0] || email?.[0] || "Y").toUpperCase()}</div>
+              <div className="min-w-0"><div className="font-display text-sm">Welcome{profile.full_name ? `, ${profile.full_name}` : ""}</div><div className="text-xs text-muted-foreground truncate max-w-[160px]">{email}</div></div>
             </div>
             <ul className="mt-6 space-y-1 text-sm">
-              {menu.map(([k, l, I]) => (
-                <li key={k}>
-                  {k === "membership" ? (
-                    <Link
-                      to="/membership-dashboard"
-                      className="flex w-full items-center gap-3 rounded px-3 py-2 text-left hover:bg-secondary/60"
-                    >
-                      <I className="h-4 w-4" /> {l}
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => setTab(k)}
-                      className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left ${tab === k ? "bg-gold text-onyx" : "hover:bg-secondary/60"}`}
-                    >
-                      <I className="h-4 w-4" /> {l}
-                    </button>
-                  )}
-                </li>
-              ))}
-              <li>
-                <button onClick={async () => { await supabase.auth.signOut(); nav({ to: "/" }); }} className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-destructive hover:bg-destructive/10">
-                  <LogOut className="h-4 w-4" /> Logout
-                </button>
-              </li>
+              {menu.map(([key, label, Icon]) => <li key={key}>{key === "membership" ? <Link to="/membership-dashboard" className="flex w-full items-center gap-3 rounded px-3 py-2 text-left hover:bg-secondary/60"><Icon className="h-4 w-4" /> {label}</Link> : <button onClick={() => setTab(key)} className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left ${tab === key ? "bg-gold text-onyx" : "hover:bg-secondary/60"}`}><Icon className="h-4 w-4" /> {label}</button>}</li>)}
+              <li><button onClick={signOut} className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-destructive hover:bg-destructive/10"><LogOut className="h-4 w-4" /> Logout</button></li>
             </ul>
           </aside>
-
-          <div>
-            <h1 className="font-display text-4xl">Dashboard</h1>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { k: 3, l: "Orders" },
-                { k: 2, l: "Wishlist" },
-                { k: 1, l: "Reviews" },
-                { k: "Black", l: "Member" },
-              ].map((s) => (
-                <div key={s.l} className="border border-border p-6 text-center">
-                  <div className="font-display text-3xl text-gold">{s.k}</div>
-                  <div className="mt-1 text-[11px] tracking-[0.24em] text-muted-foreground">{s.l.toUpperCase()}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 border border-border">
-              <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <h2 className="text-xs font-semibold tracking-[0.24em] text-gold">RECENT ORDERS</h2>
-                <Link to="/track-order" className="text-xs tracking-[0.2em] text-muted-foreground hover:text-gold">VIEW ALL</Link>
-              </div>
-              <ul className="divide-y divide-border text-sm">
-                {orders.map((o) => (
-                  <li key={o.id} className="grid grid-cols-4 items-center px-5 py-3">
-                    <span className="text-gold">Order #{o.id}</span>
-                    <span className="text-muted-foreground">{o.d}</span>
-                    <span>{o.s}</span>
-                    <span className="text-right">₹{o.a.toLocaleString("en-IN")}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <main>
+            {tab === "dashboard" && <Dashboard orders={latestOrders} wishlistCount={wishlistItems.length} memberLabel={memberLabel} setTab={setTab} />}
+            {tab === "orders" && <Orders orders={orders} loading={ordersQuery.isLoading} />}
+            {tab === "addresses" && <Addresses addresses={profile.addresses} newAddress={newAddress} setNewAddress={setNewAddress} addAddress={addAddress} removeAddress={removeAddress} saving={saving} />}
+            {tab === "wishlist" && <Wishlist items={wishlistItems} />}
+            {tab === "reviews" && <Empty title="My Reviews" body="You have not submitted a review yet." />}
+            {tab === "details" && <Details profile={profile} setProfile={setProfile} save={() => saveProfile()} saving={saving} email={email} />}
+          </main>
         </div>
       </section>
       <SiteFooter />
     </div>
   );
 }
+
+function Dashboard({ orders, wishlistCount, memberLabel, setTab }: { orders: Order[]; wishlistCount: number; memberLabel: string; setTab: (tab: "orders" | "wishlist") => void }) {
+  return <><h1 className="font-display text-4xl">Dashboard</h1><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat value={orders.length} label="Orders" /><Stat value={wishlistCount} label="Wishlist" /><Stat value="—" label="Reviews" /><Stat value="Black" label="Member" /></div><div className="mt-10 border border-border"><div className="flex items-center justify-between border-b border-border px-5 py-3"><h2 className="text-xs font-semibold tracking-[0.24em] text-gold">RECENT ORDERS</h2><button onClick={() => setTab("orders")} className="text-xs tracking-[0.2em] text-muted-foreground hover:text-gold">VIEW ALL</button></div>{orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders yet. Your placed orders will appear here automatically.</div>}</div><p className="mt-5 text-xs text-muted-foreground">{memberLabel} membership details are available from the left menu.</p></>;
+}
+
+function Stat({ value, label }: { value: string | number; label: string }) { return <div className="border border-border p-6 text-center"><div className="font-display text-3xl text-gold">{value}</div><div className="mt-1 text-[11px] tracking-[0.24em] text-muted-foreground">{label.toUpperCase()}</div></div>; }
+function OrderRows({ orders }: { orders: Order[] }) { return <ul className="divide-y divide-border text-sm">{orders.map((order) => <li key={order.id} className="grid grid-cols-[1.3fr_1fr_1fr_auto] gap-2 items-center px-5 py-3"><span className="text-gold">Order #{order.id.slice(0, 8).toUpperCase()}</span><span className="text-muted-foreground">{formatDate(order.created_at)}</span><span>{statusLabel(order.status)}</span><span className="text-right">{formatINR(order.total)}</span></li>)}</ul>; }
+function Orders({ orders, loading }: { orders: Order[]; loading: boolean }) { return <><h1 className="font-display text-4xl">My Orders</h1><div className="mt-6 border border-border">{loading ? <div className="p-6 text-sm text-muted-foreground">Loading your orders…</div> : orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders found for this account.</div>}</div></>; }
+function Addresses({ addresses, newAddress, setNewAddress, addAddress, removeAddress, saving }: { addresses: Address[]; newAddress: string; setNewAddress: (value: string) => void; addAddress: () => void; removeAddress: (id: string) => void; saving: boolean }) { return <><h1 className="font-display text-4xl">My Addresses</h1><div className="mt-6 grid gap-3">{addresses.length ? addresses.map((address) => <div key={address.id} className="flex items-start justify-between gap-4 border border-border p-5"><div><p className="text-xs tracking-[0.18em] text-gold">{address.label.toUpperCase()}</p><p className="mt-2 whitespace-pre-wrap text-sm">{address.value}</p></div><button aria-label="Delete address" onClick={() => removeAddress(address.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button></div>) : <p className="text-sm text-muted-foreground">No saved addresses yet.</p>}</div><div className="mt-6 border border-border p-5"><label className="text-xs tracking-[0.18em] text-muted-foreground">ADD A NEW ADDRESS</label><textarea value={newAddress} onChange={(event) => setNewAddress(event.target.value)} rows={4} className="mt-3 w-full border border-border bg-background p-3 text-sm outline-none focus:border-gold" placeholder="House / street, area, city, state and PIN code" /><button disabled={saving} onClick={addAddress} className="mt-3 inline-flex items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Plus className="h-4 w-4" /> SAVE ADDRESS</button></div></>; }
+function Wishlist({ items }: { items: { id: string; name: string; price: number; image: string }[] }) { return <><h1 className="font-display text-4xl">My Wishlist</h1><div className="mt-6 grid gap-4 sm:grid-cols-2">{items.length ? items.map((item) => <Link to="/products/$id" params={{ id: item.id }} key={item.id} className="flex gap-4 border border-border p-3 hover:border-gold"><img src={item.image} alt="" className="h-20 w-20 object-cover" /><div><p className="font-display text-lg">{item.name}</p><p className="mt-1 text-sm text-gold">{formatINR(item.price)}</p></div></Link>) : <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>}</div></>; }
+function Details({ profile, setProfile, save, saving, email }: { profile: Profile; setProfile: (profile: Profile) => void; save: () => void; saving: boolean; email: string }) { return <><h1 className="font-display text-4xl">Account Details</h1><div className="mt-6 grid max-w-xl gap-4 border border-border p-6"><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">FULL NAME<input value={profile.full_name} onChange={(event) => setProfile({ ...profile, full_name: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">EMAIL<input value={email} disabled className="border border-border bg-secondary/40 px-3 py-2.5 text-sm text-muted-foreground" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">PHONE NUMBER<input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><button disabled={saving} onClick={save} className="inline-flex w-fit items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Save className="h-4 w-4" /> SAVE CHANGES</button></div></>; }
+function Empty({ title, body }: { title: string; body: string }) { return <><h1 className="font-display text-4xl">{title}</h1><p className="mt-6 border border-border p-6 text-sm text-muted-foreground">{body}</p></>; }
