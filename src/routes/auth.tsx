@@ -12,13 +12,14 @@ const searchSchema = z.object({
 });
 
 function safeInternalRedirect(value?: string): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+  if (!value || value.includes("\\")) {
     return "/account";
   }
 
   try {
     const parsed = new URL(value, "https://yomora.in");
     if (parsed.origin !== "https://yomora.in") return "/account";
+    if (!parsed.pathname.startsWith("/")) return "/account";
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return "/account";
