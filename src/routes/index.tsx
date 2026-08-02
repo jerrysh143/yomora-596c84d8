@@ -17,6 +17,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import legacyImg from "@/assets/legacy-showroom.jpg";
+import customJewelleryBanner from "@/assets/custom-jewellery-banner.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
@@ -59,22 +60,20 @@ function Index() {
       <SiteHeader />
 
       {/* CUSTOM PIECE BANNER */}
-      <section className="relative overflow-hidden bg-onyx text-cream">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_100%_at_15%_50%,color-mix(in_oklab,var(--color-gold)_18%,transparent),transparent_60%)]" />
-        <div className="relative container-x mx-auto flex max-w-[1400px] flex-col items-center gap-5 py-10 text-center md:flex-row md:justify-between md:py-12 md:text-left">
-          <div>
-            <h2 className="font-display text-3xl md:text-4xl">{ctaStrip.title}</h2>
-            <p className="mt-2 max-w-xl text-sm text-cream/70">{ctaStrip.body}</p>
-          </div>
-          <a
-            href={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-3 bg-gold px-6 py-3.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-          >
-            {ctaStrip.button_label} <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
+      <section className="bg-onyx">
+        <a
+          href={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Request a custom jewellery piece on WhatsApp"
+          className="group block overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-gold"
+        >
+          <img
+            src={customJewelleryBanner}
+            alt="Made only for you — custom 925 silver jewellery"
+            className="h-auto w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+          />
+        </a>
       </section>
 
       {/* CATEGORIES */}
