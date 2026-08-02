@@ -303,7 +303,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     whatsapp_message: "Hi! I'd like to request a custom 925 silver jewellery piece.",
   },
   homepage_banners: {
-    slides: [{ image_url: "", link: "", alt: "Made only for you — custom 925 silver jewellery" }],
+    slides: [{ image_url: "", link: "/products", alt: "Celestial Double Star Pendant Set — YOMORA 925 silver" }],
   },
   footer: {
     brand_blurb:
