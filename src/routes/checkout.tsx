@@ -1,9 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
+import { createOrderFn } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -19,8 +22,10 @@ export const Route = createFileRoute("/checkout")({
 
 function CheckoutPage() {
   const { items, subtotal } = useCart();
-  const nav = useNavigate();
+  const createOrder = useServerFn(createOrderFn);
   const [pay, setPay] = useState("upi");
+  const [submitting, setSubmitting] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const discount = subtotal >= 1500 ? 210 : 0;
   const total = subtotal - discount;
   return (
@@ -28,12 +33,54 @@ function CheckoutPage() {
       <SiteHeader />
       <section className="container-x mx-auto max-w-[1400px] py-12">
         <h1 className="font-display text-4xl">Checkout</h1>
+        {orderId ? (
+          <div className="mt-8 max-w-2xl border border-gold bg-gold/10 p-8">
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-gold">ORDER RECEIVED</p>
+            <h2 className="mt-2 font-display text-3xl">Thank you for shopping with YOMORA.</h2>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Your order has been saved and is now visible in YOMORA Admin.
+            </p>
+            <p className="mt-5 text-sm">
+              Order number: <span className="font-mono font-semibold text-gold">{orderId}</span>
+            </p>
+            <Link to="/products" className="mt-6 inline-block bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.2em] text-onyx">
+              CONTINUE SHOPPING
+            </Link>
+          </div>
+        ) : (
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            const id = "YOM" + Math.floor(1000 + Math.random() * 9000);
-            cart.clear();
-            nav({ to: "/track-order", hash: id });
+            if (items.length === 0 || submitting) return;
+            const form = new FormData(e.currentTarget);
+            setSubmitting(true);
+            try {
+              const order = await createOrder({
+                data: {
+                  customer_name: String(form.get("customer_name") ?? ""),
+                  customer_email: String(form.get("customer_email") ?? ""),
+                  customer_phone: String(form.get("customer_phone") ?? ""),
+                  shipping_address: [
+                    form.get("address_line"),
+                    form.get("city"),
+                    form.get("state"),
+                    form.get("pincode"),
+                  ]
+                    .map((value) => String(value ?? "").trim())
+                    .filter(Boolean)
+                    .join(", "),
+                  payment_method: pay as "upi" | "card" | "netbank" | "cod",
+                  items: items.map((item) => ({ id: item.id, quantity: item.qty })),
+                },
+              });
+              cart.clear();
+              setOrderId(order.id);
+              toast.success("Order placed successfully");
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to place order");
+            } finally {
+              setSubmitting(false);
+            }
           }}
           className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]"
         >
@@ -41,18 +88,18 @@ function CheckoutPage() {
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">1. CONTACT INFORMATION</legend>
               <div className="grid gap-4">
-                <Input label="Email" type="email" required placeholder="you@email.com" />
-                <Input label="Phone" required placeholder="+91 98765 43210" />
+                <Input name="customer_email" label="Email" type="email" required placeholder="you@email.com" />
+                <Input name="customer_phone" label="Phone" required placeholder="+91 98765 43210" />
               </div>
             </fieldset>
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">2. SHIPPING ADDRESS</legend>
               <div className="grid gap-4 md:grid-cols-2">
-                <Input label="Full name" required />
-                <Input label="Pincode" required />
-                <Input label="Address line" required className="md:col-span-2" />
-                <Input label="City" required />
-                <Input label="State" required />
+                <Input name="customer_name" label="Full name" required />
+                <Input name="pincode" label="Pincode" required inputMode="numeric" />
+                <Input name="address_line" label="Address line" required className="md:col-span-2" />
+                <Input name="city" label="City" required />
+                <Input name="state" label="State" required />
               </div>
             </fieldset>
             <fieldset className="border border-border p-6">
@@ -94,10 +141,13 @@ function CheckoutPage() {
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
             </dl>
-            <button disabled={items.length === 0} className="mt-6 w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-40">PLACE ORDER</button>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">100% Secure Payment</p>
+            <button disabled={items.length === 0 || submitting} className="mt-6 w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-40">
+              {submitting ? "PLACING ORDER…" : "PLACE ORDER"}
+            </button>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">Your order is saved securely and will appear in YOMORA Admin.</p>
           </aside>
         </form>
+        )}
       </section>
       <SiteFooter />
     </div>

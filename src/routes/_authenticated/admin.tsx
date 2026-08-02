@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -103,10 +103,11 @@ function AdminPage() {
 
   const { data: products = [] } = useQuery(productsQuery());
   const { data: categories = [] } = useQuery(categoriesQuery());
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [], refetch: refetchOrders, isFetching: ordersRefreshing } = useQuery({
     queryKey: ["orders"],
     queryFn: () => listOrders(),
     enabled: !!adminInfo?.isAdmin,
+    refetchInterval: 15_000,
   });
   const { data: plans = [] } = useQuery(subscriptionPlansQuery());
   const listAlerts = useServerFn(listNotifyRequestsFn);
@@ -730,6 +731,14 @@ on conflict do nothing;`}
         {tab === "orders" && (
         <div className="mt-8 grid gap-4">
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => refetchOrders()}
+              disabled={ordersRefreshing}
+              className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${ordersRefreshing ? "animate-spin" : ""}`} /> REFRESH
+            </button>
             {([
               { k: "pending" as const, label: "Pending", count: orderCounts.pending },
               { k: "completed" as const, label: "Completed", count: orderCounts.completed },
