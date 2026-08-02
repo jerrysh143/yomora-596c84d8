@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -20,8 +20,10 @@ import {
   listOrdersFn,
   updateOrderStatusFn,
   deleteOrderFn,
+  updateInvoiceDetailsFn,
   type OrderStatus,
   type OrderItem,
+  type InvoiceDetails,
 } from "@/lib/orders.functions";
 import {
   updateSubscriptionPlanFn,
@@ -77,6 +79,8 @@ const emptyForm: FormState = {
   sold_out: false,
 };
 
+const invoiceInputCls = "w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold";
+
 function AdminPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -88,6 +92,7 @@ function AdminPage() {
   const listOrders = useServerFn(listOrdersFn);
   const updateOrder = useServerFn(updateOrderStatusFn);
   const removeOrder = useServerFn(deleteOrderFn);
+  const updateInvoice = useServerFn(updateInvoiceDetailsFn);
   const savePlan = useServerFn(updateSubscriptionPlanFn);
   const createPlan = useServerFn(createSubscriptionPlanFn);
   const removePlan = useServerFn(deleteSubscriptionPlanFn);
@@ -124,6 +129,7 @@ function AdminPage() {
 
   const [tab, setTab] = useState<"products" | "categories" | "orders" | "alerts" | "subscription" | "memberships" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
+  const [invoiceEditor, setInvoiceEditor] = useState<{ id: string; details: InvoiceDetails } | null>(null);
 
   // Admin session stays active until an explicit sign-out.
 
@@ -244,6 +250,16 @@ function AdminPage() {
     onSuccess: () => {
       toast.success("Order deleted");
       qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const invoiceMut = useMutation({
+    mutationFn: (value: { id: string; invoice_details: InvoiceDetails }) => updateInvoice({ data: value }),
+    onSuccess: () => {
+      toast.success("Invoice details saved");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setInvoiceEditor(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -814,7 +830,36 @@ on conflict do nothing;`}
                       </div>
                     )}
 
+                    {invoiceEditor?.id === o.id && (
+                      <div className="grid gap-3 border-t border-border pt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-semibold tracking-[0.22em] text-gold">INVOICE CONTENT</p>
+                            <p className="mt-1 text-xs text-muted-foreground">This information appears on the customer's downloadable invoice.</p>
+                          </div>
+                          <button type="button" onClick={() => setInvoiceEditor(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Field label="Invoice number"><input value={invoiceEditor.details.invoice_number ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, invoice_number: e.target.value } })} placeholder={`YM-${o.id.slice(0, 8).toUpperCase()}`} className={invoiceInputCls} /></Field>
+                          <Field label="Tax rate (%)"><input type="number" min="0" max="100" value={invoiceEditor.details.tax_rate ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, tax_rate: e.target.value === "" ? undefined : Number(e.target.value) } })} className={invoiceInputCls} /></Field>
+                          <Field label="Discount (₹)"><input type="number" min="0" value={invoiceEditor.details.discount ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, discount: e.target.value === "" ? undefined : Number(e.target.value) } })} className={invoiceInputCls} /></Field>
+                          <Field label="Seller / brand name"><input value={invoiceEditor.details.seller_name ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_name: e.target.value } })} placeholder="YOMORA" className={invoiceInputCls} /></Field>
+                        </div>
+                        <Field label="Seller address"><textarea rows={2} value={invoiceEditor.details.seller_address ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_address: e.target.value } })} className={invoiceInputCls} /></Field>
+                        <div className="grid gap-3 sm:grid-cols-2"><Field label="Seller phone"><input value={invoiceEditor.details.seller_phone ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_phone: e.target.value } })} className={invoiceInputCls} /></Field><Field label="Thank-you message"><input value={invoiceEditor.details.thank_you_note ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, thank_you_note: e.target.value } })} placeholder="Thank you for choosing YOMORA." className={invoiceInputCls} /></Field></div>
+                        <Field label="Bank details"><textarea rows={2} value={invoiceEditor.details.bank_details ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, bank_details: e.target.value } })} className={invoiceInputCls} /></Field>
+                        <Field label="Invoice note"><textarea rows={2} value={invoiceEditor.details.notes ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, notes: e.target.value } })} className={invoiceInputCls} /></Field>
+                        <div><button type="button" disabled={invoiceMut.isPending} onClick={() => invoiceMut.mutate({ id: o.id, invoice_details: invoiceEditor.details })} className="inline-flex items-center gap-2 bg-gold px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-onyx disabled:opacity-50"><Save className="h-3.5 w-3.5" /> SAVE INVOICE</button></div>
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      <button
+                        onClick={() => setInvoiceEditor({ id: o.id, details: (o.invoice_details ?? {}) as InvoiceDetails })}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-gold hover:text-gold"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> INVOICE DETAILS
+                      </button>
                       {o.status !== "pending" && (
                         <button
                           onClick={() => orderStatusMut.mutate({ id: o.id, status: "pending" })}

@@ -30,6 +30,7 @@ import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsIdRouteImport } from './routes/products.$id'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedInvoiceIdRouteImport } from './routes/_authenticated/invoice.$id'
 import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
 
 const WomenRoute = WomenRouteImport.update({
@@ -137,6 +138,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInvoiceIdRoute = AuthenticatedInvoiceIdRouteImport.update({
+  id: '/invoice/$id',
+  path: '/invoice/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
   id: '/api/public/img/$',
   path: '/api/public/img/$',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRoutesByTo {
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
   '/products': typeof ProductsIndexRoute
+  '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRoutesById {
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/products/$id': typeof ProductsIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/_authenticated/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRouteTypes {
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/membership-dashboard'
     | '/products/$id'
     | '/products/'
+    | '/invoice/$id'
     | '/api/public/img/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/membership-dashboard'
     | '/products/$id'
     | '/products'
+    | '/invoice/$id'
     | '/api/public/img/$'
   id:
     | '__root__'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/membership-dashboard'
     | '/products/$id'
     | '/products/'
+    | '/_authenticated/invoice/$id'
     | '/api/public/img/$'
   fileRoutesById: FileRoutesById
 }
@@ -459,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/invoice/$id': {
+      id: '/_authenticated/invoice/$id'
+      path: '/invoice/$id'
+      fullPath: '/invoice/$id'
+      preLoaderRoute: typeof AuthenticatedInvoiceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/img/$': {
       id: '/api/public/img/$'
       path: '/api/public/img/$'
@@ -472,11 +491,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedMembershipDashboardRoute: typeof AuthenticatedMembershipDashboardRoute
+  AuthenticatedInvoiceIdRoute: typeof AuthenticatedInvoiceIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedMembershipDashboardRoute: AuthenticatedMembershipDashboardRoute,
+  AuthenticatedInvoiceIdRoute: AuthenticatedInvoiceIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

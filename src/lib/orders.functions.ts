@@ -13,6 +13,40 @@ export type OrderItem = {
   quantity: number;
 };
 
+export type InvoiceDetails = {
+  invoice_number?: string;
+  tax_rate?: number;
+  discount?: number;
+  seller_name?: string;
+  seller_address?: string;
+  seller_phone?: string;
+  bank_details?: string;
+  thank_you_note?: string;
+  notes?: string;
+};
+
+const INVOICE_MARKER = "\n\n---YOMORA-INVOICE---\n";
+
+function invoiceDetailsFromNotes(notes: string | null | undefined): InvoiceDetails {
+  const markerAt = notes?.lastIndexOf(INVOICE_MARKER) ?? -1;
+  if (markerAt < 0) return {};
+  try {
+    const parsed = JSON.parse(notes!.slice(markerAt + INVOICE_MARKER.length));
+    return parsed && typeof parsed === "object" ? parsed as InvoiceDetails : {};
+  } catch {
+    return {};
+  }
+}
+
+function notesWithoutInvoiceDetails(notes: string | null | undefined) {
+  const markerAt = notes?.lastIndexOf(INVOICE_MARKER) ?? -1;
+  return markerAt < 0 ? (notes ?? "") : notes!.slice(0, markerAt).trimEnd();
+}
+
+function mapOrder(row: any): Order {
+  return { ...row, invoice_details: invoiceDetailsFromNotes(row.notes) } as Order;
+}
+
 const checkoutInput = z.object({
   customer_name: z.string().trim().min(2).max(120),
   customer_email: z.string().trim().email().max(200),
@@ -119,6 +153,7 @@ export type Order = {
   notes: string;
   created_at: string;
   updated_at: string;
+  invoice_details?: InvoiceDetails;
 };
 
 async function assertAdmin(ctx: { supabase: SupabaseClient<Database>; userId: string }) {
@@ -139,7 +174,7 @@ export const listOrdersFn = createServerFn({ method: "GET" })
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as Order[];
+    return (data ?? []).map(mapOrder);
   });
 
 /** Returns only the orders belonging to the currently signed-in customer's email. */
@@ -159,7 +194,62 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
       .eq("customer_email", email)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as Order[];
+    return (data ?? []).map(mapOrder);
+  });
+
+const invoiceDetailsSchema = z.object({
+  invoice_number: z.string().trim().max(80).optional(),
+  tax_rate: z.number().min(0).max(100).optional(),
+  discount: z.number().int().min(0).max(10_000_000).optional(),
+  seller_name: z.string().trim().max(160).optional(),
+  seller_address: z.string().trim().max(1000).optional(),
+  seller_phone: z.string().trim().max(80).optional(),
+  bank_details: z.string().trim().max(1000).optional(),
+  thank_you_note: z.string().trim().max(300).optional(),
+  notes: z.string().trim().max(1000).optional(),
+});
+
+export const updateInvoiceDetailsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; invoice_details: InvoiceDetails }) =>
+    z.object({ id: z.string().uuid(), invoice_details: invoiceDetailsSchema }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: order, error: readError } = await context.supabase
+      .from("orders")
+      .select("notes")
+      .eq("id", data.id)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const notes = `${notesWithoutInvoiceDetails(order.notes)}${INVOICE_MARKER}${JSON.stringify(data.invoice_details)}`;
+    const { error } = await context.supabase
+      .from("orders")
+      .update({ notes })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Returns one invoice only to its customer or an administrator. */
+export const getInvoiceOrderFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const [{ data: auth, error: authError }, { data: isAdmin }] = await Promise.all([
+      context.supabase.auth.getUser(),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    ]);
+    const email = auth.user?.email?.trim().toLowerCase();
+    if (authError || (!email && !isAdmin)) throw new Error("Unauthorized");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = supabaseAdmin.from("orders").select("*").eq("id", data.id);
+    if (!isAdmin) query = query.eq("customer_email", email!);
+    const { data: order, error } = await query.maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Invoice not found");
+    return mapOrder(order);
   });
 
 export const updateOrderStatusFn = createServerFn({ method: "POST" })
