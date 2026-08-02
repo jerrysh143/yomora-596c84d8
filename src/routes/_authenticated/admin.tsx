@@ -33,6 +33,7 @@ import {
 } from "@/lib/subscription.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { SiteContentEditor } from "@/components/admin/site-content-editor";
+import { CouponManager } from "@/components/admin/coupon-manager";
 import {
   listMembershipsFn,
   updateMembershipFn,
@@ -127,7 +128,7 @@ function AdminPage() {
     enabled: !!adminInfo?.isAdmin,
   });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "alerts" | "subscription" | "memberships" | "site">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "alerts" | "subscription" | "memberships" | "coupons" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
   const [invoiceEditor, setInvoiceEditor] = useState<{ id: string; details: InvoiceDetails } | null>(null);
 
@@ -606,7 +607,7 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : "Manage site content"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : tab === "coupons" ? "Manage coupons" : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
@@ -619,6 +620,8 @@ on conflict do nothing;`}
                 ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
                 : tab === "memberships"
                 ? `${memberships.length} member${memberships.length === 1 ? "" : "s"} · ${memberships.filter((m) => m.status === "active").length} active`
+                : tab === "coupons"
+                ? "Create public and members-only checkout offers."
                 : "Edit every homepage section, header and footer."}
             </p>
           </div>
@@ -632,7 +635,7 @@ on conflict do nothing;`}
           )}
         </div>
 
-        <div className="mt-6 flex gap-2 border-b border-border">
+        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-border">
           {([
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
@@ -640,6 +643,7 @@ on conflict do nothing;`}
             { k: "alerts" as const, label: "RESTOCK ALERTS", icon: BellRing },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
             { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
+            { k: "coupons" as const, label: "COUPONS", icon: Tag },
             { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
           ]).map((t) => {
             const Icon = t.icon;
@@ -806,6 +810,11 @@ on conflict do nothing;`}
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold text-foreground">{formatINR(o.total)}</div>
+                        {o.coupon_code && (
+                          <div className="text-[10px] font-semibold tracking-[0.12em] text-gold">
+                            {o.coupon_code} · -{formatINR(o.discount_amount)}
+                          </div>
+                        )}
                         <div className="text-[11px] text-muted-foreground">
                           {items.reduce((s, i) => s + i.quantity, 0)} item(s)
                         </div>
@@ -901,6 +910,8 @@ on conflict do nothing;`}
         )}
 
         {tab === "site" && <SiteContentEditor />}
+
+        {tab === "coupons" && <CouponManager />}
 
         {tab === "alerts" && (
           <div className="mt-8 grid gap-2">

@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
+import { validateCouponFn } from "@/lib/coupons.functions";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -23,10 +24,22 @@ export const Route = createFileRoute("/checkout")({
 function CheckoutPage() {
   const { items, subtotal } = useCart();
   const createOrder = useServerFn(createOrderFn);
+  const validateCoupon = useServerFn(validateCouponFn);
   const [pay, setPay] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const discount = subtotal >= 1500 ? 210 : 0;
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [couponInput, setCouponInput] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    description: string;
+    memberOnly: boolean;
+    subtotal: number;
+    discount: number;
+  } | null>(null);
+  const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
+  const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
   return (
     <div className="min-h-screen bg-background">
@@ -70,6 +83,7 @@ function CheckoutPage() {
                     .filter(Boolean)
                     .join(", "),
                   payment_method: pay as "upi" | "card" | "netbank" | "cod",
+                  coupon_code: currentCoupon?.code,
                   items: items.map((item) => ({ id: item.id, quantity: item.qty })),
                 },
               });
@@ -88,7 +102,15 @@ function CheckoutPage() {
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">1. CONTACT INFORMATION</legend>
               <div className="grid gap-4">
-                <Input name="customer_email" label="Email" type="email" required placeholder="you@email.com" />
+                <Input
+                  name="customer_email"
+                  label="Email"
+                  type="email"
+                  required
+                  placeholder="you@email.com"
+                  value={customerEmail}
+                  onChange={(event) => setCustomerEmail(event.target.value)}
+                />
                 <Input name="customer_phone" label="Phone" required placeholder="+91 98765 43210" />
               </div>
             </fieldset>
@@ -136,11 +158,75 @@ function CheckoutPage() {
             </div>
             <dl className="mt-5 space-y-2 text-sm">
               <Row k="Subtotal" v={formatINR(subtotal)} />
-              {discount > 0 && <Row k="Discount" v={`-${formatINR(discount)}`} />}
+              {discount > 0 && <Row k={`Coupon (${currentCoupon?.code})`} v={`-${formatINR(discount)}`} />}
               <Row k="Shipping" v="FREE" />
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
             </dl>
+            <div className="mt-5 border-t border-border pt-5">
+              <label className="block text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
+                COUPON CODE
+              </label>
+              {currentCoupon ? (
+                <div className="mt-2 border border-gold bg-gold/10 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold tracking-[0.14em] text-gold">{currentCoupon.code} APPLIED</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {currentCoupon.description || `You save ${formatINR(currentCoupon.discount)}`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
+                      className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground hover:text-foreground"
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 flex">
+                  <input
+                    value={couponInput}
+                    onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+                    placeholder="ENTER CODE"
+                    maxLength={40}
+                    className="min-w-0 flex-1 border border-border bg-background px-3 py-2.5 text-sm uppercase outline-none focus:border-gold"
+                  />
+                  <button
+                    type="button"
+                    disabled={!couponInput.trim() || items.length === 0 || validatingCoupon}
+                    onClick={async () => {
+                      setValidatingCoupon(true);
+                      try {
+                        const result = await validateCoupon({
+                          data: {
+                            code: couponInput,
+                            items: items.map((item) => ({ id: item.id, quantity: item.qty })),
+                            ...(customerEmail.trim() ? { customer_email: customerEmail.trim() } : {}),
+                          },
+                        });
+                        setAppliedCoupon(result);
+                        setCouponInput(result.code);
+                        toast.success(`Coupon applied. You save ${formatINR(result.discount)}`);
+                      } catch (error) {
+                        setAppliedCoupon(null);
+                        toast.error(error instanceof Error ? error.message : "Unable to apply coupon");
+                      } finally {
+                        setValidatingCoupon(false);
+                      }
+                    }}
+                    className="border border-l-0 border-gold bg-gold px-4 text-[10px] font-semibold tracking-[0.18em] text-onyx disabled:opacity-40"
+                  >
+                    {validatingCoupon ? "CHECKING…" : "APPLY"}
+                  </button>
+                </div>
+              )}
+              <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                Membership offers require an active membership and a signed-in account.
+              </p>
+            </div>
             <button disabled={items.length === 0 || submitting} className="mt-6 w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-40">
               {submitting ? "PLACING ORDER…" : "PLACE ORDER"}
             </button>

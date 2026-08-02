@@ -53,6 +53,7 @@ const checkoutInput = z.object({
   customer_phone: z.string().trim().min(6).max(30).regex(/^[0-9+()\-\s]+$/, "Invalid phone"),
   shipping_address: z.string().trim().min(10).max(600),
   payment_method: z.enum(["upi", "card", "netbank", "cod"]),
+  coupon_code: z.string().trim().max(40).optional(),
   items: z
     .array(z.object({ id: z.string().min(1).max(80), quantity: z.number().int().min(1).max(10) }))
     .min(1)
@@ -120,8 +121,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
     });
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     // Keep this server-side so the browser cannot alter the payable amount.
-    const discount = subtotal >= 1500 ? 210 : 0;
-    const total = subtotal - discount;
+    const total = subtotal;
     const notes = `Payment method: ${data.payment_method}\n[request:${fingerprint}]`;
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -131,6 +131,8 @@ export const createOrderFn = createServerFn({ method: "POST" })
         customer_phone: data.customer_phone,
         shipping_address: data.shipping_address,
         items,
+        subtotal,
+        discount_amount: 0,
         total,
         notes,
         status: "pending",
@@ -138,7 +140,34 @@ export const createOrderFn = createServerFn({ method: "POST" })
       .select("id,total")
       .single();
     if (error) throw new Error(error.message);
-    return { id: order.id, total: order.total };
+
+    if (data.coupon_code) {
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const { data: auth } = token ? await supabaseAdmin.auth.getUser(token) : { data: { user: null } };
+      if (auth.user?.email && auth.user.email.toLowerCase() !== data.customer_email.toLowerCase()) {
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        throw new Error("Use the email address connected to your signed-in account");
+      }
+      const { data: redeemed, error: couponError } = await supabaseAdmin.rpc("redeem_coupon_for_order", {
+        _order_id: order.id,
+        _coupon_code: data.coupon_code,
+        _user_id: auth.user?.id ?? null,
+      });
+      if (couponError || !redeemed?.[0]) {
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        const message = couponError?.message?.replace(/^.*?: /, "") || "Unable to apply coupon";
+        throw new Error(message);
+      }
+      return {
+        id: order.id,
+        total: redeemed[0].total,
+        discount: redeemed[0].discount_amount,
+        couponCode: redeemed[0].coupon_code,
+      };
+    }
+
+    return { id: order.id, total: order.total, discount: 0, couponCode: null };
   });
 
 export type Order = {
@@ -148,6 +177,9 @@ export type Order = {
   customer_phone: string;
   shipping_address: string;
   items: OrderItem[];
+  subtotal: number;
+  discount_amount: number;
+  coupon_code: string | null;
   total: number;
   status: OrderStatus;
   notes: string;
@@ -190,7 +222,7 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .select("id,customer_name,customer_email,customer_phone,shipping_address,items,total,status,notes,created_at,updated_at")
+      .select("id,customer_name,customer_email,customer_phone,shipping_address,items,subtotal,discount_amount,coupon_code,total,status,notes,created_at,updated_at")
       .eq("customer_email", email)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);

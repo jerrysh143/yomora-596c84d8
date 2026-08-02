@@ -38,6 +38,108 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          customer_email: string
+          discount_amount: number
+          id: string
+          order_id: string
+          user_id: string | null
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          customer_email: string
+          discount_amount: number
+          id?: string
+          order_id: string
+          user_id?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          customer_email?: string
+          discount_amount?: number
+          id?: string
+          order_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          maximum_discount: number | null
+          member_only: boolean
+          minimum_order: number
+          per_customer_limit: number
+          starts_at: string | null
+          times_used: number
+          updated_at: string
+          usage_limit: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          maximum_discount?: number | null
+          member_only?: boolean
+          minimum_order?: number
+          per_customer_limit?: number
+          starts_at?: string | null
+          times_used?: number
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          maximum_discount?: number | null
+          member_only?: boolean
+          minimum_order?: number
+          per_customer_limit?: number
+          starts_at?: string | null
+          times_used?: number
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
           activated_at: string | null
@@ -90,41 +192,50 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_code: string | null
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          discount_amount: number
           id: string
           items: Json
           notes: string
           shipping_address: string
           status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
           total: number
           updated_at: string
         }
         Insert: {
+          coupon_code?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone?: string
+          discount_amount?: number
           id?: string
           items?: Json
           notes?: string
           shipping_address?: string
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
           total?: number
           updated_at?: string
         }
         Update: {
+          coupon_code?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          discount_amount?: number
           id?: string
           items?: Json
           notes?: string
           shipping_address?: string
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
           total?: number
           updated_at?: string
         }
@@ -384,6 +495,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      redeem_coupon_for_order: {
+        Args: {
+          _coupon_code: string
+          _order_id: string
+          _user_id?: string | null
+        }
+        Returns: {
+          coupon_code: string
+          discount_amount: number
+          total: number
+        }[]
       }
     }
     Enums: {
