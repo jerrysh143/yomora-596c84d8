@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -23,6 +23,7 @@ import {
   updateInvoiceDetailsFn,
   type OrderStatus,
   type OrderItem,
+  type Order,
   type InvoiceDetails,
 } from "@/lib/orders.functions";
 import {
@@ -81,6 +82,41 @@ const emptyForm: FormState = {
 };
 
 const invoiceInputCls = "w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold";
+
+function whatsappNumber(phone: string) {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10) digits = `91${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) digits = `91${digits.slice(1)}`;
+  return digits.length >= 10 && digits.length <= 15 ? digits : null;
+}
+
+function openWhatsAppInvoice(order: Order) {
+  const number = whatsappNumber(order.customer_phone);
+  if (!number) {
+    toast.error("Add a valid customer WhatsApp number before sending the invoice");
+    return;
+  }
+
+  const invoiceUrl = `${window.location.origin}/invoice/${order.id}`;
+  const message = [
+    `Hello ${order.customer_name},`,
+    "",
+    `Your YOMORA order #${order.id.slice(0, 8).toUpperCase()} has been completed.`,
+    `Order total: ${formatINR(order.total)}`,
+    "",
+    `View or download your invoice: ${invoiceUrl}`,
+    "Please sign in using the email address used for this order.",
+    "",
+    "Thank you for shopping with YOMORA by Nehalbhai Devika Jewellers.",
+  ].join("\n");
+
+  window.open(
+    `https://wa.me/${number}?text=${encodeURIComponent(message)}`,
+    "_blank",
+    "noopener,noreferrer",
+  );
+}
 
 function AdminPage() {
   const qc = useQueryClient();
@@ -863,6 +899,15 @@ on conflict do nothing;`}
                     )}
 
                     <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      {o.status === "completed" && (
+                        <button
+                          type="button"
+                          onClick={() => openWhatsAppInvoice(o)}
+                          className="inline-flex items-center gap-1.5 bg-[#25D366] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[#071b0e] hover:bg-[#20bd5a]"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
+                        </button>
+                      )}
                       <button
                         onClick={() => setInvoiceEditor({ id: o.id, details: (o.invoice_details ?? {}) as InvoiceDetails })}
                         className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-gold hover:text-gold"
