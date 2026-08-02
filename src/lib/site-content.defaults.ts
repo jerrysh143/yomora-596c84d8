@@ -81,6 +81,10 @@ export type CtaStripContent = {
   whatsapp_message: string;
 };
 
+export type HomepageBannersContent = {
+  slides: { image_url: string; link: string; alt: string }[];
+};
+
 export type FooterContent = {
   brand_blurb: string;
   shop_links: { label: string; to: string }[];
@@ -209,6 +213,7 @@ export type SiteContentMap = {
   categories_section: SectionHeadingContent;
   featured_section: SectionHeadingContent;
   cta_strip: CtaStripContent;
+  homepage_banners: HomepageBannersContent;
   footer: FooterContent;
   reels: ReelsContent;
   social: SocialContent;
@@ -296,6 +301,9 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     button_label: "REQUEST A CUSTOM PIECE",
     whatsapp_number: "919000000000",
     whatsapp_message: "Hi! I'd like to request a custom 925 silver jewellery piece.",
+  },
+  homepage_banners: {
+    slides: [{ image_url: "", link: "", alt: "Made only for you — custom 925 silver jewellery" }],
   },
   footer: {
     brand_blurb:

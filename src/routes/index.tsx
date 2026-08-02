@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import legacyImg from "@/assets/legacy-showroom.jpg";
 import customJewelleryBanner from "@/assets/custom-jewellery-banner-wide.jpg";
+import { HomeBannerSlider } from "@/components/home-banner-slider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
@@ -59,22 +60,11 @@ function Index() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* CUSTOM PIECE BANNER */}
-      <section className="bg-onyx">
-        <a
-          href={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Request a custom jewellery piece on WhatsApp"
-          className="group block overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-gold"
-        >
-          <img
-            src={customJewelleryBanner}
-            alt="Made only for you — custom 925 silver jewellery"
-            className="h-auto w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
-          />
-        </a>
-      </section>
+      <HomeBannerSlider
+        banners={content.homepage_banners}
+        fallbackImage={customJewelleryBanner}
+        fallbackLink={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
+      />
 
       {/* CATEGORIES */}
       <section className="bg-secondary/40">

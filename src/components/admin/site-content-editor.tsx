@@ -326,6 +326,32 @@ export function SiteContentEditor() {
         )}
       />
 
+      <SectionCard
+        title="Homepage banner slider"
+        description="Upload wide banners (recommended 2000 × 469), set where each banner opens, and add more banners when needed. Slider controls appear only when you have two or more banners."
+        value={content.homepage_banners}
+        saving={isSaving("homepage_banners")}
+        onSave={(v) => persist("homepage_banners", v)}
+        render={(s, set) => (
+          <div className="grid gap-5">
+            {s.slides.map((slide, i) => (
+              <div key={i} className="grid gap-3 border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground">BANNER {i + 1}</span>
+                  {s.slides.length > 1 && (
+                    <button type="button" onClick={() => set((p) => ({ ...p, slides: p.slides.filter((_, ix) => ix !== i) }))} className="inline-flex items-center gap-1 text-xs text-destructive hover:underline"><Trash2 className="h-3.5 w-3.5" /> Remove</button>
+                  )}
+                </div>
+                <ImageUploadField label="Banner image" value={slide.image_url} onChange={(url) => set((p) => ({ ...p, slides: p.slides.map((x, ix) => ix === i ? { ...x, image_url: url } : x) }))} />
+                <Field label="Destination link (e.g. /products, /custom-jewellery, or https://...) "><input className={inputCls} placeholder="/products" value={slide.link} onChange={(e) => set((p) => ({ ...p, slides: p.slides.map((x, ix) => ix === i ? { ...x, link: e.target.value } : x) }))} /></Field>
+                <Field label="Image description (for accessibility)"><input className={inputCls} placeholder="New arrivals in 925 silver" value={slide.alt} onChange={(e) => set((p) => ({ ...p, slides: p.slides.map((x, ix) => ix === i ? { ...x, alt: e.target.value } : x) }))} /></Field>
+              </div>
+            ))}
+            <button type="button" onClick={() => set((p) => ({ ...p, slides: [...p.slides, { image_url: "", link: "/products", alt: "" }] }))} className="inline-flex items-center gap-1 justify-self-start text-xs text-gold hover:underline"><Plus className="h-3 w-3" /> Add banner</button>
+          </div>
+        )}
+      />
+
       {/* FOOTER */}
       <SectionCard
         title="Footer"
