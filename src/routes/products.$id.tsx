@@ -37,6 +37,14 @@ const absoluteSiteUrl = (value: string) => {
   }
 };
 
+const shareImageVersion = (value: string) => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(31, hash) + value.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(36);
+};
+
 export const Route = createFileRoute("/products/$id")({
   loader: async ({ context, params }) => {
     const product = await context.queryClient.ensureQueryData(productQuery(params.id));
@@ -60,7 +68,8 @@ export const Route = createFileRoute("/products/$id")({
       product.description ||
       `${product.name}, handcrafted in 925 sterling silver by YOMORA.`;
     const image = absoluteSiteUrl(productImage(product));
-    const url = `${SITE_URL}/products/${encodeURIComponent(product.id)}`;
+    const canonicalUrl = `${SITE_URL}/products/${encodeURIComponent(product.id)}`;
+    const shareUrl = `${canonicalUrl}?share=${shareImageVersion(image)}`;
 
     return {
       meta: [
@@ -69,7 +78,7 @@ export const Route = createFileRoute("/products/$id")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "product" },
-        { property: "og:url", content: url },
+        { property: "og:url", content: shareUrl },
         { property: "og:image", content: image },
         { property: "og:image:secure_url", content: image },
         { property: "og:image:alt", content: product.name },
@@ -79,7 +88,7 @@ export const Route = createFileRoute("/products/$id")({
         { name: "twitter:image", content: image },
         { name: "twitter:image:alt", content: product.name },
       ],
-      links: [{ rel: "canonical", href: url }],
+      links: [{ rel: "canonical", href: canonicalUrl }],
     };
   },
   notFoundComponent: () => (
@@ -164,7 +173,8 @@ function ProductPage() {
   };
 
   const handleShare = async () => {
-    const productUrl = `${window.location.origin}/products/${encodeURIComponent(product.id)}`;
+    const imageVersion = shareImageVersion(absoluteSiteUrl(img));
+    const productUrl = `${window.location.origin}/products/${encodeURIComponent(product.id)}?share=${imageVersion}`;
     const shareData = {
       title: `${product.name} — YOMORA`,
       text: `${product.name} · ${formatINR(product.price)} · Handcrafted 925 sterling silver jewellery from YOMORA.`,
