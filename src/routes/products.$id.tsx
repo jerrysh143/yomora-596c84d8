@@ -13,6 +13,7 @@ import {
   Sparkles,
   ArrowRight,
   LoaderCircle,
+  Share2,
 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -24,6 +25,7 @@ import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
 import { NotifyMeForm } from "@/components/notify-me-form";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/products/$id")({
   loader: ({ params }) => {
@@ -115,6 +117,38 @@ function ProductPage() {
       cartButtonTimer.current = null;
     }
     nav({ to: "/checkout" });
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${product.name} — YOMORA`,
+      text: `${product.name} · ${formatINR(product.price)} · Handcrafted 925 sterling silver jewellery from YOMORA.`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Product link copied");
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareData.url;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const copied = document.execCommand("copy");
+      textArea.remove();
+      copied ? toast.success("Product link copied") : toast.error("Unable to copy product link");
+    }
   };
   const { items: wishItems } = useWishlist();
   const wished = wishItems.some((w) => w.id === product.id);
@@ -291,6 +325,14 @@ function ProductPage() {
               </button>
             </div>
             )}
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 border border-gold/70 px-6 py-3.5 text-[11px] font-bold tracking-[0.24em] text-foreground transition-colors hover:bg-gold hover:text-onyx"
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" /> SHARE THIS PRODUCT
+            </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-gold" /> 100% Secure Payment
