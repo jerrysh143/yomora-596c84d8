@@ -27,17 +27,61 @@ import { NotifyMeForm } from "@/components/notify-me-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
+const SITE_URL = "https://yomora.in";
+
+const absoluteSiteUrl = (value: string) => {
+  try {
+    return new URL(value, SITE_URL).toString();
+  } catch {
+    return `${SITE_URL}/og-image.jpg`;
+  }
+};
+
 export const Route = createFileRoute("/products/$id")({
-  loader: ({ params }) => {
-    // Data is fetched via useSuspenseQuery in the component; loader kept minimal.
-    return { id: params.id };
+  loader: async ({ context, params }) => {
+    const product = await context.queryClient.ensureQueryData(productQuery(params.id));
+    if (!product) throw notFound();
+    return { id: params.id, product };
   },
-  head: () => ({
-    meta: [
-      { title: "Product — YOMORA" },
-      { name: "description", content: "Handcrafted 925 sterling silver jewellery from YOMORA." },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const product = loaderData?.product;
+    if (!product) {
+      return {
+        meta: [
+          { title: "Product — YOMORA" },
+          { name: "description", content: "Handcrafted 925 sterling silver jewellery from YOMORA." },
+        ],
+      };
+    }
+
+    const title = `${product.name} — YOMORA`;
+    const description =
+      product.tagline ||
+      product.description ||
+      `${product.name}, handcrafted in 925 sterling silver by YOMORA.`;
+    const image = absoluteSiteUrl(productImage(product));
+    const url = `${SITE_URL}/products/${encodeURIComponent(product.id)}`;
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
+        { property: "og:image", content: image },
+        { property: "og:image:secure_url", content: image },
+        { property: "og:image:alt", content: product.name },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+        { name: "twitter:image:alt", content: product.name },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   notFoundComponent: () => (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -120,10 +164,11 @@ function ProductPage() {
   };
 
   const handleShare = async () => {
+    const productUrl = `${window.location.origin}/products/${encodeURIComponent(product.id)}`;
     const shareData = {
       title: `${product.name} — YOMORA`,
       text: `${product.name} · ${formatINR(product.price)} · Handcrafted 925 sterling silver jewellery from YOMORA.`,
-      url: window.location.href,
+      url: productUrl,
     };
 
     if (navigator.share) {
