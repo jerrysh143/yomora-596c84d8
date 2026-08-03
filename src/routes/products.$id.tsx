@@ -218,9 +218,26 @@ function ProductPage() {
                 SOLD OUT
               </span>
             )}
-            <button onClick={toggleWish} aria-label={wished ? "Remove from wishlist" : "Add to wishlist"} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
-              <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
-            </button>
+            <div className="absolute right-4 top-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleWish}
+                aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
+                title={wished ? "Remove from wishlist" : "Add to wishlist"}
+                className="grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+              >
+                <Heart className={`h-4 w-4 ${wished ? "fill-current text-gold" : ""}`} />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this product"
+                title="Share this product"
+                className="grid h-10 w-10 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
           {/* Details */}
@@ -325,14 +342,6 @@ function ProductPage() {
               </button>
             </div>
             )}
-
-            <button
-              type="button"
-              onClick={handleShare}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 border border-gold/70 px-6 py-3.5 text-[11px] font-bold tracking-[0.24em] text-foreground transition-colors hover:bg-gold hover:text-onyx"
-            >
-              <Share2 className="h-4 w-4" aria-hidden="true" /> SHARE THIS PRODUCT
-            </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-gold" /> 100% Secure Payment
