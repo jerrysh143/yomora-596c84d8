@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Crown, Trash2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
@@ -9,6 +10,8 @@ import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
+
+const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -47,6 +50,8 @@ function CheckoutPage() {
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
   const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
+  const qualifiesForMembership = total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD;
+  const membershipRemaining = Math.max(0, COMPLIMENTARY_MEMBERSHIP_THRESHOLD - total);
 
   useEffect(() => {
     let active = true;
@@ -186,6 +191,19 @@ function CheckoutPage() {
                     <div className="text-xs text-muted-foreground">Qty {i.qty}</div>
                   </div>
                   <div className="text-sm">{formatINR(i.price * i.qty)}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      cart.remove(i.id);
+                      if (appliedCoupon) setAppliedCoupon(null);
+                      toast.success(`${i.name} removed`);
+                    }}
+                    className="grid h-8 w-8 shrink-0 place-items-center text-muted-foreground transition-colors hover:text-destructive"
+                    title={`Remove ${i.name}`}
+                    aria-label={`Remove ${i.name} from order`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
               {items.length === 0 && <p className="text-xs text-muted-foreground">No items in cart. <Link to="/products" className="text-gold">Shop now</Link></p>}
@@ -197,6 +215,26 @@ function CheckoutPage() {
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
             </dl>
+            <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
+              <div className="flex gap-3">
+                <Crown className={`mt-0.5 h-5 w-5 shrink-0 ${qualifiesForMembership ? "text-gold" : "text-muted-foreground"}`} />
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
+                    {qualifiesForMembership ? "COMPLIMENTARY MEMBERSHIP INCLUDED" : "YOMORA PRIVILEGE"}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {qualifiesForMembership
+                      ? "Your one-year membership will activate when this order is completed."
+                      : `Add ${formatINR(membershipRemaining)} more to unlock a complimentary one-year membership.`}
+                  </p>
+                  {!qualifiesForMembership && (
+                    <Link to="/membership" className="mt-2 inline-block text-[10px] font-semibold tracking-[0.16em] text-gold hover:underline">
+                      VIEW MEMBERSHIP
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="mt-5 border-t border-border pt-5">
               <label className="block text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
                 COUPON CODE

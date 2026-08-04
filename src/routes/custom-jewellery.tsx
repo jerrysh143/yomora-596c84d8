@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { getIcon } from "@/lib/icon-map";
+import { createInquiryFn } from "@/lib/inquiries.functions";
 
 export const Route = createFileRoute("/custom-jewellery")({
   head: () => ({
@@ -23,6 +26,8 @@ export const Route = createFileRoute("/custom-jewellery")({
 
 function CustomJewelleryPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const createInquiry = useServerFn(createInquiryFn);
   const { data } = useQuery(siteContentQuery());
   const c = data?.page_custom ?? SITE_CONTENT_DEFAULTS.page_custom;
   return (
@@ -66,15 +71,15 @@ function CustomJewelleryPage() {
         </div>
 
         <form
-          onSubmit={(e) => { e.preventDefault(); setSent(true); }}
+          onSubmit={async (e) => { e.preventDefault(); if (sending) return; const form = e.currentTarget; const values = new FormData(form); setSending(true); setSent(false); try { await createInquiry({ data: { inquiry_type: "custom_jewellery", name: String(values.get("name") ?? ""), email: String(values.get("email") ?? ""), phone: String(values.get("phone") ?? ""), message: String(values.get("message") ?? "") } }); setSent(true); form.reset(); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to send your request"); } finally { setSending(false); } }}
           className="mx-auto mt-16 grid max-w-2xl gap-4 border border-border p-8"
         >
           <h2 className="font-display text-2xl">{c.form_title}</h2>
-          <input required placeholder="Your name" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <input required type="email" placeholder="Email" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <input required placeholder="Phone" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <textarea required placeholder="Describe the piece you have in mind" rows={5} className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <button className="bg-gold px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx">{c.form_button_label}</button>
+          <input name="name" required placeholder="Your name" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+          <input name="email" required type="email" placeholder="Email" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+          <input name="phone" required placeholder="Phone" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+          <textarea name="message" required placeholder="Describe the piece you have in mind" rows={5} className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+          <button disabled={sending} className="bg-gold px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-50">{sending ? "SENDING…" : c.form_button_label}</button>
           {sent && <p className="text-xs text-gold">{c.form_success_message}</p>}
         </form>
       </section>

@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SocialLinks } from "@/components/social-links";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
+import { createInquiryFn } from "@/lib/inquiries.functions";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -22,6 +25,8 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const createInquiry = useServerFn(createInquiryFn);
   const { data } = useQuery(siteContentQuery());
   const c = data?.page_contact ?? SITE_CONTENT_DEFAULTS.page_contact;
   return (
@@ -40,12 +45,12 @@ function ContactPage() {
               <SocialLinks placement="footer" className="mt-3" />
             </div>
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); setSent(true); }} className="space-y-4 border border-border p-6">
-            <Field label="Name"><input required placeholder="Enter your name" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
-            <Field label="Email"><input required type="email" placeholder="Enter your email" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
-            <Field label="Phone"><input required placeholder="Enter your phone number" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
-            <Field label="Message"><textarea required rows={5} placeholder="How can we help you?" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
-            <button className="w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx">{c.form_button_label}</button>
+          <form onSubmit={async (e) => { e.preventDefault(); if (sending) return; const form = e.currentTarget; const values = new FormData(form); setSending(true); setSent(false); try { await createInquiry({ data: { inquiry_type: "contact", name: String(values.get("name") ?? ""), email: String(values.get("email") ?? ""), phone: String(values.get("phone") ?? ""), message: String(values.get("message") ?? "") } }); setSent(true); form.reset(); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to send your message"); } finally { setSending(false); } }} className="space-y-4 border border-border p-6">
+            <Field label="Name"><input name="name" required placeholder="Enter your name" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
+            <Field label="Email"><input name="email" required type="email" placeholder="Enter your email" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
+            <Field label="Phone"><input name="phone" required placeholder="Enter your phone number" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
+            <Field label="Message"><textarea name="message" required rows={5} placeholder="How can we help you?" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></Field>
+            <button disabled={sending} className="w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-50">{sending ? "SENDING…" : c.form_button_label}</button>
             {sent && <p className="text-xs text-gold">{c.form_success_message}</p>}
           </form>
         </div>

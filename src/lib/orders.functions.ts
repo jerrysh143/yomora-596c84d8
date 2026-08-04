@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 export type OrderStatus = "pending" | "completed" | "cancelled";
+export const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
 export type OrderItem = {
   id: string;
@@ -58,6 +59,11 @@ const checkoutInput = z.object({
     .array(z.object({ id: z.string().min(1).max(80), quantity: z.number().int().min(1).max(10) }))
     .min(1)
     .max(20),
+});
+
+const trackOrderInput = z.object({
+  order_id: z.string().trim().uuid("Enter the complete order ID"),
+  customer_email: z.string().trim().email().max(200),
 });
 
 function getClientAddress(request: Request): string {
@@ -189,6 +195,22 @@ export type Order = {
   invoice_details?: InvoiceDetails;
 };
 
+/** Public order tracking only returns delivery-safe fields after matching order ID and email. */
+export const trackOrderFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => trackOrderInput.parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("id,status,created_at,updated_at")
+      .eq("id", data.order_id)
+      .eq("customer_email", data.customer_email.toLowerCase())
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("No order matches that order ID and email address");
+    return order;
+  });
+
 async function assertAdmin(ctx: { supabase: SupabaseClient<Database>; userId: string }) {
   const { data: isAdmin, error } = await ctx.supabase.rpc("has_role", {
     _user_id: ctx.userId,
@@ -295,12 +317,51 @@ export const updateOrderStatusFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase
+    const { data: order, error: orderError } = await context.supabase
       .from("orders")
       .update({ status: data.status })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+      .eq("id", data.id)
+      .select("id,customer_email,total")
+      .single();
+    if (orderError) throw new Error(orderError.message);
+
+    let membershipActivated = false;
+    if (data.status === "completed" && order.total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      let customerId: string | null = null;
+      for (let page = 1; page <= 10 && !customerId; page += 1) {
+        const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
+        if (usersError) throw new Error(usersError.message);
+        customerId = users.users.find((user) => user.email?.trim().toLowerCase() === order.customer_email.trim().toLowerCase())?.id ?? null;
+        if (users.users.length < 100) break;
+      }
+
+      if (customerId) {
+        const [{ data: plan }, { data: existing }] = await Promise.all([
+          supabaseAdmin.from("subscription_plan").select("id").eq("is_active", true).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+          supabaseAdmin.from("memberships").select("id,status").eq("user_id", customerId).in("status", ["pending", "active"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        ]);
+        if (!existing || existing.status !== "active") {
+          const activatedAt = new Date();
+          const expiresAt = new Date(activatedAt);
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+          const membershipValues = {
+            plan_id: plan?.id ?? null,
+            status: "active" as const,
+            activated_at: activatedAt.toISOString(),
+            expires_at: expiresAt.toISOString(),
+            member_number: `YOM-${customerId.slice(0, 6).toUpperCase()}-${order.id.slice(0, 6).toUpperCase()}`,
+            notes: `Complimentary membership earned with order ${order.id}`,
+          };
+          const result = existing
+            ? await supabaseAdmin.from("memberships").update(membershipValues).eq("id", existing.id)
+            : await supabaseAdmin.from("memberships").insert({ ...membershipValues, user_id: customerId });
+          if (result.error) throw new Error(result.error.message);
+          membershipActivated = true;
+        }
+      }
+    }
+    return { ok: true, membershipActivated };
   });
 
 export const deleteOrderFn = createServerFn({ method: "POST" })

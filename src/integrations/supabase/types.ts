@@ -271,6 +271,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_inquiries: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          inquiry_type: string
+          message: string | null
+          name: string | null
+          phone: string | null
+          request_fingerprint: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          inquiry_type: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          request_fingerprint?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          inquiry_type?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          request_fingerprint?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       product_notify_requests: {
         Row: {
           created_at: string

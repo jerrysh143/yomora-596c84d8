@@ -10,6 +10,14 @@ export type AdminCustomer = {
   email_confirmed: boolean;
   created_at: string;
   last_sign_in_at: string | null;
+  total_purchased: number;
+  order_count: number;
+  orders: Array<{
+    id: string;
+    total: number;
+    status: "pending" | "completed" | "cancelled";
+    created_at: string;
+  }>;
 };
 
 export const listCustomersFn = createServerFn({ method: "GET" })
@@ -23,12 +31,26 @@ export const listCustomersFn = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Forbidden: admin role required");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: orderRows, error: ordersError } = await supabaseAdmin
+      .from("orders")
+      .select("id,customer_email,total,status,created_at")
+      .order("created_at", { ascending: false });
+    if (ordersError) throw new Error(ordersError.message);
+    const ordersByEmail = new Map<string, AdminCustomer["orders"]>();
+    for (const order of orderRows ?? []) {
+      const email = order.customer_email.trim().toLowerCase();
+      const list = ordersByEmail.get(email) ?? [];
+      list.push({ id: order.id, total: order.total, status: order.status, created_at: order.created_at });
+      ordersByEmail.set(email, list);
+    }
     const customers: AdminCustomer[] = [];
     for (let page = 1; page <= 10; page += 1) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
       if (error) throw new Error(error.message);
       customers.push(...data.users.map((user) => {
         const metadata = user.user_metadata ?? {};
+        const email = user.email?.trim().toLowerCase() ?? "";
+        const orders = ordersByEmail.get(email) ?? [];
         return {
           id: user.id,
           full_name:
@@ -41,6 +63,11 @@ export const listCustomersFn = createServerFn({ method: "GET" })
           email_confirmed: !!user.email_confirmed_at,
           created_at: user.created_at,
           last_sign_in_at: user.last_sign_in_at ?? null,
+          total_purchased: orders
+            .filter((order) => order.status === "completed")
+            .reduce((sum, order) => sum + order.total, 0),
+          order_count: orders.length,
+          orders,
         };
       }));
       if (data.users.length < 100) break;

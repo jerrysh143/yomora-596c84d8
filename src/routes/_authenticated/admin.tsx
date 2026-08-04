@@ -43,6 +43,7 @@ import {
   type AdminMembership,
 } from "@/lib/memberships-admin.functions";
 import { listCustomersFn } from "@/lib/customers-admin.functions";
+import { listInquiriesFn } from "@/lib/inquiries.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -139,6 +140,7 @@ function AdminPage() {
   const removeMembership = useServerFn(deleteMembershipFn);
   const addMembership = useServerFn(createMembershipFn);
   const listCustomers = useServerFn(listCustomersFn);
+  const listInquiries = useServerFn(listInquiriesFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -158,6 +160,11 @@ function AdminPage() {
   const alertsQ = useQuery({
     queryKey: ["admin", "notify-requests"],
     queryFn: () => listAlerts(),
+    enabled: !!adminInfo?.isAdmin,
+  });
+  const inquiriesQ = useQuery({
+    queryKey: ["admin", "customer-inquiries"],
+    queryFn: () => listInquiries(),
     enabled: !!adminInfo?.isAdmin,
   });
   const { data: memberships = [] } = useQuery({
@@ -711,13 +718,13 @@ on conflict do nothing;`}
         {tab === "customers" && (
           <div className="mt-8">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">Customer contact details and future-update subscription preferences.</p>
+              <p className="text-sm text-muted-foreground">Customer contact details, completed purchase totals and order history.</p>
               <button type="button" onClick={() => refetchCustomers()} disabled={customersRefreshing} className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground hover:border-gold hover:text-gold disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${customersRefreshing ? "animate-spin" : ""}`} /> REFRESH</button>
             </div>
             <div className="overflow-x-auto border border-border">
-              <table className="w-full min-w-[850px] text-left text-sm">
-                <thead className="border-b border-border bg-secondary/30 text-[10px] tracking-[0.16em] text-muted-foreground"><tr><th className="px-4 py-3">CUSTOMER</th><th className="px-4 py-3">EMAIL</th><th className="px-4 py-3">PHONE</th><th className="px-4 py-3">FUTURE UPDATES</th><th className="px-4 py-3">JOINED</th><th className="px-4 py-3">LAST LOGIN</th></tr></thead>
-                <tbody className="divide-y divide-border">{customers.map((customer) => <tr key={customer.id}><td className="px-4 py-3"><div className="font-medium text-foreground">{customer.full_name || "Not provided"}</div><div className="mt-0.5 text-[10px] text-muted-foreground">{customer.email_confirmed ? "Email verified" : "Email confirmation pending"}</div></td><td className="px-4 py-3 text-muted-foreground">{customer.email || "—"}</td><td className="px-4 py-3 text-muted-foreground">{customer.phone || "—"}</td><td className="px-4 py-3"><span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${customer.marketing_opt_in ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{customer.marketing_opt_in ? "ACTIVE" : "INACTIVE"}</span></td><td className="px-4 py-3 text-xs text-muted-foreground">{new Date(customer.created_at).toLocaleDateString("en-IN")}</td><td className="px-4 py-3 text-xs text-muted-foreground">{customer.last_sign_in_at ? new Date(customer.last_sign_in_at).toLocaleString("en-IN") : "Never"}</td></tr>)}</tbody>
+              <table className="w-full min-w-[1100px] text-left text-sm">
+                <thead className="border-b border-border bg-secondary/30 text-[10px] tracking-[0.16em] text-muted-foreground"><tr><th className="px-4 py-3">CUSTOMER</th><th className="px-4 py-3">EMAIL</th><th className="px-4 py-3">PHONE</th><th className="px-4 py-3">TOTAL PURCHASED</th><th className="px-4 py-3">ORDERS</th><th className="px-4 py-3">FUTURE UPDATES</th><th className="px-4 py-3">JOINED</th><th className="px-4 py-3">LAST LOGIN</th></tr></thead>
+                <tbody className="divide-y divide-border">{customers.map((customer) => <tr key={customer.id} className="align-top"><td className="px-4 py-3"><div className="font-medium text-foreground">{customer.full_name || "Not provided"}</div><div className="mt-0.5 text-[10px] text-muted-foreground">{customer.email_confirmed ? "Email verified" : "Email confirmation pending"}</div></td><td className="px-4 py-3 text-muted-foreground">{customer.email || "—"}</td><td className="px-4 py-3 text-muted-foreground">{customer.phone || "—"}</td><td className="px-4 py-3 font-medium text-foreground">{formatINR(customer.total_purchased)}</td><td className="px-4 py-3"><details><summary className="cursor-pointer text-xs font-semibold text-gold">{customer.order_count} ORDER{customer.order_count === 1 ? "" : "S"}</summary><div className="mt-3 w-72 space-y-2">{customer.orders.map((order) => <Link key={order.id} to="/invoice/$id" params={{ id: order.id }} target="_blank" className="flex items-center justify-between gap-3 border-b border-border pb-2 text-xs"><span>#{order.id.slice(0, 8).toUpperCase()}<span className="mt-0.5 block text-[10px] text-muted-foreground">{new Date(order.created_at).toLocaleDateString("en-IN")} · {order.status}</span></span><span>{formatINR(order.total)}</span></Link>)}{customer.orders.length === 0 && <span className="text-xs text-muted-foreground">No orders</span>}</div></details></td><td className="px-4 py-3"><span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${customer.marketing_opt_in ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{customer.marketing_opt_in ? "ACTIVE" : "INACTIVE"}</span></td><td className="px-4 py-3 text-xs text-muted-foreground">{new Date(customer.created_at).toLocaleDateString("en-IN")}</td><td className="px-4 py-3 text-xs text-muted-foreground">{customer.last_sign_in_at ? new Date(customer.last_sign_in_at).toLocaleString("en-IN") : "Never"}</td></tr>)}</tbody>
               </table>
               {customers.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">No registered customers yet.</p>}
             </div>
@@ -985,7 +992,15 @@ on conflict do nothing;`}
         {tab === "coupons" && <CouponManager />}
 
         {tab === "alerts" && (
-          <div className="mt-8 grid gap-2">
+          <div className="mt-8 grid gap-8">
+            <div className="grid gap-2">
+            <h2 className="font-display text-2xl">Customer enquiries & subscriptions</h2>
+            {inquiriesQ.isLoading && <p className="py-4 text-sm text-muted-foreground">Loading customer enquiries…</p>}
+            {!inquiriesQ.isLoading && (inquiriesQ.data ?? []).length === 0 && <p className="py-4 text-sm text-muted-foreground">No customer enquiries yet.</p>}
+            {(inquiriesQ.data ?? []).map((inquiry) => <div key={inquiry.id} className="grid gap-2 border border-border p-3 sm:grid-cols-[1fr_auto]"><div><div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">{inquiry.inquiry_type.replace("_", " ")}</div><div className="mt-1 font-medium">{inquiry.name || inquiry.email}</div><div className="mt-0.5 text-xs text-muted-foreground">{[inquiry.email, inquiry.phone].filter(Boolean).join(" · ")}</div>{inquiry.message && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{inquiry.message}</p>}</div><span className="text-xs text-muted-foreground">{new Date(inquiry.created_at).toLocaleString("en-IN")}</span></div>)}
+            </div>
+            <div className="grid gap-2">
+            <h2 className="font-display text-2xl">Restock alerts</h2>
             {alertsQ.isLoading && <p className="py-8 text-sm text-muted-foreground">Loading restock alerts…</p>}
             {!alertsQ.isLoading && (alertsQ.data ?? []).length === 0 && (
               <p className="py-8 text-sm text-muted-foreground">No restock alerts yet.</p>
@@ -1005,6 +1020,7 @@ on conflict do nothing;`}
                 </span>
               </div>
             ))}
+            </div>
           </div>
         )}
       </section>
