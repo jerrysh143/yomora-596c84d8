@@ -31,7 +31,12 @@ REVOKE INSERT, UPDATE, DELETE ON public.product_reviews FROM anon, authenticated
 DROP POLICY IF EXISTS "Published reviews are public" ON public.product_reviews;
 CREATE POLICY "Published reviews are public" ON public.product_reviews
   FOR SELECT TO anon, authenticated
-  USING (is_published OR user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+  USING (is_published);
+
+DROP POLICY IF EXISTS "Customers read their reviews" ON public.product_reviews;
+CREATE POLICY "Customers read their reviews" ON public.product_reviews
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Admins manage reviews" ON public.product_reviews;
 CREATE POLICY "Admins manage reviews" ON public.product_reviews
