@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -42,6 +42,7 @@ import {
   createMembershipFn,
   type AdminMembership,
 } from "@/lib/memberships-admin.functions";
+import { listCustomersFn } from "@/lib/customers-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -137,6 +138,7 @@ function AdminPage() {
   const saveMembership = useServerFn(updateMembershipFn);
   const removeMembership = useServerFn(deleteMembershipFn);
   const addMembership = useServerFn(createMembershipFn);
+  const listCustomers = useServerFn(listCustomersFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -163,8 +165,13 @@ function AdminPage() {
     queryFn: () => listMemberships(),
     enabled: !!adminInfo?.isAdmin,
   });
+  const { data: customers = [], refetch: refetchCustomers, isFetching: customersRefreshing } = useQuery({
+    queryKey: ["admin", "customers"],
+    queryFn: () => listCustomers(),
+    enabled: !!adminInfo?.isAdmin,
+  });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "alerts" | "subscription" | "memberships" | "coupons" | "site">("products");
+  const [tab, setTab] = useState<"products" | "categories" | "orders" | "customers" | "alerts" | "subscription" | "memberships" | "coupons" | "site">("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
   const [invoiceEditor, setInvoiceEditor] = useState<{ id: string; details: InvoiceDetails } | null>(null);
 
@@ -643,7 +650,7 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : tab === "coupons" ? "Manage coupons" : "Manage site content"}
+              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "customers" ? "Manage customers" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : tab === "coupons" ? "Manage coupons" : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
@@ -652,6 +659,8 @@ on conflict do nothing;`}
                 ? `${categories.length} categories.`
                 : tab === "orders"
                 ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
+                : tab === "customers"
+                ? `${customers.length} registered customer${customers.length === 1 ? "" : "s"} · ${customers.filter((customer) => customer.marketing_opt_in).length} subscribed`
                 : tab === "subscription"
                 ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
                 : tab === "memberships"
@@ -676,6 +685,7 @@ on conflict do nothing;`}
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
+            { k: "customers" as const, label: "CUSTOMERS", icon: Users },
             { k: "alerts" as const, label: "RESTOCK ALERTS", icon: BellRing },
             { k: "subscription" as const, label: "SUBSCRIPTION", icon: Sparkles },
             { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
@@ -697,6 +707,22 @@ on conflict do nothing;`}
             );
           })}
         </div>
+
+        {tab === "customers" && (
+          <div className="mt-8">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">Customer contact details and future-update subscription preferences.</p>
+              <button type="button" onClick={() => refetchCustomers()} disabled={customersRefreshing} className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground hover:border-gold hover:text-gold disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${customersRefreshing ? "animate-spin" : ""}`} /> REFRESH</button>
+            </div>
+            <div className="overflow-x-auto border border-border">
+              <table className="w-full min-w-[850px] text-left text-sm">
+                <thead className="border-b border-border bg-secondary/30 text-[10px] tracking-[0.16em] text-muted-foreground"><tr><th className="px-4 py-3">CUSTOMER</th><th className="px-4 py-3">EMAIL</th><th className="px-4 py-3">PHONE</th><th className="px-4 py-3">FUTURE UPDATES</th><th className="px-4 py-3">JOINED</th><th className="px-4 py-3">LAST LOGIN</th></tr></thead>
+                <tbody className="divide-y divide-border">{customers.map((customer) => <tr key={customer.id}><td className="px-4 py-3"><div className="font-medium text-foreground">{customer.full_name || "Not provided"}</div><div className="mt-0.5 text-[10px] text-muted-foreground">{customer.email_confirmed ? "Email verified" : "Email confirmation pending"}</div></td><td className="px-4 py-3 text-muted-foreground">{customer.email || "—"}</td><td className="px-4 py-3 text-muted-foreground">{customer.phone || "—"}</td><td className="px-4 py-3"><span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${customer.marketing_opt_in ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{customer.marketing_opt_in ? "ACTIVE" : "INACTIVE"}</span></td><td className="px-4 py-3 text-xs text-muted-foreground">{new Date(customer.created_at).toLocaleDateString("en-IN")}</td><td className="px-4 py-3 text-xs text-muted-foreground">{customer.last_sign_in_at ? new Date(customer.last_sign_in_at).toLocaleString("en-IN") : "Never"}</td></tr>)}</tbody>
+              </table>
+              {customers.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">No registered customers yet.</p>}
+            </div>
+          </div>
+        )}
 
         {tab === "categories" && (
           <div className="mt-8 grid gap-2">

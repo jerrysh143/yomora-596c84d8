@@ -87,8 +87,9 @@ async function requestFingerprint(request: Request, secret: string): Promise<str
 
 /** Creates a real order server-side. Product names and prices are always read from the database. */
 export const createOrderFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => checkoutInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const [{ supabaseAdmin }, { getRequest }] = await Promise.all([
       import("@/integrations/supabase/client.server"),
       import("@tanstack/react-start/server"),
@@ -96,6 +97,13 @@ export const createOrderFn = createServerFn({ method: "POST" })
     const request = getRequest();
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!request || !serviceRoleKey) throw new Error("Checkout is temporarily unavailable");
+
+    const { data: authData, error: authError } = await context.supabase.auth.getUser();
+    const accountEmail = authData.user?.email?.trim().toLowerCase();
+    if (authError || !accountEmail) throw new Error("Sign in before placing an order");
+    if (accountEmail !== data.customer_email.trim().toLowerCase()) {
+      throw new Error("Use the email address connected to your YOMORA account");
+    }
 
     const fingerprint = await requestFingerprint(request, serviceRoleKey);
     const { count, error: rateError } = await supabaseAdmin
@@ -142,17 +150,10 @@ export const createOrderFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (data.coupon_code) {
-      const authHeader = request.headers.get("authorization");
-      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-      const { data: auth } = token ? await supabaseAdmin.auth.getUser(token) : { data: { user: null } };
-      if (auth.user?.email && auth.user.email.toLowerCase() !== data.customer_email.toLowerCase()) {
-        await supabaseAdmin.from("orders").delete().eq("id", order.id);
-        throw new Error("Use the email address connected to your signed-in account");
-      }
       const { data: redeemed, error: couponError } = await supabaseAdmin.rpc("redeem_coupon_for_order", {
         _order_id: order.id,
         _coupon_code: data.coupon_code,
-        _user_id: auth.user?.id ?? null,
+        _user_id: authData.user.id,
       });
       if (couponError || !redeemed?.[0]) {
         await supabaseAdmin.from("orders").delete().eq("id", order.id);

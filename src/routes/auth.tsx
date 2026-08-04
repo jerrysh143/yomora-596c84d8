@@ -65,6 +65,9 @@ function EmailLogin({ redirect }: { redirect: string }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const google = async () => {
@@ -86,14 +89,24 @@ function EmailLogin({ redirect }: { redirect: string }) {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}${redirect}`,
+            data: {
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+              marketing_opt_in: marketingOptIn,
+            },
           },
         });
         if (error) throw error;
+        if (!data.session) {
+          toast.success("Account created. Confirm your email, then sign in to continue.");
+          setMode("signin");
+          return;
+        }
         toast.success("Account created. Check your email if confirmation is required.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -134,6 +147,18 @@ function EmailLogin({ redirect }: { redirect: string }) {
       </div>
 
       <form onSubmit={submit} className="grid gap-4">
+        {mode === "signup" && (
+          <>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-xs tracking-[0.16em] text-muted-foreground">FULL NAME</span>
+              <input type="text" required autoComplete="name" minLength={2} maxLength={120} value={fullName} onChange={(e) => setFullName(e.target.value)} className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-xs tracking-[0.16em] text-muted-foreground">PHONE NUMBER</span>
+              <input type="tel" required autoComplete="tel" minLength={6} maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" />
+            </label>
+          </>
+        )}
         <label className="grid gap-1.5 text-sm">
           <span className="text-xs tracking-[0.16em] text-muted-foreground">EMAIL</span>
           <input
@@ -145,6 +170,12 @@ function EmailLogin({ redirect }: { redirect: string }) {
             className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
           />
         </label>
+        {mode === "signup" && (
+          <label className="flex items-start gap-3 border border-border p-3 text-xs text-muted-foreground">
+            <input type="checkbox" checked={marketingOptIn} onChange={(event) => setMarketingOptIn(event.target.checked)} className="mt-0.5" />
+            <span>Keep me subscribed to YOMORA product launches, offers and future updates. I can change this anytime in Account Details.</span>
+          </label>
+        )}
         <label className="grid gap-1.5 text-sm">
           <span className="text-xs tracking-[0.16em] text-muted-foreground">PASSWORD</span>
           <input

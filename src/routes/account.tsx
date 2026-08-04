@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listMyOrdersFn, type Order } from "@/lib/orders.functions";
 import { formatINR } from "@/lib/products";
 import { useWishlist } from "@/lib/wishlist";
+import { listMyReviewsFn, type ProductReview } from "@/lib/reviews.functions";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -23,9 +24,9 @@ export const Route = createFileRoute("/account")({
 });
 
 type Address = { id: string; label: string; value: string };
-type Profile = { full_name: string; phone: string; addresses: Address[] };
+type Profile = { full_name: string; phone: string; addresses: Address[]; marketing_opt_in: boolean };
 
-const emptyProfile: Profile = { full_name: "", phone: "", addresses: [] };
+const emptyProfile: Profile = { full_name: "", phone: "", addresses: [], marketing_opt_in: false };
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -38,6 +39,7 @@ function statusLabel(status: Order["status"]) {
 function AccountPage() {
   const nav = useNavigate();
   const listMyOrders = useServerFn(listMyOrdersFn);
+  const listMyReviews = useServerFn(listMyReviewsFn);
   const { items: wishlistItems } = useWishlist();
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<Profile>(emptyProfile);
@@ -65,6 +67,7 @@ function AccountPage() {
         full_name: typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : "",
         phone: typeof metadata.phone === "string" ? metadata.phone : "",
         addresses: savedAddresses,
+        marketing_opt_in: metadata.marketing_opt_in === true,
       });
     };
     load();
@@ -82,13 +85,19 @@ function AccountPage() {
   });
   const orders = ordersQuery.data ?? [];
   const latestOrders = orders.slice(0, 3);
+  const reviewsQuery = useQuery({
+    queryKey: ["my-reviews"],
+    queryFn: () => listMyReviews(),
+    enabled: !!email,
+  });
+  const reviews = reviewsQuery.data ?? [];
 
   const memberLabel = useMemo(() => "Black Signature", []);
 
   const saveProfile = async (next: Profile = profile) => {
     setSaving(true);
     const { error } = await supabase.auth.updateUser({
-      data: { full_name: next.full_name.trim(), phone: next.phone.trim(), addresses: next.addresses },
+      data: { full_name: next.full_name.trim(), phone: next.phone.trim(), addresses: next.addresses, marketing_opt_in: next.marketing_opt_in },
     });
     setSaving(false);
     if (error) { toast.error(error.message); return false; }
@@ -134,11 +143,11 @@ function AccountPage() {
             </ul>
           </aside>
           <main>
-            {tab === "dashboard" && <Dashboard orders={latestOrders} wishlistCount={wishlistItems.length} memberLabel={memberLabel} setTab={setTab} />}
+            {tab === "dashboard" && <Dashboard orders={latestOrders} orderCount={orders.length} wishlistCount={wishlistItems.length} reviewCount={reviews.length} memberLabel={memberLabel} setTab={setTab} />}
             {tab === "orders" && <Orders orders={orders} loading={ordersQuery.isLoading} />}
             {tab === "addresses" && <Addresses addresses={profile.addresses} newAddress={newAddress} setNewAddress={setNewAddress} addAddress={addAddress} removeAddress={removeAddress} saving={saving} />}
             {tab === "wishlist" && <Wishlist items={wishlistItems} />}
-            {tab === "reviews" && <Empty title="My Reviews" body="You have not submitted a review yet." />}
+            {tab === "reviews" && <MyReviews reviews={reviews} loading={reviewsQuery.isLoading} />}
             {tab === "details" && <Details profile={profile} setProfile={setProfile} save={() => saveProfile()} saving={saving} email={email} />}
           </main>
         </div>
@@ -148,14 +157,14 @@ function AccountPage() {
   );
 }
 
-function Dashboard({ orders, wishlistCount, memberLabel, setTab }: { orders: Order[]; wishlistCount: number; memberLabel: string; setTab: (tab: "orders" | "wishlist") => void }) {
-  return <><h1 className="font-display text-4xl">Dashboard</h1><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat value={orders.length} label="Orders" /><Stat value={wishlistCount} label="Wishlist" /><Stat value="—" label="Reviews" /><Stat value="Black" label="Member" /></div><div className="mt-10 border border-border"><div className="flex items-center justify-between border-b border-border px-5 py-3"><h2 className="text-xs font-semibold tracking-[0.24em] text-gold">RECENT ORDERS</h2><button onClick={() => setTab("orders")} className="text-xs tracking-[0.2em] text-muted-foreground hover:text-gold">VIEW ALL</button></div>{orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders yet. Your placed orders will appear here automatically.</div>}</div><p className="mt-5 text-xs text-muted-foreground">{memberLabel} membership details are available from the left menu.</p></>;
+function Dashboard({ orders, orderCount, wishlistCount, reviewCount, memberLabel, setTab }: { orders: Order[]; orderCount: number; wishlistCount: number; reviewCount: number; memberLabel: string; setTab: (tab: "orders" | "wishlist") => void }) {
+  return <><h1 className="font-display text-4xl">Dashboard</h1><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat value={orderCount} label="Orders" /><Stat value={wishlistCount} label="Wishlist" /><Stat value={reviewCount} label="Reviews" /><Stat value="Black" label="Member" /></div><div className="mt-10 border border-border"><div className="flex items-center justify-between border-b border-border px-5 py-3"><h2 className="text-xs font-semibold tracking-[0.24em] text-gold">RECENT ORDERS</h2><button onClick={() => setTab("orders")} className="text-xs tracking-[0.2em] text-muted-foreground hover:text-gold">VIEW ALL</button></div>{orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders yet. Your placed orders will appear here automatically.</div>}</div><p className="mt-5 text-xs text-muted-foreground">{memberLabel} membership details are available from the left menu.</p></>;
 }
 
 function Stat({ value, label }: { value: string | number; label: string }) { return <div className="border border-border p-6 text-center"><div className="font-display text-3xl text-gold">{value}</div><div className="mt-1 text-[11px] tracking-[0.24em] text-muted-foreground">{label.toUpperCase()}</div></div>; }
-function OrderRows({ orders }: { orders: Order[] }) { return <ul className="divide-y divide-border text-sm">{orders.map((order) => <li key={order.id} className="grid grid-cols-[1.3fr_1fr_1fr_auto] gap-2 items-center px-5 py-3"><span className="text-gold">Order #{order.id.slice(0, 8).toUpperCase()}</span><span className="text-muted-foreground">{formatDate(order.created_at)}</span><span>{statusLabel(order.status)}</span><span className="flex items-center justify-end gap-3"><span>{formatINR(order.total)}</span><Link to="/invoice/$id" params={{ id: order.id }} className="text-[10px] font-semibold tracking-[0.16em] text-gold hover:text-foreground">INVOICE</Link></span></li>)}</ul>; }
+function OrderRows({ orders }: { orders: Order[] }) { return <ul className="divide-y divide-border text-sm">{orders.map((order) => <li key={order.id} className="grid grid-cols-1 gap-2 px-5 py-4 sm:grid-cols-[1.3fr_1fr_1fr_auto] sm:items-center"><span className="text-gold">Order #{order.id.slice(0, 8).toUpperCase()}</span><span className="text-muted-foreground">{formatDate(order.created_at)}</span><span>{statusLabel(order.status)}</span><span className="flex items-center gap-3 sm:justify-end"><span>{formatINR(order.total)}</span><Link to="/invoice/$id" params={{ id: order.id }} className="text-[10px] font-semibold tracking-[0.16em] text-gold hover:text-foreground">INVOICE</Link></span>{order.status === "completed" && <div className="flex flex-wrap gap-2 sm:col-span-4">{order.items.map((item) => <Link key={item.id} to="/products/$id" params={{ id: item.id }} hash="reviews" className="border border-gold/50 px-3 py-1.5 text-[9px] font-semibold tracking-[0.14em] text-gold hover:bg-gold hover:text-onyx">REVIEW {item.name.toUpperCase()}</Link>)}</div>}</li>)}</ul>; }
 function Orders({ orders, loading }: { orders: Order[]; loading: boolean }) { return <><h1 className="font-display text-4xl">My Orders</h1><div className="mt-6 border border-border">{loading ? <div className="p-6 text-sm text-muted-foreground">Loading your orders…</div> : orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders found for this account.</div>}</div></>; }
+function MyReviews({ reviews, loading }: { reviews: ProductReview[]; loading: boolean }) { return <><h1 className="font-display text-4xl">My Reviews</h1><div className="mt-6 grid gap-4">{loading ? <p className="border border-border p-6 text-sm text-muted-foreground">Loading your reviews…</p> : reviews.length ? reviews.map((review) => <article key={review.id} className="border border-border p-5"><div className="flex flex-wrap items-center justify-between gap-3"><Link to="/products/$id" params={{ id: review.product_id }} hash="reviews" className="text-xs font-semibold tracking-[0.16em] text-gold hover:text-foreground">VIEW PRODUCT</Link><span className="flex text-gold">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`h-4 w-4 ${star <= review.rating ? "fill-current" : "opacity-25"}`} />)}</span></div><p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{review.comment}</p>{review.media_urls.length > 0 && <div className="mt-4 flex gap-2 overflow-x-auto">{review.media_urls.map((url) => /\.(mp4|webm|mov)(?:\?|$)/i.test(url) ? <video key={url} src={url} controls preload="metadata" className="h-24 w-24 shrink-0 bg-onyx object-cover" /> : <img key={url} src={url} alt="Your product review" loading="lazy" className="h-24 w-24 shrink-0 object-cover" />)}</div>}<time className="mt-3 block text-[10px] tracking-[0.14em] text-muted-foreground">{formatDate(review.created_at)}</time></article>) : <p className="border border-border p-6 text-sm text-muted-foreground">You have not submitted a review yet. Review buttons appear under delivered orders.</p>}</div></>; }
 function Addresses({ addresses, newAddress, setNewAddress, addAddress, removeAddress, saving }: { addresses: Address[]; newAddress: string; setNewAddress: (value: string) => void; addAddress: () => void; removeAddress: (id: string) => void; saving: boolean }) { return <><h1 className="font-display text-4xl">My Addresses</h1><div className="mt-6 grid gap-3">{addresses.length ? addresses.map((address) => <div key={address.id} className="flex items-start justify-between gap-4 border border-border p-5"><div><p className="text-xs tracking-[0.18em] text-gold">{address.label.toUpperCase()}</p><p className="mt-2 whitespace-pre-wrap text-sm">{address.value}</p></div><button aria-label="Delete address" onClick={() => removeAddress(address.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button></div>) : <p className="text-sm text-muted-foreground">No saved addresses yet.</p>}</div><div className="mt-6 border border-border p-5"><label className="text-xs tracking-[0.18em] text-muted-foreground">ADD A NEW ADDRESS</label><textarea value={newAddress} onChange={(event) => setNewAddress(event.target.value)} rows={4} className="mt-3 w-full border border-border bg-background p-3 text-sm outline-none focus:border-gold" placeholder="House / street, area, city, state and PIN code" /><button disabled={saving} onClick={addAddress} className="mt-3 inline-flex items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Plus className="h-4 w-4" /> SAVE ADDRESS</button></div></>; }
 function Wishlist({ items }: { items: { id: string; name: string; price: number; image: string }[] }) { return <><h1 className="font-display text-4xl">My Wishlist</h1><div className="mt-6 grid gap-4 sm:grid-cols-2">{items.length ? items.map((item) => <Link to="/products/$id" params={{ id: item.id }} key={item.id} className="flex gap-4 border border-border p-3 hover:border-gold"><img src={item.image} alt="" className="h-20 w-20 object-cover" /><div><p className="font-display text-lg">{item.name}</p><p className="mt-1 text-sm text-gold">{formatINR(item.price)}</p></div></Link>) : <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>}</div></>; }
-function Details({ profile, setProfile, save, saving, email }: { profile: Profile; setProfile: (profile: Profile) => void; save: () => void; saving: boolean; email: string }) { return <><h1 className="font-display text-4xl">Account Details</h1><div className="mt-6 grid max-w-xl gap-4 border border-border p-6"><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">FULL NAME<input value={profile.full_name} onChange={(event) => setProfile({ ...profile, full_name: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">EMAIL<input value={email} disabled className="border border-border bg-secondary/40 px-3 py-2.5 text-sm text-muted-foreground" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">PHONE NUMBER<input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><button disabled={saving} onClick={save} className="inline-flex w-fit items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Save className="h-4 w-4" /> SAVE CHANGES</button></div></>; }
-function Empty({ title, body }: { title: string; body: string }) { return <><h1 className="font-display text-4xl">{title}</h1><p className="mt-6 border border-border p-6 text-sm text-muted-foreground">{body}</p></>; }
+function Details({ profile, setProfile, save, saving, email }: { profile: Profile; setProfile: (profile: Profile) => void; save: () => void; saving: boolean; email: string }) { return <><h1 className="font-display text-4xl">Account Details</h1><div className="mt-6 grid max-w-xl gap-4 border border-border p-6"><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">FULL NAME<input value={profile.full_name} onChange={(event) => setProfile({ ...profile, full_name: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">EMAIL<input value={email} disabled className="border border-border bg-secondary/40 px-3 py-2.5 text-sm text-muted-foreground" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">PHONE NUMBER<input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="flex items-start gap-3 border border-border p-4 text-xs text-muted-foreground"><input type="checkbox" checked={profile.marketing_opt_in} onChange={(event) => setProfile({ ...profile, marketing_opt_in: event.target.checked })} className="mt-0.5" /><span><b className="block text-foreground">Future updates: {profile.marketing_opt_in ? "Active" : "Inactive"}</b><span className="mt-1 block">Receive YOMORA product launches, offers and membership updates by email or phone.</span></span></label><button disabled={saving} onClick={save} className="inline-flex w-fit items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Save className="h-4 w-4" /> SAVE CHANGES</button></div></>; }

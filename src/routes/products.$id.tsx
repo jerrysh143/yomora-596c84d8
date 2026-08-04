@@ -24,6 +24,7 @@ import { productQuery, productsQuery } from "@/lib/products.queries";
 import { cart } from "@/lib/cart";
 import { wishlist, useWishlist } from "@/lib/wishlist";
 import { NotifyMeForm } from "@/components/notify-me-form";
+import { ProductReviews } from "@/components/product-reviews";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
@@ -146,6 +147,10 @@ function ProductPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (window.location.hash === "#reviews") setTab("reviews");
+  }, []);
 
   const handleCartAction = () => {
     if (cartActionStatus === "ready") {
@@ -427,7 +432,7 @@ function ProductPage() {
       </section>
 
       {/* Tabs + gift box */}
-      <section className="container-x mx-auto max-w-[1400px] py-14">
+      <section id="reviews" className="container-x mx-auto max-w-[1400px] scroll-mt-28 py-14">
         <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
           <div>
             <div className="flex flex-wrap gap-6 border-b border-border">
@@ -439,7 +444,7 @@ function ProductPage() {
                     tab === k ? "border-gold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {k === "shipping" ? "Shipping & Returns" : k === "reviews" ? "Reviews (120)" : k}
+                  {k === "shipping" ? "Shipping & Returns" : k === "reviews" ? "Reviews" : k}
                 </button>
               ))}
             </div>
@@ -468,7 +473,7 @@ function ProductPage() {
                 <p>Free shipping across India. Orders dispatched within 24-48 hours. Easy returns within 7 days of delivery — piece must be unworn and in original YOMORA packaging.</p>
               )}
               {tab === "reviews" && (
-                <p>Loved by 120+ customers. Full review module coming soon.</p>
+                <ProductReviews productId={product.id} productName={product.name} />
               )}
             </div>
           </div>
@@ -503,14 +508,6 @@ function ProductPage() {
                 </div>
                 <h3 className="mt-3 text-center text-sm text-foreground">{p.name}</h3>
                 <p className="mt-1 text-center text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
-                <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <div className="flex text-gold">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-current" />
-                    ))}
-                  </div>
-                  <span>(80)</span>
-                </div>
               </Link>
             ))}
           </div>

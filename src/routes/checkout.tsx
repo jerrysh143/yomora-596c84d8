@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +8,7 @@ import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
+  const navigate = useNavigate();
   const { items, subtotal } = useCart();
   const createOrder = useServerFn(createOrderFn);
   const validateCoupon = useServerFn(validateCouponFn);
@@ -29,6 +31,10 @@ function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -41,6 +47,33 @@ function CheckoutPage() {
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
   const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
+
+  useEffect(() => {
+    let active = true;
+    const applySession = (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
+      if (!session) {
+        navigate({ to: "/auth", search: { redirect: "/checkout" }, replace: true });
+        return;
+      }
+      if (!active) return;
+      const metadata = session.user.user_metadata ?? {};
+      const addresses = Array.isArray(metadata.addresses) ? metadata.addresses : [];
+      const firstAddress = addresses.find((address: unknown) => !!address && typeof address === "object" && typeof (address as { value?: unknown }).value === "string") as { value?: string } | undefined;
+      setCustomerEmail(session.user.email ?? "");
+      setCustomerName(typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : "");
+      setCustomerPhone(typeof metadata.phone === "string" ? metadata.phone : "");
+      setAddressLine(firstAddress?.value ?? "");
+      setAuthReady(true);
+    };
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [navigate]);
+
+  if (!authReady) {
+    return <div className="min-h-screen bg-background"><SiteHeader /><div className="container-x mx-auto max-w-[1400px] py-24 text-sm text-muted-foreground">Checking your YOMORA account…</div><SiteFooter /></div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -110,16 +143,17 @@ function CheckoutPage() {
                   placeholder="you@email.com"
                   value={customerEmail}
                   onChange={(event) => setCustomerEmail(event.target.value)}
+                  readOnly
                 />
-                <Input name="customer_phone" label="Phone" required placeholder="+91 98765 43210" />
+                <Input name="customer_phone" label="Phone" required placeholder="+91 98765 43210" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} />
               </div>
             </fieldset>
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">2. SHIPPING ADDRESS</legend>
               <div className="grid gap-4 md:grid-cols-2">
-                <Input name="customer_name" label="Full name" required />
+                <Input name="customer_name" label="Full name" required value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
                 <Input name="pincode" label="Pincode" required inputMode="numeric" />
-                <Input name="address_line" label="Address line" required className="md:col-span-2" />
+                <Input name="address_line" label="Address line" required className="md:col-span-2" value={addressLine} onChange={(event) => setAddressLine(event.target.value)} />
                 <Input name="city" label="City" required />
                 <Input name="state" label="State" required />
               </div>

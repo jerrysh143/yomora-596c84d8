@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, User, ShoppingBag, Heart } from "lucide-react";
+import { Search, User, ShoppingBag, Heart, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,12 +97,27 @@ export function SiteHeader() {
             )}
           </Link>
           <Link
-            to={signedIn ? "/admin" : "/auth"}
-            aria-label={signedIn ? "Admin dashboard" : "Sign in"}
+            to={signedIn ? "/account" : "/auth"}
+            aria-label={signedIn ? "My account" : "Sign in"}
+            title={signedIn ? "My account" : "Sign in"}
             className="rounded-full p-1.5 hover:text-gold sm:p-2"
           >
             <User className="h-5 w-5" />
           </Link>
+          {signedIn && (
+            <button
+              type="button"
+              aria-label="Logout"
+              title="Logout"
+              onClick={async () => {
+                const { error } = await supabase.auth.signOut();
+                if (!error) window.location.assign("/");
+              }}
+              className="rounded-full p-1.5 hover:text-gold sm:p-2"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          )}
           <Link to="/cart" aria-label="Cart" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
