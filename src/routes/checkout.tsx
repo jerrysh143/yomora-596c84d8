@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Crown, Trash2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -10,6 +11,7 @@ import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { getMyMembershipFn } from "@/lib/memberships.functions";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
@@ -30,6 +32,7 @@ function CheckoutPage() {
   const { items, subtotal } = useCart();
   const createOrder = useServerFn(createOrderFn);
   const validateCoupon = useServerFn(validateCouponFn);
+  const getMyMembership = useServerFn(getMyMembershipFn);
   const [pay, setPay] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -47,6 +50,13 @@ function CheckoutPage() {
     subtotal: number;
     discount: number;
   } | null>(null);
+  const { data: membership } = useQuery({
+    queryKey: ["checkout", "membership"],
+    queryFn: () => getMyMembership(),
+    enabled: authReady,
+  });
+  const hasActiveMembership = membership?.status === "active" &&
+    (!membership.expires_at || new Date(membership.expires_at).getTime() > Date.now());
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
   const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
@@ -215,7 +225,7 @@ function CheckoutPage() {
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
             </dl>
-            <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
+            {!hasActiveMembership && <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
               <div className="flex gap-3">
                 <Crown className={`mt-0.5 h-5 w-5 shrink-0 ${qualifiesForMembership ? "text-gold" : "text-muted-foreground"}`} />
                 <div>
@@ -234,7 +244,7 @@ function CheckoutPage() {
                   )}
                 </div>
               </div>
-            </div>
+            </div>}
             <div className="mt-5 border-t border-border pt-5">
               <label className="block text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
                 COUPON CODE
