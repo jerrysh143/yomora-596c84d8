@@ -50,7 +50,7 @@ function CheckoutPage() {
     subtotal: number;
     discount: number;
   } | null>(null);
-  const { data: membership } = useQuery({
+  const { data: membership, isLoading: membershipLoading } = useQuery({
     queryKey: ["checkout", "membership"],
     queryFn: () => getMyMembership(),
     enabled: authReady,
@@ -225,7 +225,7 @@ function CheckoutPage() {
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
             </dl>
-            {!hasActiveMembership && <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
+            {!membershipLoading && !hasActiveMembership && <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
               <div className="flex gap-3">
                 <Crown className={`mt-0.5 h-5 w-5 shrink-0 ${qualifiesForMembership ? "text-gold" : "text-muted-foreground"}`} />
                 <div>
