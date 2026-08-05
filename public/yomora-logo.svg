@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="title desc">
   <title id="title">YOMORA</title>
-  <desc id="desc">YOMORA by Nehalbhai Devika Jewellers heritage crest logo</desc>
+  <desc id="desc">YOMORA by Nehalbhai Devika Jewellers horizontal heritage crest logo</desc>
   <defs>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ead09a"/>
@@ -11,19 +11,26 @@
     </linearGradient>
   </defs>
 
-  <!-- Option 3 heritage crest, centred exactly as selected. -->
-  <g fill="none" stroke="url(#gold)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M390 211v-58c0-45 36-68 75-89 30-16 35-35 35-35s5 19 35 35c39 21 75 44 75 89v58"/>
-    <path d="M390 211h43m134 0h43"/>
-    <path d="M500 205c-29-32-66-32-84-3 29 0 57 11 84 38 27-27 55-38 84-38-18-29-55-29-84 3z"/>
-    <path d="M500 240c-30-18-52-24-80-24 18 29 49 41 80 24 31 17 62 5 80-24-28 0-50 6-80 24z"/>
+  <!-- Option 3 heritage crest on the left. -->
+  <g transform="translate(10 28)">
+    <g transform="scale(.9) translate(-372 -29)">
+      <g fill="none" stroke="url(#gold)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M390 211v-58c0-45 36-68 75-89 30-16 35-35 35-35s5 19 35 35c39 21 75 44 75 89v58"/>
+        <path d="M390 211h43m134 0h43"/>
+        <path d="M500 205c-29-32-66-32-84-3 29 0 57 11 84 38 27-27 55-38 84-38-18-29-55-29-84 3z"/>
+        <path d="M500 240c-30-18-52-24-80-24 18 29 49 41 80 24 31 17 62 5 80-24-28 0-50 6-80 24z"/>
+      </g>
+      <g fill="url(#gold)">
+        <path d="m500 42 8 15 15 8-15 8-8 15-8-15-15-8 15-8z"/>
+        <path d="m390 166 6 12 12 6-12 6-6 12-6-12-12-6 12-6z"/>
+        <path d="m610 166 6 12 12 6-12 6-6 12-6-12-12-6 12-6z"/>
+        <text x="500" y="176" text-anchor="middle" font-family="Cormorant Garamond, Georgia, Times New Roman, serif" font-size="105" font-weight="500">Y</text>
+      </g>
+    </g>
   </g>
-  <g fill="url(#gold)">
-    <path d="m500 42 8 15 15 8-15 8-8 15-8-15-15-8 15-8z"/>
-    <path d="m390 166 6 12 12 6-12 6-6 12-6-12-12-6 12-6z"/>
-    <path d="m610 166 6 12 12 6-12 6-6 12-6-12-12-6 12-6z"/>
-    <text x="500" y="176" text-anchor="middle" font-family="Cormorant Garamond, Georgia, Times New Roman, serif" font-size="105" font-weight="500">Y</text>
-    <text x="500" y="382" text-anchor="middle" font-family="Cormorant Garamond, Georgia, Times New Roman, serif" font-size="134" font-weight="500" letter-spacing="26">YOMORA</text>
-  </g>
-  <text x="500" y="455" text-anchor="middle" fill="#f1e9dc" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="400" letter-spacing="10">BY NEHALBHAI DEVIKA JEWELLERS</text>
+
+  <!-- Wordmark is vertically centred beside the crest. -->
+  <text x="285" y="170" fill="url(#gold)" font-family="Cormorant Garamond, Georgia, Times New Roman, serif" font-size="142" font-weight="400" letter-spacing="34">YOMORA</text>
+  <!-- The business line finishes level with the bottom of the crest. -->
+  <text x="295" y="236" fill="#f1e9dc" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="400" letter-spacing="10">BY NEHALBHAI DEVIKA JEWELLERS</text>
 </svg>

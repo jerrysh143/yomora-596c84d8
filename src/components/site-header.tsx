@@ -68,10 +68,10 @@ export function SiteHeader() {
       </div>
 
       {/* Main nav */}
-      <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 lg:grid-cols-[auto_1fr_auto] lg:gap-6 lg:py-5">
-        <Link to="/" className="flex min-w-0 items-center" aria-label={`${header.brand_name} home`}>
+      <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 lg:grid-cols-[auto_1fr_auto] lg:gap-6">
+        <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
           <img src="/yomora-favicon.svg" alt="" className="h-11 w-11 sm:hidden" />
-          <img src="/yomora-logo.svg" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-auto w-[250px] sm:block lg:w-[280px]" />
+          <img src="/yomora-logo.svg" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-16 w-auto max-w-[300px] object-contain sm:block" />
         </Link>
 
         <nav className="hidden items-center justify-center gap-6 text-xs font-medium tracking-[0.18em] lg:flex xl:gap-8">
