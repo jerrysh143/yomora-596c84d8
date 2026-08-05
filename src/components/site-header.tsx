@@ -69,9 +69,9 @@ export function SiteHeader() {
 
       {/* Main nav */}
       <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 lg:grid-cols-[auto_1fr_auto] lg:gap-6 lg:py-5">
-        <Link to="/" className="flex min-w-0 flex-col leading-none">
-          <span className="truncate font-display text-2xl tracking-[0.18em] text-gold sm:text-3xl">{header.brand_name}</span>
-          <span className="mt-1 truncate text-[9px] tracking-[0.24em] text-cream/60 sm:text-[10px] sm:tracking-[0.28em]">{header.brand_tagline}</span>
+        <Link to="/" className="flex min-w-0 items-center" aria-label={`${header.brand_name} home`}>
+          <img src="/yomora-favicon.svg" alt="" className="h-11 w-11 sm:hidden" />
+          <img src="/yomora-logo.svg" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-auto w-[270px] sm:block lg:w-[300px]" />
         </Link>
 
         <nav className="hidden items-center justify-center gap-6 text-xs font-medium tracking-[0.18em] lg:flex xl:gap-8">
