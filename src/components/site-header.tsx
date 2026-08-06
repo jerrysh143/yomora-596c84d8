@@ -41,8 +41,9 @@ export function SiteHeader() {
   const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
+  const navItems = headerNav.items.length > 0 ? headerNav.items : SITE_CONTENT_DEFAULTS.header_nav.items;
   const nav: { label: string; to: string; hash: string }[] = [
-    ...headerNav.items.map((i) => ({ label: i.label, to: i.to || "/products", hash: i.hash || "" })),
+    ...navItems.map((i) => ({ label: i.label, to: i.to || "/products", hash: i.hash || "" })),
   ];
 
   return (
