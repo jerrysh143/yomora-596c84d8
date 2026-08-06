@@ -52,13 +52,13 @@ export function SiteHeader() {
       ref={headerRef}
       className={
         stuck
-          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx/95 text-cream shadow-lg backdrop-blur supports-[backdrop-filter]:bg-onyx/85"
+          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx/90 text-cream shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-onyx/80"
           : "relative z-50 w-full bg-onyx text-cream"
       }
     >
       {/* Utility strip */}
-      <div className="border-b border-white/5">
-        <div className="container-x mx-auto max-w-[1400px] flex flex-wrap items-center justify-center gap-x-8 gap-y-1 py-2 text-[11px] tracking-wide text-cream/80">
+      <div className="border-b border-white/[0.06]">
+        <div className="container-x mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-8 gap-y-1 py-1.5 text-[10px] tracking-[0.08em] text-cream/75 sm:py-2 sm:text-[11px]">
           {header.announcements.map((a, i) => (
             <span key={i} className="inline-flex items-center gap-2">
               <SiteIcon name={a.icon} className="h-3.5 w-3.5 text-gold" /> {a.text}
@@ -68,30 +68,31 @@ export function SiteHeader() {
       </div>
 
       {/* Main nav */}
-      <div className="container-x mx-auto max-w-[1400px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 lg:grid-cols-[auto_1fr_auto] lg:gap-6">
-        <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
-          <img src="/yomora-option-3-symbol.png" alt="" className="h-11 w-auto object-contain sm:hidden" />
-          <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-16 w-auto max-w-[300px] object-contain sm:block" />
-        </Link>
+      <div className="px-3 py-2.5 sm:px-5 sm:py-3 lg:px-8">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/15 bg-[#141817]/90 px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-black/20 backdrop-blur-xl sm:gap-4 sm:px-4 lg:grid-cols-[auto_1fr_auto] lg:gap-5 lg:px-5">
+          <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
+            <img src="/yomora-option-3-symbol.png" alt="" className="h-10 w-auto object-contain sm:hidden" />
+            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[230px] object-contain sm:block xl:h-14 xl:max-w-[260px]" />
+          </Link>
 
-        <nav className="hidden items-center justify-center gap-6 text-xs font-medium tracking-[0.18em] lg:flex xl:gap-8">
-          {nav.map((n) => (
-            <Link
-              key={n.label}
-              to={n.to}
-              hash={n.hash || undefined}
-              className="text-cream/85 transition-colors hover:text-gold"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
+          <nav className="hidden items-center justify-center gap-4 text-[10px] font-medium tracking-[0.14em] lg:flex xl:gap-6 xl:text-[11px]">
+            {nav.map((n) => (
+              <Link
+                key={n.label}
+                to={n.to}
+                hash={n.hash || undefined}
+                className="whitespace-nowrap text-cream/75 transition-colors hover:text-gold"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
 
-        <div className="flex shrink-0 items-center gap-1 text-cream/85 sm:gap-2 lg:gap-3">
-          <SocialLinks placement="header" className="mr-1 hidden xl:flex" iconClassName="h-4 w-4" />
-          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="rounded-full p-1.5 hover:text-gold sm:p-2"><Search className="h-5 w-5" /></button>
-          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
-            <Heart className="h-5 w-5" />
+          <div className="flex shrink-0 items-center gap-0 text-cream/80 sm:gap-0.5 lg:border-l lg:border-white/10 lg:pl-3 xl:pl-4">
+          <SocialLinks placement="header" className="mr-1 hidden 2xl:flex" iconClassName="h-4 w-4" />
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"><Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" /></button>
+          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
+            <Heart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
             {wishlistCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{wishlistCount}</span>
             )}
@@ -100,9 +101,9 @@ export function SiteHeader() {
             to={signedIn ? "/account" : "/auth"}
             aria-label={signedIn ? "My account" : "Sign in"}
             title={signedIn ? "My account" : "Sign in"}
-            className="rounded-full p-1.5 hover:text-gold sm:p-2"
+            className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"
           >
-            <User className="h-5 w-5" />
+            <User className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
           </Link>
           {signedIn && (
             <button
@@ -113,15 +114,16 @@ export function SiteHeader() {
                 const { error } = await supabase.auth.signOut();
                 if (!error) window.location.assign("/");
               }}
-              className="rounded-full p-1.5 hover:text-gold sm:p-2"
+              className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
             </button>
           )}
-          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-1.5 hover:text-gold sm:p-2">
-            <ShoppingBag className="h-5 w-5" />
+          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
+            <ShoppingBag className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
           </Link>
+          </div>
         </div>
       </div>
 
