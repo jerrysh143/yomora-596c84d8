@@ -20,7 +20,7 @@ export function SiteHeader() {
   useEffect(() => {
     const onScroll = () => {
       const h = headerRef.current?.offsetHeight ?? 0;
-      if (h) setHeaderH(h);
+      if (h) setHeaderH((current) => Math.max(current, h));
       setStuck(window.scrollY > h);
     };
     onScroll();
@@ -53,12 +53,12 @@ export function SiteHeader() {
       ref={headerRef}
       className={
         stuck
-          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx/90 text-cream shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-onyx/80"
+          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-transparent text-cream"
           : "relative z-50 w-full bg-onyx text-cream"
       }
     >
       {/* Utility strip */}
-      <div className="border-b border-white/[0.06]">
+      <div className={stuck ? "hidden" : "border-b border-white/[0.06]"}>
         <div className="container-x mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-8 gap-y-1 py-1.5 text-[10px] tracking-[0.08em] text-cream/75 sm:py-2 sm:text-[11px]">
           {header.announcements.map((a, i) => (
             <span key={i} className="inline-flex items-center gap-2">
