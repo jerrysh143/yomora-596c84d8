@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useWishlist, wishlist, type WishlistItem } from "@/lib/wishlist";
 import { cart } from "@/lib/cart";
-import { formatINR } from "@/lib/products";
+import { formatINR, cleanProductName } from "@/lib/products";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/wishlist")({

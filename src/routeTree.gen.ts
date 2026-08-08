@@ -27,7 +27,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
-import { Route as ProductsIdRouteImport } from './routes/products.$id'
+import { Route as ProductsCategoryRouteImport } from './routes/products.$category'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedInvoiceIdRouteImport } from './routes/_authenticated/invoice.$id'
@@ -122,9 +122,9 @@ const ProductsIndexRoute = ProductsIndexRouteImport.update({
   path: '/products/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductsIdRoute = ProductsIdRouteImport.update({
-  id: '/products/$id',
-  path: '/products/$id',
+const ProductsCategoryRoute = ProductsCategoryRouteImport.update({
+  id: '/products/$category',
+  path: '/products/$category',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMembershipDashboardRoute =
@@ -168,7 +168,7 @@ export interface FileRoutesByFullPath {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
-  '/products/$id': typeof ProductsIdRoute
+  '/products/$category': typeof ProductsCategoryRoute
   '/products/': typeof ProductsIndexRoute
   '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
@@ -192,7 +192,7 @@ export interface FileRoutesByTo {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
-  '/products/$id': typeof ProductsIdRoute
+  '/products/$category': typeof ProductsCategoryRoute
   '/products': typeof ProductsIndexRoute
   '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
@@ -218,7 +218,7 @@ export interface FileRoutesById {
   '/women': typeof WomenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
-  '/products/$id': typeof ProductsIdRoute
+  '/products/$category': typeof ProductsCategoryRoute
   '/products/': typeof ProductsIndexRoute
   '/_authenticated/invoice/$id': typeof AuthenticatedInvoiceIdRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
@@ -244,7 +244,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
-    | '/products/$id'
+    | '/products/$category'
     | '/products/'
     | '/invoice/$id'
     | '/api/public/img/$'
@@ -268,7 +268,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
-    | '/products/$id'
+    | '/products/$category'
     | '/products'
     | '/invoice/$id'
     | '/api/public/img/$'
@@ -293,7 +293,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
-    | '/products/$id'
+    | '/products/$category'
     | '/products/'
     | '/_authenticated/invoice/$id'
     | '/api/public/img/$'
@@ -317,7 +317,7 @@ export interface RootRouteChildren {
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   WomenRoute: typeof WomenRoute
-  ProductsIdRoute: typeof ProductsIdRoute
+  ProductsCategoryRoute: typeof ProductsCategoryRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
 }
@@ -450,11 +450,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/products/$id': {
-      id: '/products/$id'
-      path: '/products/$id'
-      fullPath: '/products/$id'
-      preLoaderRoute: typeof ProductsIdRouteImport
+    '/products/$category': {
+      id: '/products/$category'
+      path: '/products/$category'
+      fullPath: '/products/$category'
+      preLoaderRoute: typeof ProductsCategoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/membership-dashboard': {
@@ -521,7 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   WomenRoute: WomenRoute,
-  ProductsIdRoute: ProductsIdRoute,
+  ProductsCategoryRoute: ProductsCategoryRoute,
   ProductsIndexRoute: ProductsIndexRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
 }

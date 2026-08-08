@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Heart, Search, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, isProductNew, productImage, type Audience } from "@/lib/products";
+import { formatINR, isProductNew, productImage, cleanProductName, type Audience } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
@@ -117,7 +117,7 @@ export function AudienceCollection({
                     height={900}
                     loading="lazy"
                     decoding="async"
-                    alt={`${p.name} — 925 sterling silver ${p.category}`}
+                    alt={`${cleanProductName(p.name)} — 925 sterling silver ${p.category}`}
                     className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {isProductNew(p) && (
@@ -130,7 +130,7 @@ export function AudienceCollection({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      wishlist.toggle({ id: p.id, name: p.name, price: p.price, image: productImage(p), category: p.category });
+                      wishlist.toggle({ id: p.id, name: cleanProductName(p.name), price: p.price, image: productImage(p), category: p.category });
                     }}
                     aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
                     className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
@@ -138,7 +138,7 @@ export function AudienceCollection({
                     <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
                   </button>
                 </div>
-                <h3 className="mt-3 text-sm text-foreground">{p.name}</h3>
+                <h3 className="mt-3 text-sm text-foreground">{cleanProductName(p.name)}</h3>
                 <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
               </Link>
             ))}

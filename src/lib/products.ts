@@ -67,3 +67,8 @@ export const isProductNew = (p: Pick<Product, "is_new" | "created_at">) => {
   if (Number.isNaN(created)) return false;
   return Date.now() - created < NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 };
+
+// Remove "CATEGORY: X" suffix that may leak from admin data entry
+export const cleanProductName = (name: string): string => {
+  return name.replace(/\s+CATEGORY:\s*[A-Za-z]+$/i, "").trim();
+};

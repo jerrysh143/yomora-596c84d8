@@ -1,10 +1,24 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useState, useRef } from "react";
+import { Heart } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { formatINR, productImage, productGallery, isProductNew, type Category, type CategoryRow, type Product, cleanProductName } from "@/lib/products";
+import { productsQuery } from "@/lib/products.queries";
+import { categoriesQuery } from "@/lib/categories.queries";
+import { useWishlist, wishlist } from "@/lib/wishlist";
+import { cart } from "@/lib/cart";
+import { CollectionPageSkeleton } from "@/components/product-grid-skeleton";
+import { ProductReviews } from "@/components/product-reviews";
+import { NotifyMeForm } from "@/components/notify-me-form";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   ShieldCheck,
   Truck,
   RotateCcw,
-  Heart,
   ChevronDown,
   ChevronUp,
   Star,
@@ -15,18 +29,6 @@ import {
   LoaderCircle,
   Share2,
 } from "lucide-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage, productGallery, isProductNew } from "@/lib/products";
-import { productQuery, productsQuery } from "@/lib/products.queries";
-import { cart } from "@/lib/cart";
-import { wishlist, useWishlist } from "@/lib/wishlist";
-import { NotifyMeForm } from "@/components/notify-me-form";
-import { ProductReviews } from "@/components/product-reviews";
-import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
 
 const SITE_URL = "https://yomora.in";
 
@@ -46,28 +48,70 @@ const shareImageVersion = (value: string) => {
   return (hash >>> 0).toString(36);
 };
 
-export const Route = createFileRoute("/products/$id")({
+type LoaderData =
+  | { type: "category"; category: CategoryRow; products: Product[] }
+  | { type: "product"; product: Product; products: Product[]; categories: CategoryRow[] };
+
+export const Route = createFileRoute("/products/$category")({
   loader: async ({ context, params }) => {
-    const product = await context.queryClient.ensureQueryData(productQuery(params.id));
-    if (!product) throw notFound();
-    return { id: params.id, product };
+    const products = await context.queryClient.ensureQueryData(productsQuery());
+    const categories = await context.queryClient.ensureQueryData(categoriesQuery());
+
+    // Check if param is a valid category slug
+    const category = categories.find((c) => c.slug === params.category);
+    if (category) {
+      return { type: "category" as const, category, products };
+    }
+
+    // Check if param is a valid product ID
+    const product = products.find((p) => p.id === params.category);
+    if (product) {
+      return { type: "product" as const, product, products, categories };
+    }
+
+    // Neither category nor product found
+    throw notFound();
   },
   head: ({ loaderData }) => {
-    const product = loaderData?.product;
-    if (!product) {
+    if (!loaderData) {
       return {
-        meta: [
-          { title: "Product — YOMORA" },
-          { name: "description", content: "Handcrafted 925 sterling silver jewellery from YOMORA." },
-        ],
+        meta: [{ title: "Products — YOMORA" }],
       };
     }
 
-    const title = `${product.name} — YOMORA`;
+    if (loaderData.type === "category") {
+      const { category, products } = loaderData;
+      const catProducts = products.filter((p) => p.category === category.slug);
+      const title = `${category.label} — YOMORA 925 Sterling Silver`;
+      const description = `Shop ${category.label.toLowerCase()} in 925 hallmarked sterling silver. ${catProducts.length} hand-finished designs, certified authentic, free shipping across India.`;
+      const image = catProducts[0] ? productImage(catProducts[0]) : `${SITE_URL}/og-image.jpg`;
+      const canonicalUrl = `${SITE_URL}/products/${category.slug}`;
+
+      return {
+        meta: [
+          { title },
+          { name: "description", content: description },
+          { property: "og:title", content: title },
+          { property: "og:description", content: description },
+          { property: "og:type", content: "website" },
+          { property: "og:url", content: canonicalUrl },
+          { property: "og:image", content: image },
+          { name: "twitter:card", content: "summary_large_image" },
+          { name: "twitter:title", content: title },
+          { name: "twitter:description", content: description },
+          { name: "twitter:image", content: image },
+        ],
+        links: [{ rel: "canonical", href: canonicalUrl }],
+      };
+    }
+
+    // Product page meta
+    const product = loaderData.product;
+    const title = `${cleanProductName(product.name)} — YOMORA`;
     const description =
       product.tagline ||
       product.description ||
-      `${product.name}, handcrafted in 925 sterling silver by YOMORA.`;
+      `${cleanProductName(product.name)}, handcrafted in 925 sterling silver by YOMORA.`;
     const image = absoluteSiteUrl(productImage(product));
     const canonicalUrl = `${SITE_URL}/products/${encodeURIComponent(product.id)}`;
     const shareUrl = `${canonicalUrl}?share=${shareImageVersion(image)}`;
@@ -82,12 +126,12 @@ export const Route = createFileRoute("/products/$id")({
         { property: "og:url", content: shareUrl },
         { property: "og:image", content: image },
         { property: "og:image:secure_url", content: image },
-        { property: "og:image:alt", content: product.name },
+        { property: "og:image:alt", content: cleanProductName(product.name) },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
-        { name: "twitter:image:alt", content: product.name },
+        { name: "twitter:image:alt", content: cleanProductName(product.name) },
       ],
       links: [{ rel: "canonical", href: canonicalUrl }],
     };
@@ -97,34 +141,142 @@ export const Route = createFileRoute("/products/$id")({
       <SiteHeader />
       <div className="container-x mx-auto max-w-[900px] py-32 text-center">
         <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">404</p>
-        <h1 className="mt-3 font-display text-4xl">Piece not found</h1>
+        <h1 className="mt-3 font-display text-4xl">Category not found</h1>
         <Link to="/products" className="mt-6 inline-flex items-center gap-2 text-sm text-gold hover:underline">
-          <ArrowLeft className="h-4 w-4" /> Back to collection
+          View all collections
         </Link>
       </div>
       <SiteFooter />
     </div>
   ),
-  errorComponent: ({ error, reset }) => (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <div className="container-x mx-auto max-w-[900px] py-32 text-center">
-        <h1 className="font-display text-3xl">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={reset} className="mt-6 bg-gold px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-onyx">TRY AGAIN</button>
-      </div>
-      <SiteFooter />
-    </div>
-  ),
-  component: ProductPage,
+  pendingMs: 150,
+  pendingMinMs: 300,
+  pendingComponent: CollectionPageSkeleton,
+  component: UniversalProductPage,
 });
 
-function ProductPage() {
-  const { id } = Route.useLoaderData();
-  const { data: product } = useSuspenseQuery(productQuery(id));
-  const { data: PRODUCTS } = useSuspenseQuery(productsQuery());
-  if (!product) throw notFound();
-  const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 5);
+function UniversalProductPage() {
+  const loaderData = Route.useLoaderData();
+
+  if (loaderData.type === "category") {
+    return <CategoryPage category={loaderData.category} products={loaderData.products} />;
+  }
+
+  return <ProductPage product={loaderData.product} products={loaderData.products} categories={loaderData.categories} />;
+}
+
+function CategoryPage({ category, products }: { category: CategoryRow; products: Product[] }) {
+  const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
+  const { items: wishItems } = useWishlist();
+  const wishSet = new Set(wishItems.map((w) => w.id));
+  const [onlyNew, setOnlyNew] = useState(false);
+
+  const items = products.filter((p) => p.category === category.slug);
+  const filteredItems = onlyNew ? items.filter((p) => isProductNew(p)) : items;
+
+  const filters: { key: Category | "all"; label: string }[] = [
+    { key: "all", label: "All" },
+    ...CATEGORIES.map((c) => ({ key: c.slug as Category, label: c.label })),
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+
+      <section className="bg-onyx text-cream">
+        <div className="container-x mx-auto max-w-[1400px] py-14">
+          <Link to="/products" className="inline-flex items-center gap-1 text-[11px] font-semibold tracking-[0.2em] text-cream/70 hover:text-gold mb-4">
+            ← All Collections
+          </Link>
+          <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{category.label.toUpperCase()}</p>
+          <h1 className="mt-3 font-display text-5xl">Shop {category.label}</h1>
+          <p className="mt-3 max-w-xl text-sm text-cream/70">
+            Hand-finished 925 sterling silver {category.label.toLowerCase()}, hallmarked and made to be worn every day.
+          </p>
+        </div>
+      </section>
+
+      <section className="container-x mx-auto max-w-[1400px] py-10">
+        <h2 className="sr-only">Product listing</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+          <div className="flex flex-wrap gap-2">
+            {filters.map((f) => (
+              <Link
+                key={f.key}
+                to={f.key === "all" ? "/products" : `/products/${f.key}`}
+                className={`border px-4 py-2 text-[11px] font-semibold tracking-[0.2em] transition-colors ${
+                  f.key === category.slug
+                    ? "border-gold bg-gold text-onyx"
+                    : "border-border text-foreground hover:border-gold hover:text-gold"
+                }`}
+              >
+                {f.label.toUpperCase()}
+              </Link>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={onlyNew}
+              onChange={(e) => setOnlyNew(e.target.checked)}
+              className="accent-[color:var(--gold)]"
+            />
+            New arrivals only
+          </label>
+        </div>
+
+        <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+          {filteredItems.map((p) => (
+            <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
+              <div className="relative overflow-hidden bg-secondary/40">
+                <img
+                  src={productImage(p)}
+                  width={900}
+                  height={900}
+                  loading="lazy"
+                  decoding="async"
+                  alt={`${cleanProductName(p.name)} — 925 sterling silver ${p.category}`}
+                  className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                {p.sold_out && (
+                  <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
+                )}
+                {isProductNew(p) && (
+                  <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    wishlist.toggle({ id: p.id, name: cleanProductName(p.name), price: p.price, image: productImage(p), category: p.category });
+                  }}
+                  aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                >
+                  <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
+                </button>
+              </div>
+              <div className="pt-4">
+                <h3 className="font-display text-lg text-foreground">{cleanProductName(p.name)}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{p.tagline}</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {filteredItems.length === 0 && (
+          <p className="py-16 text-center text-sm text-muted-foreground">No pieces in this category yet.</p>
+        )}
+      </section>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+function ProductPage({ product, products, categories }: { product: Product; products: Product[]; categories: CategoryRow[] }) {
+  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 5);
   const nav = useNavigate();
   const img = productImage(product);
   const gallery = productGallery(product);
@@ -139,7 +291,7 @@ function ProductPage() {
   const cartButtonTimer = useRef<number | null>(null);
   const cartActionStatus =
     cartAction.productId === product.id ? cartAction.status : "idle";
-  const add = () => cart.add({ id: product.id, name: product.name, price: product.price, image: img });
+  const add = () => cart.add({ id: product.id, name: cleanProductName(product.name), price: product.price, image: img });
 
   useEffect(
     () => () => {
@@ -181,8 +333,8 @@ function ProductPage() {
     const imageVersion = shareImageVersion(absoluteSiteUrl(img));
     const productUrl = `${window.location.origin}/products/${encodeURIComponent(product.id)}?share=${imageVersion}`;
     const shareData = {
-      title: `${product.name} — YOMORA`,
-      text: `${product.name} · ${formatINR(product.price)} · Handcrafted 925 sterling silver jewellery from YOMORA.`,
+      title: `${cleanProductName(product.name)} — YOMORA`,
+      text: `${cleanProductName(product.name)} · ${formatINR(product.price)} · Handcrafted 925 sterling silver jewellery from YOMORA.`,
       url: productUrl,
     };
 
@@ -213,7 +365,7 @@ function ProductPage() {
   const { items: wishItems } = useWishlist();
   const wished = wishItems.some((w) => w.id === product.id);
   const toggleWish = () =>
-    wishlist.toggle({ id: product.id, name: product.name, price: product.price, image: img, category: product.category });
+    wishlist.toggle({ id: product.id, name: cleanProductName(product.name), price: product.price, image: img, category: product.category });
 
   return (
     <div className="min-h-screen bg-background">
@@ -228,7 +380,7 @@ function ProductPage() {
           <span className="mx-2">/</span>
           <span className="capitalize">{product.category}</span>
           <span className="mx-2">/</span>
-          <span className="text-foreground">{product.name}</span>
+          <span className="text-foreground">{cleanProductName(product.name)}</span>
         </div>
       </div>
 
@@ -266,7 +418,7 @@ function ProductPage() {
           <div className="relative order-1 self-start bg-onyx lg:order-2">
             <img
               src={gallery[activeImg]}
-              alt={product.name}
+              alt={cleanProductName(product.name)}
               width={900}
               height={900}
               fetchPriority="high"
@@ -312,7 +464,7 @@ function ProductPage() {
               <span className="border border-onyx/20 px-3 py-1 text-[10px] font-bold tracking-[0.24em] text-onyx">925 HALLMARKED</span>
             </div>
 
-            <h1 className="mt-4 font-display text-4xl uppercase leading-tight text-foreground md:text-5xl">{product.name}</h1>
+            <h1 className="mt-4 font-display text-4xl uppercase leading-tight text-foreground md:text-5xl">{cleanProductName(product.name)}</h1>
 
             <div className="mt-3 flex items-center gap-2">
               <div className="flex text-gold">
@@ -473,7 +625,7 @@ function ProductPage() {
                 <p>Free shipping across India. Orders dispatched within 24-48 hours. Easy returns within 7 days of delivery — piece must be unworn and in original YOMORA packaging.</p>
               )}
               {tab === "reviews" && (
-                <ProductReviews productId={product.id} productName={product.name} />
+                <ProductReviews productId={product.id} productName={cleanProductName(product.name)} />
               )}
             </div>
           </div>
@@ -506,7 +658,7 @@ function ProductPage() {
                     <Heart className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <h3 className="mt-3 text-center text-sm text-foreground">{p.name}</h3>
+                <h3 className="mt-3 text-center text-sm text-foreground">{cleanProductName(p.name)}</h3>
                 <p className="mt-1 text-center text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
               </Link>
             ))}

@@ -240,6 +240,10 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     items: [
       { label: "COLLECTIONS", to: "/products", hash: "" },
       { label: "NEW ARRIVALS", to: "/products", hash: "new" },
+      { label: "RINGS", to: "/products/rings", hash: "" },
+      { label: "EARRINGS", to: "/products/earrings", hash: "" },
+      { label: "NECKWEAR", to: "/products/neckwear", hash: "" },
+      { label: "BRACELETS", to: "/products/bracelets", hash: "" },
       { label: "CUSTOM", to: "/custom-jewellery", hash: "" },
       { label: "MEMBERSHIP", to: "/membership", hash: "" },
       { label: "ABOUT", to: "/about", hash: "" },
@@ -291,7 +295,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       { icon: "BadgeCheck", title: "925 Sterling Silver", subtitle: "Certified Authentic" },
       { icon: "ShieldCheck", title: "6-Month Warranty", subtitle: "Quality You Can Trust" },
       { icon: "Recycle", title: "Lifetime Replating", subtitle: "Lasting Brilliance" },
-      { icon: "PackageCheck", title: "15-Day Easy Returns", subtitle: "Simple & Hassle-Free" },
+      { icon: "PackageCheck", title: "7-Day Easy Returns", subtitle: "Simple & Hassle-Free" },
     ],
   },
   featured_section: { eyebrow: "FEATURED", title: "Signature Pieces" },
@@ -309,14 +313,17 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     brand_blurb:
       "Premium 925 sterling silver jewellery by Nehalbhai Devika Jewellers. A legacy of trust since 1994.",
     shop_links: [
-      { label: "Rings", to: "/products" },
-      { label: "Earrings", to: "/products" },
-      { label: "Neckwear", to: "/products" },
-      { label: "Bracelets", to: "/products" },
+      { label: "Rings", to: "/products/rings" },
+      { label: "Earrings", to: "/products/earrings" },
+      { label: "Neckwear", to: "/products/neckwear" },
+      { label: "Bracelets", to: "/products/bracelets" },
     ],
     help_links: [
       { label: "Track Order", to: "/track-order" },
       { label: "FAQ", to: "/faq" },
+      { label: "Shipping Policy", to: "/faq" }, // Will link to FAQ section on shipping
+      { label: "Returns Policy", to: "/faq" }, // Will link to FAQ section on returns
+      { label: "Care Guide", to: "/faq" }, // Will link to FAQ section on care
       { label: "Custom Jewellery", to: "/custom-jewellery" },
       { label: "Contact", to: "/contact" },
     ],
@@ -336,11 +343,11 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
   },
   social: {
     cta_label: "FOLLOW US",
-    handle: "@yomora",
+    handle: "@houseofyomora",
     show_in_header: true,
     show_in_footer: true,
     items: [
-      { platform: "Instagram", url: "https://instagram.com/", label: "Instagram" },
+      { platform: "Instagram", url: "https://instagram.com/houseofyomora", label: "Instagram" },
     ],
   },
   page_about: {

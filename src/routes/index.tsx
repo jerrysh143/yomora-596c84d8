@@ -121,8 +121,7 @@ function Index() {
                 return (
                   <Link
                     key={c.slug}
-                    to="/products"
-                    hash={c.slug}
+                    to={`/products/${c.slug}`}
                     className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
                     <div className="relative mx-auto aspect-square w-[86%] rounded-full p-[3px] ring-1 ring-gold/50 transition-shadow duration-500 group-hover:shadow-[0_18px_40px_-18px_color-mix(in_oklab,var(--color-gold)_65%,transparent)]">
