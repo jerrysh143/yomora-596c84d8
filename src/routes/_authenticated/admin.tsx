@@ -793,7 +793,7 @@ on conflict do nothing;`}
                           <div className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Link to="/products/$id" params={{ id: p.id }} className="rounded p-2 text-muted-foreground hover:text-gold" title="View">
+                          <Link to="/products/$category" params={{ category: p.id }} className="rounded p-2 text-muted-foreground hover:text-gold" title="View">
                             <ExternalLink className="h-4 w-4" />
                           </Link>
                           <button onClick={() => open(p)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">

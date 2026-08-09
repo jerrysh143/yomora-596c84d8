@@ -7,8 +7,6 @@ import {
   Percent,
   Headphones,
   Gift,
-  Truck,
-  Crown,
   Rocket,
   Cake,
   BadgeCheck,
@@ -28,7 +26,6 @@ import { categoriesQuery } from "@/lib/categories.queries";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SiteIcon } from "@/lib/site-icons";
-import { Sparkles } from "lucide-react";
 import { useWishlist, wishlist } from "@/lib/wishlist";
 
 export const Route = createFileRoute("/")({
@@ -121,7 +118,8 @@ function Index() {
                 return (
                   <Link
                     key={c.slug}
-                    to={`/products/${c.slug}`}
+                    to="/products/$category"
+                    params={{ category: c.slug }}
                     className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
                     <div className="relative mx-auto aspect-square w-[86%] rounded-full p-[3px] ring-1 ring-gold/50 transition-shadow duration-500 group-hover:shadow-[0_18px_40px_-18px_color-mix(in_oklab,var(--color-gold)_65%,transparent)]">
@@ -221,7 +219,7 @@ function Index() {
 
           <div className="fade-in-grid mt-10 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {featured.map((p) => (
-              <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
+              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img
                     src={productImage(p)}

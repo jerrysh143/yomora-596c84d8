@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import { Heart } from "lucide-react";
@@ -15,7 +15,6 @@ import { NotifyMeForm } from "@/components/notify-me-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   ShieldCheck,
   Truck,
   RotateCcw,
@@ -47,10 +46,6 @@ const shareImageVersion = (value: string) => {
   }
   return (hash >>> 0).toString(36);
 };
-
-type LoaderData =
-  | { type: "category"; category: CategoryRow; products: Product[] }
-  | { type: "product"; product: Product; products: Product[]; categories: CategoryRow[] };
 
 export const Route = createFileRoute("/products/$category")({
   loader: async ({ context, params }) => {
@@ -162,7 +157,7 @@ function UniversalProductPage() {
     return <CategoryPage category={loaderData.category} products={loaderData.products} />;
   }
 
-  return <ProductPage product={loaderData.product} products={loaderData.products} categories={loaderData.categories} />;
+  return <ProductPage product={loaderData.product} products={loaderData.products} />;
 }
 
 function CategoryPage({ category, products }: { category: CategoryRow; products: Product[] }) {
@@ -200,19 +195,23 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
         <h2 className="sr-only">Product listing</h2>
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
           <div className="flex flex-wrap gap-2">
-            {filters.map((f) => (
-              <Link
-                key={f.key}
-                to={f.key === "all" ? "/products" : `/products/${f.key}`}
-                className={`border px-4 py-2 text-[11px] font-semibold tracking-[0.2em] transition-colors ${
-                  f.key === category.slug
-                    ? "border-gold bg-gold text-onyx"
-                    : "border-border text-foreground hover:border-gold hover:text-gold"
-                }`}
-              >
-                {f.label.toUpperCase()}
-              </Link>
-            ))}
+            {filters.map((f) => {
+              const className = `border px-4 py-2 text-[11px] font-semibold tracking-[0.2em] transition-colors ${
+                f.key === category.slug
+                  ? "border-gold bg-gold text-onyx"
+                  : "border-border text-foreground hover:border-gold hover:text-gold"
+              }`;
+
+              return f.key === "all" ? (
+                <Link key={f.key} to="/products" className={className}>
+                  {f.label.toUpperCase()}
+                </Link>
+              ) : (
+                <Link key={f.key} to="/products/$category" params={{ category: f.key }} className={className}>
+                  {f.label.toUpperCase()}
+                </Link>
+              );
+            })}
           </div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input
@@ -227,7 +226,7 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
 
         <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
           {filteredItems.map((p) => (
-            <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
+            <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
                 <img
                   src={productImage(p)}
@@ -275,7 +274,7 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
   );
 }
 
-function ProductPage({ product, products, categories }: { product: Product; products: Product[]; categories: CategoryRow[] }) {
+function ProductPage({ product, products }: { product: Product; products: Product[] }) {
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 5);
   const nav = useNavigate();
   const img = productImage(product);
@@ -651,7 +650,7 @@ function ProductPage({ product, products, categories }: { product: Product; prod
           </div>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {related.map((p) => (
-              <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block bg-background">
+              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block bg-background">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img src={productImage(p)} width={600} height={600} loading="lazy" decoding="async" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <button aria-label="Wishlist" onClick={(e) => e.preventDefault()} className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">

@@ -83,8 +83,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           {results.map((p) => (
             <Link
               key={p.id}
-              to="/products/$id"
-              params={{ id: p.id }}
+              to="/products/$category"
+              params={{ category: p.id }}
               onClick={onClose}
               className="flex items-center gap-4 rounded-xl px-2 py-2.5 hover:bg-white/5"
             >

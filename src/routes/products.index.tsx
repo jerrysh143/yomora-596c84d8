@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -36,7 +36,7 @@ function ProductsPage() {
   const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
-  const [filter, setFilter] = useState<Filter>("all");
+  const filter: Filter = "all";
   const [onlyNew, setOnlyNew] = useState(false);
 
   const items = useMemo(() => {
@@ -66,19 +66,23 @@ function ProductsPage() {
         <h2 className="sr-only">Product listing</h2>
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
           <div className="flex flex-wrap gap-2">
-            {filters.map((f) => (
-              <Link
-                key={f.key}
-                to={f.key === "all" ? "/products" : `/products/${f.key}`}
-                className={`border px-4 py-2 text-[11px] font-semibold tracking-[0.2em] transition-colors ${
-                  filter === f.key
-                    ? "border-gold bg-gold text-onyx"
-                    : "border-border text-foreground hover:border-gold hover:text-gold"
-                }`}
-              >
-                {f.label.toUpperCase()}
-              </Link>
-            ))}
+            {filters.map((f) => {
+              const className = `border px-4 py-2 text-[11px] font-semibold tracking-[0.2em] transition-colors ${
+                filter === f.key
+                  ? "border-gold bg-gold text-onyx"
+                  : "border-border text-foreground hover:border-gold hover:text-gold"
+              }`;
+
+              return f.key === "all" ? (
+                <Link key={f.key} to="/products" className={className}>
+                  {f.label.toUpperCase()}
+                </Link>
+              ) : (
+                <Link key={f.key} to="/products/$category" params={{ category: f.key }} className={className}>
+                  {f.label.toUpperCase()}
+                </Link>
+              );
+            })}
           </div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} className="accent-[color:var(--gold)]" />
@@ -88,7 +92,7 @@ function ProductsPage() {
 
         <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
           {items.map((p) => (
-            <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="group block">
+            <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block">
               <div className="relative overflow-hidden bg-secondary/40">
               <img src={productImage(p)} width={900} height={900} loading="lazy" decoding="async" alt={`${cleanProductName(p.name)} — 925 sterling silver ${p.category}`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 {p.sold_out && (

@@ -1,7 +1,7 @@
 import { Truck, ShieldCheck, RotateCcw, Award, Gem, Hammer, Sparkles, Star, Heart, BadgeCheck, PackageCheck, Recycle, Clock, type LucideIcon } from "lucide-react";
 import type { IconName } from "./site-content.defaults";
 
-export const ICON_MAP: Record<IconName, LucideIcon> = {
+const ICON_MAP: Record<IconName, LucideIcon> = {
   Truck,
   ShieldCheck,
   RotateCcw,

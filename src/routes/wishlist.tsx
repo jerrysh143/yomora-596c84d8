@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useWishlist, wishlist, type WishlistItem } from "@/lib/wishlist";
 import { cart } from "@/lib/cart";
-import { formatINR, cleanProductName } from "@/lib/products";
+import { formatINR } from "@/lib/products";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/wishlist")({
@@ -93,7 +93,7 @@ function WishlistCard({ item }: { item: WishlistItem }) {
   return (
     <div className="group flex flex-col">
       <div className="relative overflow-hidden bg-secondary/40">
-        <Link to="/products/$id" params={{ id: item.id }} className="block">
+        <Link to="/products/$category" params={{ category: item.id }} className="block">
           <img
             src={item.image}
             width={900}
@@ -118,16 +118,16 @@ function WishlistCard({ item }: { item: WishlistItem }) {
 
       <div className="flex flex-1 flex-col pt-4">
         <Link
-          to="/products/$id"
-          params={{ id: item.id }}
+          to="/products/$category"
+          params={{ category: item.id }}
           className="font-display text-lg text-foreground transition-colors hover:text-gold"
         >
           {item.name}
         </Link>
         <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(item.price)}</p>
         <Link
-          to="/products/$id"
-          params={{ id: item.id }}
+          to="/products/$category"
+          params={{ category: item.id }}
           className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.2em] text-gold hover:text-onyx"
         >
           <Eye className="h-3 w-3" /> VIEW DETAILS

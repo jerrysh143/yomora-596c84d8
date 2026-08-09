@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 
 /** Placeholder grid that mirrors the real product grid so layout never jumps while data loads. */
-export function ProductGridSkeleton({ count = 10, className = "" }: { count?: number; className?: string }) {
+function ProductGridSkeleton({ count = 10, className = "" }: { count?: number; className?: string }) {
   return (
     <div
       aria-hidden="true"
