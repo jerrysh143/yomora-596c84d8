@@ -432,7 +432,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     privileges_footer:
       "A PRIVILEGE RESERVED FOR THOSE WHO VALUE QUALITY, TRUST & TIMELESS ELEGANCE.",
     privileges: [
-      { icon: "Sparkles", title: "15% OFF", description: "on everything you order for 1 year" },
+      { icon: "Sparkles", title: "25% OFF", description: "on everything you order for 1 year" },
       { icon: "Star", title: "EARLY ACCESS", description: "to new arrivals & exclusive collections" },
       { icon: "Gem", title: "MEMBER-ONLY OFFERS", description: "special discounts all year long" },
       { icon: "Heart", title: "BIRTHDAY SURPRISE", description: "a special treat just for you" },

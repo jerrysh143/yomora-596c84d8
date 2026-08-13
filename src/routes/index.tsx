@@ -334,7 +334,7 @@ function BlackSignatureBlock({
   ctaLabel: string;
 }) {
   const privileges = [
-    { icon: Percent, t: "15% OFF", d: "on everything you order for 1 year" },
+    { icon: Percent, t: "25% OFF", d: "on everything you order for 1 year" },
     { icon: Rocket, t: "EARLY ACCESS", d: "to new arrivals & exclusive collections" },
     { icon: Gift, t: "MEMBER-ONLY OFFERS", d: "special discounts all year long" },
     { icon: Cake, t: "BIRTHDAY SURPRISE", d: "a special treat just for you" },

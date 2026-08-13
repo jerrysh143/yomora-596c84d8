@@ -132,8 +132,8 @@ function MembershipPage() {
                     <div className="mx-auto grid h-11 w-11 place-items-center text-gold">
                       <Icon className="h-6 w-6" strokeWidth={1.2} />
                     </div>
-                    <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">{b.title}</div>
-                    <div className="mt-1 text-[11px] leading-relaxed text-cream/60">{b.description}</div>
+                    <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">{b.title.replace(/15%/gi, "25%")}</div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-cream/60">{b.description.replace(/15%/gi, "25%")}</div>
                   </div>
                 );
               })}

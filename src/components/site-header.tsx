@@ -38,13 +38,8 @@ export function SiteHeader() {
   }, []);
   const { data: siteContent } = useQuery(siteContentQuery());
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
-  const headerNav = siteContent?.header_nav ?? SITE_CONTENT_DEFAULTS.header_nav;
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const navItems = headerNav.items.length > 0 ? headerNav.items : SITE_CONTENT_DEFAULTS.header_nav.items;
-  const nav: { label: string; to: string; hash: string }[] = [
-    ...navItems.map((i) => ({ label: i.label, to: i.to || "/products", hash: i.hash || "" })),
-  ];
 
   return (
     <>
@@ -70,26 +65,13 @@ export function SiteHeader() {
 
       {/* Main nav */}
       <div className="px-3 py-2.5 sm:px-5 sm:py-3 lg:px-8">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/15 bg-[#141817]/90 px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-black/20 backdrop-blur-xl sm:gap-4 sm:px-4 lg:grid-cols-[auto_1fr_auto] lg:gap-5 lg:px-5">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/15 bg-[#141817]/90 px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-black/20 backdrop-blur-xl sm:gap-4 sm:px-4 lg:gap-5 lg:px-5">
           <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
             <img src="/yomora-option-3-symbol.png" alt="" className="h-10 w-auto object-contain sm:hidden" />
             <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[230px] object-contain sm:block xl:h-14 xl:max-w-[260px]" />
           </Link>
 
-          <nav className="hidden items-center justify-center gap-4 text-[10px] font-medium tracking-[0.14em] lg:flex xl:gap-6 xl:text-[11px]">
-            {nav.map((n) => (
-              <Link
-                key={n.label}
-                to={n.to}
-                hash={n.hash || undefined}
-                className="whitespace-nowrap text-cream/75 transition-colors hover:text-gold"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex shrink-0 items-center gap-0 text-cream/80 sm:gap-0.5 lg:border-l lg:border-white/10 lg:pl-3 xl:pl-4">
+          <div className="flex shrink-0 items-center gap-0 text-cream/80 sm:gap-0.5">
           <SocialLinks placement="header" className="mr-1 hidden 2xl:flex" iconClassName="h-4 w-4" />
           <button aria-label="Search" onClick={() => setSearchOpen(true)} className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"><Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" /></button>
           <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">

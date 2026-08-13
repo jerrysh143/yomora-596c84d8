@@ -203,7 +203,7 @@ function MembershipDashboard() {
                     {(membership.plan?.benefits?.length
                       ? membership.plan.benefits
                       : [
-                          "15% off on everything for 1 year",
+                          "25% off on everything for 1 year",
                           "Early access to new collections",
                           "Priority dispatch & dedicated support",
                           "Birthday surprise & member-only offers",
@@ -211,7 +211,7 @@ function MembershipDashboard() {
                     ).map((b) => (
                       <li key={b} className="flex gap-2">
                         <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gold" />
-                        <span>{b}</span>
+                        <span>{b.replace(/15%/gi, "25%")}</span>
                       </li>
                     ))}
                   </ul>
@@ -273,7 +273,7 @@ function EmptyState({
       </div>
       <h2 className="mt-5 font-display text-3xl text-cream">You're not a member yet</h2>
       <p className="mx-auto mt-3 max-w-lg text-sm text-cream/70">
-        Join Black Signature to unlock 15% off, early access, priority dispatch and more.
+        Join Black Signature to unlock 25% off, early access, priority dispatch and more.
         {plan ? ` Membership from ${formatINR(plan.price)} / ${plan.duration_label.toLowerCase()}.` : ""}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">

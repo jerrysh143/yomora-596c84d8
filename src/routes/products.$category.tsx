@@ -279,9 +279,7 @@ function ProductPage({ product, products }: { product: Product; products: Produc
   const nav = useNavigate();
   const img = productImage(product);
   const gallery = productGallery(product);
-  const sizes = ["6", "7", "8", "9", "10", "11", "12"];
   const [activeImg, setActiveImg] = useState(0);
-  const [size, setSize] = useState("8");
   const [tab, setTab] = useState<"description" | "details" | "shipping" | "reviews">("description");
   const [cartAction, setCartAction] = useState<{
     productId: string;
@@ -485,29 +483,6 @@ function ProductPage({ product, products }: { product: Product; products: Produc
               <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-gold" /> Hallmarked</span>
               <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-gold" /> Skin Friendly</span>
             </div>
-
-            {/* Size */}
-            {product.category === "rings" && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold tracking-[0.28em] text-foreground">SIZE</p>
-                  <button className="text-[11px] font-semibold tracking-[0.2em] text-gold hover:underline">Size Guide</button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {sizes.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setSize(s)}
-                      className={`h-10 w-10 rounded-full border text-sm transition-colors ${
-                        size === s ? "border-gold bg-gold text-onyx" : "border-border text-foreground hover:border-gold"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* CTAs */}
             {product.sold_out ? (
