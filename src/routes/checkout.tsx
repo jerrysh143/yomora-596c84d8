@@ -12,6 +12,7 @@ import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
+import { GST_RATE, includedGst } from "@/lib/tax";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
@@ -60,6 +61,7 @@ function CheckoutPage() {
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
   const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
+  const gst = includedGst(total);
   const qualifiesForMembership = total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD;
   const membershipRemaining = Math.max(0, COMPLIMENTARY_MEMBERSHIP_THRESHOLD - total);
 
@@ -221,6 +223,7 @@ function CheckoutPage() {
             <dl className="mt-5 space-y-2 text-sm">
               <Row k="Subtotal" v={formatINR(subtotal)} />
               {discount > 0 && <Row k={`Coupon (${currentCoupon?.code})`} v={`-${formatINR(discount)}`} />}
+              <Row k={`Included GST (${GST_RATE}%)`} v={formatINR(gst)} />
               <Row k="Shipping" v="FREE" />
               <div className="my-3 h-px bg-border" />
               <Row k="Total" v={formatINR(total)} bold />
