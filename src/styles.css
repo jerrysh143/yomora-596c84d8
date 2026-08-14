@@ -2,6 +2,63 @@
 @source "../src";
 @import "tw-animate-css";
 
+@keyframes yomora-pencil-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.18;
+  }
+  12% {
+    opacity: 1;
+  }
+  82%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.yomora-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgb(184 138 82 / 10%), transparent 34%),
+    #0b0a08;
+}
+
+.yomora-loader__logo {
+  width: clamp(8rem, 24vw, 11rem);
+  height: auto;
+  filter: drop-shadow(0 0 18px rgb(184 138 82 / 16%));
+}
+
+.yomora-loader__lines,
+.yomora-loader__details {
+  stroke: #c99b5c;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: yomora-pencil-draw 1.5s cubic-bezier(.65, 0, .35, 1) infinite alternate;
+}
+
+.yomora-loader__lines {
+  stroke-width: 8;
+}
+
+.yomora-loader__details {
+  stroke-width: 5.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yomora-loader__lines,
+  .yomora-loader__details {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*

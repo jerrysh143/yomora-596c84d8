@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { LogoLoader } from "@/components/logo-loader";
 
 function NotFoundComponent() {
   return (
@@ -147,6 +148,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LogoLoader />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <main id="main-content">
         <Outlet />
