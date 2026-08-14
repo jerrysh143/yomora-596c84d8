@@ -12,7 +12,7 @@ import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
-import { GST_RATE, includedGst } from "@/lib/tax";
+import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
@@ -61,7 +61,7 @@ function CheckoutPage() {
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
   const discount = currentCoupon?.discount ?? 0;
   const total = subtotal - discount;
-  const gst = includedGst(total);
+  const tax = inclusiveTaxBreakdown(subtotal, discount);
   const qualifiesForMembership = total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD;
   const membershipRemaining = Math.max(0, COMPLIMENTARY_MEMBERSHIP_THRESHOLD - total);
 
@@ -221,12 +221,13 @@ function CheckoutPage() {
               {items.length === 0 && <p className="text-xs text-muted-foreground">No items in cart. <Link to="/products" className="text-gold">Shop now</Link></p>}
             </div>
             <dl className="mt-5 space-y-2 text-sm">
-              <Row k="Subtotal" v={formatINR(subtotal)} />
-              {discount > 0 && <Row k={`Coupon (${currentCoupon?.code})`} v={`-${formatINR(discount)}`} />}
-              <Row k={`Included GST (${GST_RATE}%)`} v={formatINR(gst)} />
+              <Row k="Product Amount (before GST)" v={formatTaxINR(tax.productAmount)} />
+              {discount > 0 && <Row k={`Discount (${currentCoupon?.code})`} v={`− ${formatTaxINR(tax.discountAmount)}`} />}
+              <Row k="Taxable Amount" v={formatTaxINR(tax.taxableAmount)} bold />
+              <Row k={`GST @ ${GST_RATE}%`} v={formatTaxINR(tax.gstAmount)} />
               <Row k="Shipping" v="FREE" />
               <div className="my-3 h-px bg-border" />
-              <Row k="Total" v={formatINR(total)} bold />
+              <Row k="Invoice Total" v={formatTaxINR(tax.invoiceTotal)} bold />
             </dl>
             {!membershipLoading && !hasActiveMembership && <div className={`mt-5 border p-4 ${qualifiesForMembership ? "border-gold bg-gold/10" : "border-border bg-secondary/20"}`}>
               <div className="flex gap-3">

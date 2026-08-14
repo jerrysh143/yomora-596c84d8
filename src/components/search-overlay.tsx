@@ -64,8 +64,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 {categories.map((c) => (
                   <Link
                     key={c.slug}
-                    to="/products"
-                    hash={c.slug}
+                    to="/products/$category"
+                    params={{ category: c.slug }}
                     onClick={onClose}
                     className="rounded-full border border-white/15 px-4 py-1.5 text-xs tracking-wide hover:border-gold hover:text-gold"
                   >
