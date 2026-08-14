@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { LogoLoader } from "@/components/logo-loader";
+import { SiteImagePreloader } from "@/components/site-image-preloader";
 
 function NotFoundComponent() {
   return (
@@ -104,8 +105,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/yomora-favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/yomora-option-3-symbol.png?v=2", type: "image/png" },
+      { rel: "shortcut icon", href: "/favicon.ico?v=2", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/yomora-option-3-symbol.png?v=2" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
@@ -149,6 +151,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LogoLoader />
+      <SiteImagePreloader />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <main id="main-content">
         <Outlet />

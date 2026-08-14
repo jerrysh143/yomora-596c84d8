@@ -4,15 +4,15 @@
 
 @keyframes yomora-pencil-draw {
   0% {
-    stroke-dashoffset: 1;
-    opacity: 0.18;
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
   }
   12% {
     opacity: 1;
   }
   82%,
   100% {
-    stroke-dashoffset: 0;
+    clip-path: inset(0 0 0 0);
     opacity: 1;
   }
 }
@@ -33,29 +33,15 @@
   width: clamp(8rem, 24vw, 11rem);
   height: auto;
   filter: drop-shadow(0 0 18px rgb(184 138 82 / 16%));
-}
-
-.yomora-loader__lines,
-.yomora-loader__details {
-  stroke: #c99b5c;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
   animation: yomora-pencil-draw 1.5s cubic-bezier(.65, 0, .35, 1) infinite alternate;
-}
-
-.yomora-loader__lines {
-  stroke-width: 8;
-}
-
-.yomora-loader__details {
-  stroke-width: 5.5;
+  will-change: clip-path, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .yomora-loader__lines,
-  .yomora-loader__details {
+  .yomora-loader__logo {
     animation: none;
-    stroke-dashoffset: 0;
+    clip-path: none;
+    opacity: 1;
   }
 }
 
