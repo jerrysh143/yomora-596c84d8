@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
-import { SiteIcon } from "@/lib/site-icons";
 import { SocialLinks } from "@/components/social-links";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
@@ -48,24 +47,13 @@ export function SiteHeader() {
       ref={headerRef}
       className={
         stuck
-          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-transparent text-cream"
+          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx text-cream"
           : "relative z-50 w-full bg-onyx text-cream"
       }
     >
-      {/* Utility strip */}
-      <div className={stuck ? "hidden" : "border-b border-white/[0.06]"}>
-        <div className="container-x mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-8 gap-y-1 py-1.5 text-[10px] tracking-[0.08em] text-cream/75 sm:py-2 sm:text-[11px]">
-          {header.announcements.map((a, i) => (
-            <span key={i} className="inline-flex items-center gap-2">
-              <SiteIcon name={a.icon} className="h-3.5 w-3.5 text-gold" /> {a.text}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Main nav */}
       <div className="px-3 py-2.5 sm:px-5 sm:py-3 lg:px-8">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/15 bg-[#141817]/90 px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-black/20 backdrop-blur-xl sm:gap-4 sm:px-4 lg:gap-5 lg:px-5">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/10 bg-onyx px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] sm:gap-4 sm:px-4 lg:gap-5 lg:px-5">
           <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
             <img src="/yomora-option-3-symbol.png" alt="" className="h-10 w-auto object-contain sm:hidden" />
             <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[230px] object-contain sm:block xl:h-14 xl:max-w-[260px]" />
