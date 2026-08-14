@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { ImageDown, Loader2, Plus, Trash2 } from "lucide-react";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { canOptimizeImageUrl, optimizeImageUrl, type ImageOptimizationResult } from "@/lib/image-optimizer";
+import { updateProductImagesFn } from "@/lib/products.functions";
+import { productsQuery } from "@/lib/products.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { updateSiteContentFn } from "@/lib/site-content.functions";
 import {
@@ -26,6 +29,48 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls = "w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold";
+
+type OptimizationProgress = {
+  done: number;
+  total: number;
+  optimized: number;
+  skipped: number;
+  failed: number;
+  bytesSaved: number;
+};
+
+function collectContentImageUrls(value: unknown, urls: Set<string>) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectContentImageUrls(item, urls));
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+
+  Object.entries(value as Record<string, unknown>).forEach(([key, child]) => {
+    if (key === "image_url" && typeof child === "string" && canOptimizeImageUrl(child)) urls.add(child);
+    else collectContentImageUrls(child, urls);
+  });
+}
+
+function replaceContentImageUrls(value: unknown, results: Map<string, ImageOptimizationResult>): unknown {
+  if (Array.isArray(value)) return value.map((item) => replaceContentImageUrls(item, results));
+  if (!value || typeof value !== "object") return value;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, child]) => {
+      if (key === "image_url" && typeof child === "string") {
+        const result = results.get(child);
+        return [key, result?.status === "optimized" ? result.url : child];
+      }
+      return [key, replaceContentImageUrls(child, results)];
+    }),
+  );
+}
+
+function formatSavedBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function IconPicker({ value, onChange }: { value: string; onChange: (v: IconName) => void }) {
   return (
@@ -91,7 +136,11 @@ function SectionCard<T>({
 export function SiteContentEditor() {
   const qc = useQueryClient();
   const { data: content = SITE_CONTENT_DEFAULTS } = useQuery(siteContentQuery());
+  const { data: products = [] } = useQuery(productsQuery());
   const save = useServerFn(updateSiteContentFn);
+  const updateProductImages = useServerFn(updateProductImagesFn);
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState<OptimizationProgress | null>(null);
 
   const mut = useMutation({
     mutationFn: (v: { key: SiteContentKey; data: unknown }) => save({ data: v }),
@@ -107,11 +156,130 @@ export function SiteContentEditor() {
   const persist = <K extends SiteContentKey>(key: K, data: SiteContentMap[K]) =>
     mut.mutate({ key, data });
 
+  async function optimizeAllImages() {
+    const urls = new Set<string>();
+    collectContentImageUrls(content, urls);
+    products.forEach((product) => {
+      if (product.image_url && canOptimizeImageUrl(product.image_url)) urls.add(product.image_url);
+      product.gallery_urls.forEach((url) => {
+        if (canOptimizeImageUrl(url)) urls.add(url);
+      });
+    });
+
+    if (!urls.size) {
+      toast.info("No uploaded images found to optimize");
+      return;
+    }
+    if (!window.confirm(`Optimize ${urls.size} unique images now? Originals will be kept for recovery.`)) return;
+
+    setOptimizing(true);
+    let progress: OptimizationProgress = {
+      done: 0,
+      total: urls.size,
+      optimized: 0,
+      skipped: 0,
+      failed: 0,
+      bytesSaved: 0,
+    };
+    setOptimizationProgress(progress);
+
+    try {
+      const results = new Map<string, ImageOptimizationResult>();
+      for (const url of urls) {
+        const result = await optimizeImageUrl(url);
+        results.set(url, result);
+        progress = {
+          ...progress,
+          done: progress.done + 1,
+          optimized: progress.optimized + (result.status === "optimized" ? 1 : 0),
+          skipped: progress.skipped + (result.status === "skipped" ? 1 : 0),
+          failed: progress.failed + (result.status === "failed" ? 1 : 0),
+          bytesSaved:
+            progress.bytesSaved +
+            (result.status === "optimized" ? result.beforeBytes - result.afterBytes : 0),
+        };
+        setOptimizationProgress(progress);
+      }
+
+      for (const product of products) {
+        const mainResult = product.image_url ? results.get(product.image_url) : undefined;
+        const imageUrl = mainResult?.status === "optimized" ? mainResult.url : product.image_url;
+        const galleryUrls = product.gallery_urls.map((url) => {
+          const result = results.get(url);
+          return result?.status === "optimized" ? result.url : url;
+        });
+        const changed = imageUrl !== product.image_url || galleryUrls.some((url, i) => url !== product.gallery_urls[i]);
+        if (changed) {
+          await updateProductImages({
+            data: { id: product.id, image_url: imageUrl, gallery_urls: galleryUrls },
+          });
+        }
+      }
+
+      for (const key of Object.keys(content) as SiteContentKey[]) {
+        const current = content[key];
+        const updated = replaceContentImageUrls(current, results) as SiteContentMap[typeof key];
+        if (JSON.stringify(updated) !== JSON.stringify(current)) await save({ data: { key, data: updated } });
+      }
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["products"] }),
+        qc.invalidateQueries({ queryKey: ["site_content"] }),
+      ]);
+      toast.success(
+        `Optimized ${progress.optimized}, skipped ${progress.skipped}, failed ${progress.failed}. Saved ${formatSavedBytes(progress.bytesSaved)}.`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not finish image optimization");
+    } finally {
+      setOptimizing(false);
+    }
+  }
+
   return (
     <div className="mt-8 grid gap-3">
       <p className="text-sm text-muted-foreground">
         Edit every section of the storefront — header, hero, trust bar, story, section titles, CTA strip and footer. Changes go live immediately.
       </p>
+
+      <div className="border border-gold/35 bg-gold/5 p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-display text-lg">Image optimization</h3>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+              Compress product, gallery and site-content images to lightweight WebP files. Already optimized images are skipped, and original files are retained.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={optimizing}
+            onClick={() => void optimizeAllImages()}
+            className="inline-flex shrink-0 items-center justify-center gap-2 bg-gold px-5 py-2.5 text-[11px] font-semibold tracking-[0.18em] text-onyx hover:bg-gold-soft disabled:cursor-wait disabled:opacity-60"
+          >
+            {optimizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
+            {optimizing ? "OPTIMIZING…" : "OPTIMIZE ALL IMAGES"}
+          </button>
+        </div>
+        {optimizationProgress && (
+          <div className="mt-4" aria-live="polite">
+            <div className="mb-1.5 flex justify-between text-[11px] text-muted-foreground">
+              <span>{optimizationProgress.done} of {optimizationProgress.total} processed</span>
+              <span>
+                {optimizationProgress.optimized} optimized · {optimizationProgress.skipped} skipped · {optimizationProgress.failed} failed
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden bg-border">
+              <div
+                className="h-full bg-gold transition-[width] duration-300"
+                style={{ width: `${optimizationProgress.total ? (optimizationProgress.done / optimizationProgress.total) * 100 : 0}%` }}
+              />
+            </div>
+            {optimizationProgress.done === optimizationProgress.total && (
+              <p className="mt-2 text-xs text-muted-foreground">Space and transfer saved: {formatSavedBytes(optimizationProgress.bytesSaved)}</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* HEADER */}
       <SectionCard

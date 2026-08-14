@@ -51,6 +51,7 @@ export function HomeBannerSlider({ banners, fallbackImage, fallbackLink }: Props
                 alt={slide.alt || "Homepage promotion"}
                 className="h-full w-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "low"}
                 decoding="async"
               />
             </a>

@@ -97,6 +97,42 @@ export const upsertProductFn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const productImagesInput = z.object({
+  id: z.string().min(1).max(80),
+  image_url: z
+    .string()
+    .max(1000)
+    .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//.test(v), "Invalid image URL")
+    .transform((v) => (v === "" ? null : v))
+    .nullable(),
+  gallery_urls: z
+    .array(
+      z
+        .string()
+        .max(1000)
+        .refine((v) => v.startsWith("/") || /^https?:\/\//.test(v), "Invalid image URL"),
+    )
+    .max(12),
+});
+
+/** Update only product image fields after the admin batch optimizer succeeds. */
+export const updateProductImagesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => productImagesInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+
+    const { id, ...images } = data;
+    const { error } = await context.supabase.from("products").update(images).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const deleteProductFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().min(1) }).parse(d))
