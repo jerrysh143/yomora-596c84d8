@@ -139,7 +139,7 @@ export function AudienceCollection({
                   </button>
                 </div>
                 <h3 className="mt-3 text-sm text-foreground">{cleanProductName(p.name)}</h3>
-                <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
+                <p className="mt-1 hidden text-sm font-semibold text-foreground sm:block">{formatINR(p.price)}</p>
               </Link>
             ))}
           </div>
