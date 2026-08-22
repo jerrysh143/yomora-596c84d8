@@ -54,7 +54,7 @@ export function SiteHeader() {
             : "relative z-50 w-full border-b border-white/10 bg-onyx text-cream"
       }
     >
-      <div className="mx-auto flex h-[72px] max-w-[1760px] items-center justify-between gap-2 px-4 sm:grid sm:h-[78px] sm:grid-cols-[1fr_auto_1fr] sm:gap-3 sm:px-8 lg:px-14">
+      <div className="mx-auto flex h-[72px] max-w-[1760px] items-center justify-between gap-2 px-4 sm:h-[78px] sm:gap-3 sm:px-8 md:grid md:grid-cols-[1fr_auto_1fr] lg:px-14">
           <div className="hidden items-center gap-6 justify-self-start text-[11px] font-semibold tracking-[0.08em] md:flex">
             <span className="whitespace-nowrap">INR <span className="mx-2 text-white/40">|</span> EN</span>
             <span className="h-5 w-px bg-white/35" />
