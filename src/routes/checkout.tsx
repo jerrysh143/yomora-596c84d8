@@ -41,6 +41,10 @@ function CheckoutPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [addressLine, setAddressLine] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincodeStatus, setPincodeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [authReady, setAuthReady] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
@@ -86,6 +90,43 @@ function CheckoutPage() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, [navigate]);
+
+  useEffect(() => {
+    if (pincode.length !== 6) {
+      setPincodeStatus("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setPincodeStatus("loading");
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Pincode lookup failed");
+        const payload = await response.json() as Array<{
+          Status?: string;
+          PostOffice?: Array<{ District?: string; State?: string }>;
+        }>;
+        const office = payload?.[0]?.PostOffice?.[0];
+        if (payload?.[0]?.Status !== "Success" || !office?.District || !office?.State) {
+          throw new Error("Pincode not found");
+        }
+        setCity(office.District);
+        setState(office.State);
+        setPincodeStatus("success");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setPincodeStatus("error");
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pincode]);
 
   if (!authReady) {
     return <div className="min-h-screen bg-background"><SiteHeader /><div className="container-x mx-auto max-w-[1400px] py-24 text-sm text-muted-foreground">Checking your YOMORA account…</div><SiteFooter /></div>;
@@ -169,10 +210,30 @@ function CheckoutPage() {
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">2. SHIPPING ADDRESS</legend>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input name="customer_name" label="Full name" required value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
-                <Input name="pincode" label="Pincode" required inputMode="numeric" />
+                <div>
+                  <Input
+                    name="pincode"
+                    label="Pincode"
+                    required
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                    value={pincode}
+                    onChange={(event) => {
+                      setPincode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                      setPincodeStatus("idle");
+                    }}
+                  />
+                  <p className={`mt-1 text-[10px] ${pincodeStatus === "error" ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
+                    {pincodeStatus === "loading" && "Finding city and state…"}
+                    {pincodeStatus === "success" && "City and state filled automatically."}
+                    {pincodeStatus === "error" && "Pincode not found. Please enter city and state manually."}
+                  </p>
+                </div>
                 <Input name="address_line" label="Address line" required className="md:col-span-2" value={addressLine} onChange={(event) => setAddressLine(event.target.value)} />
-                <Input name="city" label="City" required />
-                <Input name="state" label="State" required />
+                <Input name="city" label="City" required autoComplete="address-level2" value={city} onChange={(event) => setCity(event.target.value)} />
+                <Input name="state" label="State" required autoComplete="address-level1" value={state} onChange={(event) => setState(event.target.value)} />
               </div>
             </fieldset>
             <fieldset className="border border-border p-6">
