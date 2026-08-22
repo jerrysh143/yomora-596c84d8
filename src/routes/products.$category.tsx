@@ -48,6 +48,9 @@ const shareImageVersion = (value: string) => {
 };
 
 export const Route = createFileRoute("/products/$category")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    audience: search.audience === "men" || search.audience === "women" ? search.audience : undefined,
+  }),
   loader: async ({ context, params }) => {
     const products = await context.queryClient.ensureQueryData(productsQuery());
     const categories = await context.queryClient.ensureQueryData(categoriesQuery());
@@ -165,8 +168,11 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
   const [onlyNew, setOnlyNew] = useState(false);
+  const { audience } = Route.useSearch();
 
-  const items = products.filter((p) => p.category === category.slug);
+  const items = products.filter(
+    (p) => p.category === category.slug && (!audience || p.audience === audience || p.audience === "unisex"),
+  );
   const filteredItems = onlyNew ? items.filter((p) => isProductNew(p)) : items;
 
   const filters: { key: Category | "all"; label: string }[] = [
@@ -184,7 +190,7 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
             ← All Collections
           </Link>
           <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{category.label.toUpperCase()}</p>
-          <h1 className="mt-3 font-display text-5xl">Shop {category.label}</h1>
+          <h1 className="mt-3 font-display text-5xl">Shop {category.label}{audience ? ` for ${audience === "men" ? "Him" : "Her"}` : ""}</h1>
           <p className="mt-3 max-w-xl text-sm text-cream/70">
             Hand-finished 925 sterling silver {category.label.toLowerCase()}, hallmarked and made to be worn every day.
           </p>
