@@ -54,16 +54,15 @@ export function SiteHeader() {
             : "relative z-50 w-full border-b border-white/10 bg-onyx text-cream"
       }
     >
-      <div className="mx-auto grid h-[72px] max-w-[1760px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:h-[78px] sm:px-8 lg:px-14">
+      <div className="mx-auto flex h-[72px] max-w-[1760px] items-center justify-between gap-2 px-4 sm:grid sm:h-[78px] sm:grid-cols-[1fr_auto_1fr] sm:gap-3 sm:px-8 lg:px-14">
           <div className="hidden items-center gap-6 justify-self-start text-[11px] font-semibold tracking-[0.08em] md:flex">
             <span className="whitespace-nowrap">INR <span className="mx-2 text-white/40">|</span> EN</span>
             <span className="h-5 w-px bg-white/35" />
             <button aria-label="Search" onClick={() => setSearchOpen(true)} className="p-1 transition-colors hover:text-gold"><Search className="h-6 w-6" strokeWidth={1.6} /></button>
           </div>
 
-          <Link to="/" className="flex min-w-0 items-center justify-self-center" aria-label={`${header.brand_name} home`}>
-            <img src="/yomora-option-3-symbol.png" alt="" className="h-10 w-auto object-contain sm:hidden" />
-            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[240px] object-contain sm:block xl:h-14 xl:max-w-[285px]" />
+          <Link to="/" className="flex min-w-0 shrink items-center justify-self-center" aria-label={`${header.brand_name} home`}>
+            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="h-10 w-auto max-w-[150px] object-contain sm:h-12 sm:max-w-[240px] xl:h-14 xl:max-w-[285px]" />
           </Link>
 
           <div className="flex shrink-0 items-center justify-self-end gap-0.5 text-white/90 sm:gap-1">
@@ -78,7 +77,7 @@ export function SiteHeader() {
           </Link>
           <Link to="/wishlist" aria-label={`Wishlist (${wishlistCount} items)`} className="relative flex h-10 items-center gap-1 p-1.5 transition-colors hover:text-gold sm:p-2">
             <Heart className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
-            <span className="hidden min-w-3 text-center text-[11px] font-semibold leading-none sm:inline">{wishlistCount}</span>
+            <span className="min-w-3 text-center text-[11px] font-semibold leading-none">{wishlistCount}</span>
           </Link>
           {signedIn && (
             <button
