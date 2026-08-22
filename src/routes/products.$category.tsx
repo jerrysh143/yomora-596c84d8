@@ -418,7 +418,7 @@ function ProductPage({ product, products }: { product: Product; products: Produc
           </div>
 
           {/* Main image */}
-          <div className="relative order-1 self-start bg-onyx lg:order-2">
+          <div className="relative order-1 mx-auto w-full max-w-[450px] self-start bg-onyx md:max-w-none lg:order-2">
             <img
               src={gallery[activeImg]}
               alt={cleanProductName(product.name)}
