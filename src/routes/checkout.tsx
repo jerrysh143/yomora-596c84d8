@@ -12,6 +12,7 @@ import { createOrderFn } from "@/lib/orders.functions";
 import { validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
+import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
@@ -60,6 +61,8 @@ function CheckoutPage() {
     queryFn: () => getMyMembership(),
     enabled: authReady,
   });
+  const { data: membershipPlans = [] } = useQuery(subscriptionPlansQuery());
+  const activeMembershipPlan = membershipPlans.find((plan) => plan.is_active);
   const hasActiveMembership = membership?.status === "active" &&
     (!membership.expires_at || new Date(membership.expires_at).getTime() > Date.now());
   const currentCoupon = appliedCoupon?.subtotal === subtotal ? appliedCoupon : null;
@@ -295,16 +298,18 @@ function CheckoutPage() {
                 <Crown className={`mt-0.5 h-5 w-5 shrink-0 ${qualifiesForMembership ? "text-gold" : "text-muted-foreground"}`} />
                 <div>
                   <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
-                    {qualifiesForMembership ? "COMPLIMENTARY MEMBERSHIP INCLUDED" : "YOMORA PRIVILEGE"}
+                    {qualifiesForMembership ? "COMPLIMENTARY MEMBERSHIP INCLUDED" : "ADD BLACK SIGNATURE MEMBERSHIP"}
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {qualifiesForMembership
                       ? "Your one-year membership will activate when this order is completed."
-                      : `Add ${formatINR(membershipRemaining)} more to unlock a complimentary one-year membership.`}
+                      : activeMembershipPlan
+                        ? `Join for ${formatINR(activeMembershipPlan.price)} and receive member privileges for ${activeMembershipPlan.duration_label || "one year"}. Or add ${formatINR(membershipRemaining)} more to this order to unlock membership complimentary.`
+                        : `Add ${formatINR(membershipRemaining)} more to this order to unlock a complimentary one-year membership.`}
                   </p>
                   {!qualifiesForMembership && (
-                    <Link to="/membership" className="mt-2 inline-block text-[10px] font-semibold tracking-[0.16em] text-gold hover:underline">
-                      VIEW MEMBERSHIP
+                    <Link to="/membership-dashboard" className="mt-3 inline-flex border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-onyx">
+                      {activeMembershipPlan ? `GET MEMBERSHIP · ${formatINR(activeMembershipPlan.price)}` : "VIEW MEMBERSHIP"}
                     </Link>
                   )}
                 </div>
