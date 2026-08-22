@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage, isProductNew, cleanProductName, type Category } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
+import { siteContentQuery } from "@/lib/site-content.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
 import { CollectionPageSkeleton } from "@/components/product-grid-skeleton";
 
@@ -19,9 +20,12 @@ export const Route = createFileRoute("/products/")({
       { property: "og:description", content: "925 hallmarked sterling silver jewellery for every occasion." },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(productsQuery());
-    context.queryClient.ensureQueryData(categoriesQuery());
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(productsQuery()),
+      context.queryClient.ensureQueryData(categoriesQuery()),
+      context.queryClient.ensureQueryData(siteContentQuery()),
+    ]);
   },
   pendingMs: 150,
   pendingMinMs: 300,
