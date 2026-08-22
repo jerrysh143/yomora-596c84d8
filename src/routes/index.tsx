@@ -215,9 +215,9 @@ function Index() {
             </Link>
           </div>
 
-          <div className="fade-in-grid mt-10 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+          <div className="fade-in-grid mt-10 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {featured.map((p) => (
-              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block">
+              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-3 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img
                     src={productImage(p)}
@@ -256,10 +256,11 @@ function Index() {
                     <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
                   </button>
                 </div>
-                <div className="pt-4">
-                  <h3 className="font-display text-lg text-foreground">{p.name}</h3>
+                <div className="min-w-0 py-2 min-[400px]:py-0 min-[400px]:pt-4">
+                  <h3 className="line-clamp-2 font-display text-lg text-foreground">{p.name}</h3>
                   <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">{p.tagline}</p>
                   <p className="mt-2 text-sm font-semibold tracking-wide text-foreground">{formatINR(p.price)}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 border-b border-gold pb-1 text-[9px] font-semibold tracking-[0.16em] text-gold min-[400px]:hidden">SHOP NOW <ArrowRight className="h-3 w-3" /></span>
                 </div>
               </Link>
             ))}
