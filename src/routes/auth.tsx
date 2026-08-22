@@ -70,12 +70,20 @@ function EmailLogin({ redirect }: { redirect: string }) {
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  const authCallbackUrl = () => {
+    const params = new URLSearchParams({ redirect });
+    return `${window.location.origin}/auth?${params.toString()}`;
+  };
+
   const google = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${redirect}`,
+          redirectTo: authCallbackUrl(),
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
       if (error) throw error;
@@ -93,7 +101,7 @@ function EmailLogin({ redirect }: { redirect: string }) {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${redirect}`,
+            emailRedirectTo: authCallbackUrl(),
             data: {
               full_name: fullName.trim(),
               phone: phone.trim(),
@@ -102,6 +110,9 @@ function EmailLogin({ redirect }: { redirect: string }) {
           },
         });
         if (error) throw error;
+        if (data.user && data.user.identities?.length === 0) {
+          throw new Error("An account already exists for this email. Sign in instead, or continue with Google if that is how you registered.");
+        }
         if (!data.session) {
           toast.success("Account created. Confirm your email, then sign in to continue.");
           setMode("signin");

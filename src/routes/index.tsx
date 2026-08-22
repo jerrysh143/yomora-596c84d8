@@ -16,7 +16,6 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import legacyImg from "@/assets/legacy-showroom.jpg";
-import customJewelleryBanner from "@/assets/custom-jewellery-banner-wide.jpg";
 import { HomeBannerSlider } from "@/components/home-banner-slider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -77,11 +76,7 @@ function Index() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <HomeBannerSlider
-        banners={content.homepage_banners}
-        fallbackImage={customJewelleryBanner}
-        fallbackLink={`https://wa.me/${(ctaStrip.whatsapp_number || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(ctaStrip.whatsapp_message || "")}`}
-      />
+      <HomeBannerSlider />
 
       {/* CATEGORIES */}
       <section className="bg-secondary/40">
@@ -215,9 +210,9 @@ function Index() {
             </Link>
           </div>
 
-          <div className="fade-in-grid mt-10 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+          <div className="fade-in-grid mt-10 grid grid-cols-1 gap-5 min-[400px]:grid-cols-2 min-[400px]:gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {featured.map((p) => (
-              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-3 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
+              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img
                     src={productImage(p)}
@@ -260,7 +255,6 @@ function Index() {
                   <h3 className="line-clamp-2 font-display text-lg text-foreground">{p.name}</h3>
                   <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">{p.tagline}</p>
                   <p className="mt-2 text-sm font-semibold tracking-wide text-foreground">{formatINR(p.price)}</p>
-                  <span className="mt-3 inline-flex items-center gap-1 border-b border-gold pb-1 text-[9px] font-semibold tracking-[0.16em] text-gold min-[400px]:hidden">SHOP NOW <ArrowRight className="h-3 w-3" /></span>
                 </div>
               </Link>
             ))}
