@@ -120,8 +120,8 @@ function ProductsPage() {
               </div>
               <div className="pt-4">
                 <h3 className="font-display text-lg text-foreground">{cleanProductName(p.name)}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{p.tagline}</p>
-                <p className="mt-2 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
+                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{p.tagline}</p>
+                <p className="mt-2 hidden text-sm font-semibold text-foreground sm:block">{formatINR(p.price)}</p>
               </div>
             </Link>
           ))}
