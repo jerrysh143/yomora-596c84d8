@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Check, X } from "lucide-react";
 import {
   Heart,
   Percent,
@@ -53,6 +54,21 @@ function Index() {
   const featured = CATEGORIES.flatMap((c) => products.filter((p) => p.category === c.slug).slice(0, 3));
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
+  const [selectedCategory, setSelectedCategory] = useState<{ slug: string; label: string } | null>(null);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedCategory(null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedCategory]);
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -79,34 +95,6 @@ function Index() {
             </Link>
           </div>
 
-          {/* Shop by audience */}
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              { to: "/men" as const, label: "Shop for Him" },
-              { to: "/women" as const, label: "Shop for Her" },
-              { to: "/kids" as const, label: "Shop for Kids" },
-            ].map((a) => (
-              <Link
-                key={a.to}
-                to={a.to}
-                className="group relative flex items-center justify-between overflow-hidden border border-gold/25 bg-onyx px-7 py-7 text-cream transition-all duration-500 hover:border-gold/60 hover:shadow-[0_18px_40px_-22px_color-mix(in_oklab,var(--color-gold)_70%,transparent)]"
-              >
-                <span className="pointer-events-none absolute inset-[6px] border border-gold/15 transition-colors duration-500 group-hover:border-gold/35" />
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(105deg,transparent,color-mix(in_oklab,var(--color-gold)_18%,transparent),transparent)] transition-transform duration-[900ms] ease-out group-hover:translate-x-full" />
-                <span className="relative font-display text-base uppercase tracking-[0.26em] text-gold transition-[letter-spacing] duration-500 group-hover:tracking-[0.3em] sm:text-lg">
-                  {a.label}
-                </span>
-                <span className="relative flex items-center">
-                  <span className="mr-0 h-px w-0 bg-gold/70 transition-all duration-500 group-hover:mr-3 group-hover:w-7" />
-                  <ArrowRight
-                    className="h-4 w-4 text-gold transition-transform duration-500 group-hover:translate-x-1"
-                    strokeWidth={1.25}
-                  />
-                </span>
-              </Link>
-            ))}
-          </div>
-
           <div className="mt-10">
             <div
               id="category-rail"
@@ -116,10 +104,11 @@ function Index() {
                 const p = products.find((x) => x.category === c.slug);
                 const img = p ? productImage(p) : "";
                 return (
-                  <Link
+                  <button
+                    type="button"
                     key={c.slug}
-                    to="/products/$category"
-                    params={{ category: c.slug }}
+                    onClick={() => setSelectedCategory({ slug: c.slug, label: c.label })}
+                    aria-label={`Choose who is shopping for ${c.label}`}
                     className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
                     <div className="relative mx-auto aspect-square w-[86%] rounded-full p-[3px] ring-1 ring-gold/50 transition-shadow duration-500 group-hover:shadow-[0_18px_40px_-18px_color-mix(in_oklab,var(--color-gold)_65%,transparent)]">
@@ -143,7 +132,7 @@ function Index() {
                       View the collection
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
-                  </Link>
+                  </button>
                 );
               })}
             </div>
@@ -318,6 +307,67 @@ function Index() {
       )}
 
       <SiteFooter />
+
+      {selectedCategory && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-onyx/75 px-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedCategory(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-audience-title"
+            className="relative w-full max-w-lg border border-gold/35 bg-background p-7 text-center shadow-2xl sm:p-10"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCategory(null)}
+              aria-label="Close selection"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-gold"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <p className="text-[10px] font-semibold tracking-[0.3em] text-gold">SHOP {selectedCategory.label.toUpperCase()}</p>
+            <h2 id="category-audience-title" className="mt-3 font-display text-3xl text-foreground sm:text-4xl">Who are you shopping for?</h2>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Choose a collection to see {selectedCategory.label.toLowerCase()} selected for them.
+            </p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              {[
+                { audience: "men" as const, eyebrow: "FOR HIM", title: "Men's Collection" },
+                { audience: "women" as const, eyebrow: "FOR HER", title: "Women's Collection" },
+              ].map((choice) => (
+                <Link
+                  key={choice.audience}
+                  to="/products/$category"
+                  params={{ category: selectedCategory.slug }}
+                  search={{ audience: choice.audience }}
+                  onClick={() => setSelectedCategory(null)}
+                  className="group border border-border bg-secondary/25 px-5 py-6 text-left transition-all hover:border-gold hover:bg-gold/10"
+                >
+                  <span className="block text-[10px] font-semibold tracking-[0.26em] text-gold">{choice.eyebrow}</span>
+                  <span className="mt-2 flex items-center justify-between font-display text-xl text-foreground">
+                    {choice.title}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <Link
+              to="/products/$category"
+              params={{ category: selectedCategory.slug }}
+              search={{}}
+              onClick={() => setSelectedCategory(null)}
+              className="mt-5 inline-flex text-[10px] font-semibold tracking-[0.2em] text-muted-foreground transition-colors hover:text-gold"
+            >
+              VIEW ALL {selectedCategory.label.toUpperCase()}
+            </Link>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
