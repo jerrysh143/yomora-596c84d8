@@ -230,9 +230,9 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
           </label>
         </div>
 
-        <div className="fade-in-grid mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+        <div className="fade-in-grid mt-8 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
           {filteredItems.map((p) => (
-            <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block">
+            <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-3 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
               <div className="relative overflow-hidden bg-secondary/40">
                 <img
                   src={productImage(p)}
@@ -261,10 +261,11 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
                   <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
                 </button>
               </div>
-              <div className="pt-4">
-                <h3 className="font-display text-lg text-foreground">{cleanProductName(p.name)}</h3>
+              <div className="min-w-0 py-2 min-[400px]:py-0 min-[400px]:pt-4">
+                <h3 className="line-clamp-2 font-display text-lg text-foreground">{cleanProductName(p.name)}</h3>
                 <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">{p.tagline}</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
+                <span className="mt-3 inline-flex items-center gap-1 border-b border-gold pb-1 text-[9px] font-semibold tracking-[0.16em] text-gold min-[400px]:hidden">SHOP NOW →</span>
               </div>
             </Link>
           ))}
@@ -629,17 +630,20 @@ function ProductPage({ product, products }: { product: Product; products: Produc
             <h2 className="text-center font-display text-2xl uppercase tracking-[0.2em] text-foreground">You May Also Like</h2>
             <span className="h-px w-10 bg-gold/50" />
           </div>
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+          <div className="mt-8 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {related.map((p) => (
-              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group block bg-background">
+              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-3 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-background min-[400px]:p-0">
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img src={productImage(p)} width={600} height={600} loading="lazy" decoding="async" alt={p.name} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <button aria-label="Wishlist" onClick={(e) => e.preventDefault()} className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold">
                     <Heart className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <h3 className="mt-3 text-center text-sm text-foreground">{cleanProductName(p.name)}</h3>
-                <p className="mt-1 text-center text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
+                <div className="min-w-0 py-2 min-[400px]:py-0">
+                  <h3 className="line-clamp-2 text-left text-sm text-foreground min-[400px]:mt-3 min-[400px]:text-center">{cleanProductName(p.name)}</h3>
+                  <p className="mt-1 text-left text-sm font-semibold text-foreground min-[400px]:text-center">{formatINR(p.price)}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 border-b border-gold pb-1 text-[9px] font-semibold tracking-[0.16em] text-gold min-[400px]:hidden">SHOP NOW →</span>
+                </div>
               </Link>
             ))}
           </div>
