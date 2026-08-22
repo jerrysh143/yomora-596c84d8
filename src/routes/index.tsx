@@ -258,8 +258,8 @@ function Index() {
                 </div>
                 <div className="pt-4">
                   <h3 className="font-display text-lg text-foreground">{p.name}</h3>
-                  <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{p.tagline}</p>
-                  <p className="mt-2 hidden text-sm font-semibold tracking-wide text-foreground sm:block">{formatINR(p.price)}</p>
+                  <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">{p.tagline}</p>
+                  <p className="mt-2 text-sm font-semibold tracking-wide text-foreground">{formatINR(p.price)}</p>
                 </div>
               </Link>
             ))}
