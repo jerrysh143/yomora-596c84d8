@@ -340,11 +340,17 @@ function Index() {
               <X className="h-5 w-5" />
             </button>
             <p className="text-[10px] font-semibold tracking-[0.3em] text-gold">SHOP {selectedCategory.label.toUpperCase()}</p>
-            <h2 id="category-audience-title" className="mt-3 font-display text-3xl text-foreground sm:text-4xl">Who are you shopping for?</h2>
+            <h2 id="category-audience-title" className="mt-3 font-display text-3xl text-foreground sm:text-4xl">
+              {selectedCategory.audiences.length === 1
+                ? `Selected for ${selectedCategory.audiences[0] === "men" ? "Him" : "Her"}`
+                : "Who are you shopping for?"}
+            </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Choose a collection to see {selectedCategory.label.toLowerCase()} selected for them.
+              {selectedCategory.audiences.length === 1
+                ? `These ${selectedCategory.label.toLowerCase()} are currently available in this collection.`
+                : `Choose a collection to see ${selectedCategory.label.toLowerCase()} selected for them.`}
             </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <div className={`mt-8 grid gap-3 ${selectedCategory.audiences.length > 1 ? "sm:grid-cols-2" : "mx-auto max-w-sm"}`}>
               {[
                 { audience: "men" as const, eyebrow: "FOR HIM", title: "Men's Collection" },
                 { audience: "women" as const, eyebrow: "FOR HER", title: "Women's Collection" },
