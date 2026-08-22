@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Search, User, ShoppingBag, Heart, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,8 +10,6 @@ import { useWishlist } from "@/lib/wishlist";
 import { SearchOverlay } from "@/components/search-overlay";
 
 export function SiteHeader() {
-  const location = useLocation();
-  const isHome = location.pathname === "/";
   const [signedIn, setSignedIn] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
@@ -43,15 +41,13 @@ export function SiteHeader() {
 
   return (
     <>
-      {stuck && !isHome && <div style={{ height: headerH }} aria-hidden />}
+      {stuck && <div style={{ height: headerH }} aria-hidden />}
     <header
       ref={headerRef}
       className={
         stuck
           ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 border-b border-white/10 bg-onyx/95 text-cream shadow-xl backdrop-blur-xl"
-          : isHome
-            ? "absolute inset-x-0 top-0 z-50 w-full bg-gradient-to-b from-black/70 via-black/25 to-transparent text-white"
-            : "relative z-50 w-full border-b border-white/10 bg-onyx text-cream"
+          : "relative z-50 w-full border-b border-white/10 bg-onyx text-cream"
       }
     >
       <div className="mx-auto flex h-[72px] max-w-[1760px] items-center justify-between gap-2 px-4 sm:h-[78px] sm:gap-3 sm:px-8 md:grid md:grid-cols-[1fr_auto_1fr] lg:px-14">
