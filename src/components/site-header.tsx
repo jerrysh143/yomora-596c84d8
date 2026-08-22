@@ -67,18 +67,18 @@ export function SiteHeader() {
           </Link>
 
           <div className="flex shrink-0 items-center justify-self-end gap-0.5 text-white/90 sm:gap-1">
-          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="p-1.5 transition-colors hover:text-gold md:hidden"><Search className="h-5 w-5" /></button>
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="flex h-10 items-center p-1.5 transition-colors hover:text-gold md:hidden"><Search className="h-5 w-5" /></button>
           <Link
             to={signedIn ? "/account" : "/auth"}
             aria-label={signedIn ? "My account" : "Sign in"}
             title={signedIn ? "My account" : "Sign in"}
-            className="p-1.5 transition-colors hover:text-gold sm:p-2"
+            className="flex h-10 items-center p-1.5 transition-colors hover:text-gold sm:p-2"
           >
             <User className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
           </Link>
-          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
+          <Link to="/wishlist" aria-label={`Wishlist (${wishlistCount} items)`} className="relative flex h-10 items-center gap-1 p-1.5 transition-colors hover:text-gold sm:p-2">
             <Heart className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
-            <span className="ml-1 hidden text-[11px] font-semibold sm:inline">{wishlistCount}</span>
+            <span className="hidden min-w-3 text-center text-[11px] font-semibold leading-none sm:inline">{wishlistCount}</span>
           </Link>
           {signedIn && (
             <button
@@ -89,14 +89,14 @@ export function SiteHeader() {
                 const { error } = await supabase.auth.signOut();
                 if (!error) window.location.assign("/");
               }}
-              className="hidden p-1.5 transition-colors hover:text-gold xl:block"
+              className="hidden h-10 items-center p-1.5 transition-colors hover:text-gold xl:flex"
             >
               <LogOut className="h-5 w-5" />
             </button>
           )}
-          <Link to="/cart" aria-label="Cart" className="relative flex items-center p-1.5 transition-colors hover:text-gold sm:p-2">
+          <Link to="/cart" aria-label={`Cart (${count} items)`} className="relative flex h-10 items-center gap-1 p-1.5 transition-colors hover:text-gold sm:p-2">
             <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
-            <span className="ml-1 text-[11px] font-semibold">{count}</span>
+            <span className="min-w-3 text-center text-[11px] font-semibold leading-none">{count}</span>
           </Link>
           </div>
       </div>
