@@ -1,16 +1,17 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Search, User, ShoppingBag, Heart, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
-import { SocialLinks } from "@/components/social-links";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { SearchOverlay } from "@/components/search-overlay";
 
 export function SiteHeader() {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   const [signedIn, setSignedIn] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
@@ -42,39 +43,42 @@ export function SiteHeader() {
 
   return (
     <>
-      {stuck && <div style={{ height: headerH }} aria-hidden />}
+      {stuck && !isHome && <div style={{ height: headerH }} aria-hidden />}
     <header
       ref={headerRef}
       className={
         stuck
-          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 bg-onyx text-cream"
-          : "relative z-50 w-full bg-onyx text-cream"
+          ? "fixed inset-x-0 top-0 z-50 w-full animate-in slide-in-from-top-4 border-b border-white/10 bg-onyx/95 text-cream shadow-xl backdrop-blur-xl"
+          : isHome
+            ? "absolute inset-x-0 top-0 z-50 w-full bg-gradient-to-b from-black/70 via-black/25 to-transparent text-white"
+            : "relative z-50 w-full border-b border-white/10 bg-onyx text-cream"
       }
     >
-      {/* Main nav */}
-      <div className="px-3 py-2.5 sm:px-5 sm:py-3 lg:px-8">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-white/10 bg-onyx px-3 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] sm:gap-4 sm:px-4 lg:gap-5 lg:px-5">
-          <Link to="/" className="flex min-w-0 self-center items-center" aria-label={`${header.brand_name} home`}>
+      <div className="mx-auto grid h-[72px] max-w-[1760px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:h-[78px] sm:px-8 lg:px-14">
+          <div className="hidden items-center gap-6 justify-self-start text-[11px] font-semibold tracking-[0.08em] md:flex">
+            <span className="whitespace-nowrap">INR <span className="mx-2 text-white/40">|</span> EN</span>
+            <span className="h-5 w-px bg-white/35" />
+            <button aria-label="Search" onClick={() => setSearchOpen(true)} className="p-1 transition-colors hover:text-gold"><Search className="h-6 w-6" strokeWidth={1.6} /></button>
+          </div>
+
+          <Link to="/" className="flex min-w-0 items-center justify-self-center" aria-label={`${header.brand_name} home`}>
             <img src="/yomora-option-3-symbol.png" alt="" className="h-10 w-auto object-contain sm:hidden" />
-            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[230px] object-contain sm:block xl:h-14 xl:max-w-[260px]" />
+            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="hidden h-12 w-auto max-w-[240px] object-contain sm:block xl:h-14 xl:max-w-[285px]" />
           </Link>
 
-          <div className="flex shrink-0 items-center gap-0 text-cream/80 sm:gap-0.5">
-          <SocialLinks placement="header" className="mr-1 hidden 2xl:flex" iconClassName="h-4 w-4" />
-          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"><Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" /></button>
-          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
-            <Heart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-            {wishlistCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{wishlistCount}</span>
-            )}
-          </Link>
+          <div className="flex shrink-0 items-center justify-self-end gap-0.5 text-white/90 sm:gap-1">
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="p-1.5 transition-colors hover:text-gold md:hidden"><Search className="h-5 w-5" /></button>
           <Link
             to={signedIn ? "/account" : "/auth"}
             aria-label={signedIn ? "My account" : "Sign in"}
             title={signedIn ? "My account" : "Sign in"}
-            className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"
+            className="p-1.5 transition-colors hover:text-gold sm:p-2"
           >
-            <User className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+            <User className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
+          </Link>
+          <Link to="/wishlist" aria-label="Wishlist" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
+            <Heart className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
+            <span className="ml-1 hidden text-[11px] font-semibold sm:inline">{wishlistCount}</span>
           </Link>
           {signedIn && (
             <button
@@ -85,18 +89,24 @@ export function SiteHeader() {
                 const { error } = await supabase.auth.signOut();
                 if (!error) window.location.assign("/");
               }}
-              className="rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2"
+              className="hidden p-1.5 transition-colors hover:text-gold xl:block"
             >
-              <LogOut className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <LogOut className="h-5 w-5" />
             </button>
           )}
-          <Link to="/cart" aria-label="Cart" className="relative rounded-full p-1.5 transition-colors hover:bg-white/5 hover:text-gold sm:p-2">
-            <ShoppingBag className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-onyx">{count}</span>
+          <Link to="/cart" aria-label="Cart" className="relative flex items-center p-1.5 transition-colors hover:text-gold sm:p-2">
+            <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
+            <span className="ml-1 text-[11px] font-semibold">{count}</span>
           </Link>
           </div>
-        </div>
       </div>
+
+      <nav className="hidden h-[58px] items-center justify-center gap-10 border-t border-white/10 text-sm font-semibold tracking-[0.02em] md:flex" aria-label="Main navigation">
+        <Link to="/products" className="transition-colors hover:text-gold">New In</Link>
+        <Link to="/products" className="transition-colors hover:text-gold">Jewellery</Link>
+        <Link to="/products" className="transition-colors hover:text-gold">Collections</Link>
+        <Link to="/about" className="transition-colors hover:text-gold">About Us</Link>
+      </nav>
 
     </header>
     <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
