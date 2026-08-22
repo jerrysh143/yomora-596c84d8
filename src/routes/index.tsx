@@ -54,7 +54,11 @@ function Index() {
   const featured = CATEGORIES.flatMap((c) => products.filter((p) => p.category === c.slug).slice(0, 3));
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
-  const [selectedCategory, setSelectedCategory] = useState<{ slug: string; label: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<{
+    slug: string;
+    label: string;
+    audiences: Array<"men" | "women">;
+  } | null>(null);
 
   useEffect(() => {
     if (!selectedCategory) return;
@@ -101,13 +105,18 @@ function Index() {
               className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 sm:mx-0 sm:gap-6 sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORIES.map((c) => {
-                const p = products.find((x) => x.category === c.slug);
+                const categoryProducts = products.filter((x) => x.category === c.slug);
+                const p = categoryProducts[0];
                 const img = p ? productImage(p) : "";
+                const audiences: Array<"men" | "women"> = [
+                  ...(categoryProducts.some((x) => x.audience === "men" || x.audience === "unisex") ? ["men" as const] : []),
+                  ...(categoryProducts.some((x) => x.audience === "women" || x.audience === "unisex") ? ["women" as const] : []),
+                ];
                 return (
                   <button
                     type="button"
                     key={c.slug}
-                    onClick={() => setSelectedCategory({ slug: c.slug, label: c.label })}
+                    onClick={() => setSelectedCategory({ slug: c.slug, label: c.label, audiences })}
                     aria-label={`Choose who is shopping for ${c.label}`}
                     className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
                   >
@@ -339,7 +348,7 @@ function Index() {
               {[
                 { audience: "men" as const, eyebrow: "FOR HIM", title: "Men's Collection" },
                 { audience: "women" as const, eyebrow: "FOR HER", title: "Women's Collection" },
-              ].map((choice) => (
+              ].filter((choice) => selectedCategory.audiences.includes(choice.audience)).map((choice) => (
                 <Link
                   key={choice.audience}
                   to="/products/$category"
