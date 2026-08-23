@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, X } from "lucide-react";
 import {
   Heart,
@@ -45,7 +45,6 @@ function Index() {
   const activePlans = plans.filter((p) => p.is_active);
   const { data: content } = useSuspenseQuery(siteContentQuery());
   const legacy = content.legacy;
-  const catsSection = content.categories_section;
   const assurance = content.assurance_bar;
   const ctaStrip = content.cta_strip;
   // 3 products per category, in category order; categories without products are skipped
@@ -57,6 +56,29 @@ function Index() {
     label: string;
     audiences: Array<"men" | "women">;
   } | null>(null);
+  const categoryRailRef = useRef<HTMLDivElement>(null);
+  const [categoryRailState, setCategoryRailState] = useState({ active: 0, pages: 1 });
+
+  useEffect(() => {
+    const rail = categoryRailRef.current;
+    if (!rail) return;
+
+    const syncRail = () => {
+      const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+      const pages = Math.max(1, Math.ceil(rail.scrollWidth / Math.max(1, rail.clientWidth)));
+      const active = maxScroll > 0 ? Math.round((rail.scrollLeft / maxScroll) * (pages - 1)) : 0;
+      setCategoryRailState({ active, pages });
+    };
+
+    syncRail();
+    rail.addEventListener("scroll", syncRail, { passive: true });
+    const observer = new ResizeObserver(syncRail);
+    observer.observe(rail);
+    return () => {
+      rail.removeEventListener("scroll", syncRail);
+      observer.disconnect();
+    };
+  }, [CATEGORIES.length]);
 
   useEffect(() => {
     if (!selectedCategory) return;
@@ -78,25 +100,23 @@ function Index() {
       <HomeBannerSlider />
 
       {/* CATEGORIES */}
-      <section className="bg-secondary/40">
-        <div className="container-x mx-auto max-w-[1400px] py-20">
-          <div className="flex items-end justify-between gap-6">
-            <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{catsSection.eyebrow}</p>
-              <h2 className="mt-3 font-display text-4xl text-foreground">{catsSection.title}</h2>
+      <section className="overflow-hidden bg-secondary/40">
+        <div className="container-x mx-auto max-w-[1600px] pb-10 pt-8 sm:pb-14 sm:pt-10">
+          <div className="relative">
+            <div className="mb-5 flex items-center justify-center gap-3" aria-label="Category carousel position">
+              {Array.from({ length: categoryRailState.pages }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`block h-2 rounded-full transition-all duration-300 ${
+                    index === categoryRailState.active ? "w-12 bg-foreground/55" : "w-2 bg-foreground/20"
+                  }`}
+                />
+              ))}
             </div>
-            <Link
-              to="/products"
-              className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex"
-            >
-              VIEW ALL →
-            </Link>
-          </div>
-
-          <div className="mt-10">
             <div
+              ref={categoryRailRef}
               id="category-rail"
-              className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 sm:mx-0 sm:gap-6 sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+              className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-3 sm:mx-0 sm:gap-7 sm:px-12 lg:gap-8 lg:px-14 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORIES.map((c) => {
                 const categoryProducts = products.filter((x) => x.category === c.slug);
@@ -112,10 +132,9 @@ function Index() {
                     key={c.slug}
                     onClick={() => setSelectedCategory({ slug: c.slug, label: c.label, audiences })}
                     aria-label={`Choose who is shopping for ${c.label}`}
-                    className="group w-[42%] shrink-0 snap-start text-center sm:w-[30%] md:w-[22%] lg:w-[16%]"
+                    className="group w-[62%] max-w-[220px] shrink-0 snap-start text-center min-[420px]:w-[44%] sm:w-[31%] md:w-[23%] lg:w-[17%]"
                   >
-                    <div className="relative mx-auto aspect-square w-[86%] rounded-full p-[3px] ring-1 ring-gold/50 transition-shadow duration-500 group-hover:shadow-[0_18px_40px_-18px_color-mix(in_oklab,var(--color-gold)_65%,transparent)]">
-                      <div className="h-full w-full overflow-hidden rounded-full border border-gold/30 bg-secondary/40">
+                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[1.75rem] border border-gold/45 bg-secondary/40 transition-all duration-500 group-hover:-translate-y-1 group-hover:border-gold group-hover:shadow-[0_20px_45px_-24px_color-mix(in_oklab,var(--color-gold)_75%,transparent)] sm:rounded-[2rem]">
                         <img
                           src={img}
                           width={600}
@@ -125,66 +144,52 @@ function Index() {
                           alt={`${c.label} — 925 sterling silver collection`}
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
-                      </div>
                     </div>
-                    <span className="mx-auto mt-4 block text-gold/70">✦</span>
-                    <span className="mt-2 block font-display text-base uppercase tracking-[0.18em] text-foreground transition-colors group-hover:text-gold sm:text-lg">
+                    <span className="mt-5 block text-lg font-medium tracking-[0.04em] text-foreground transition-colors group-hover:text-gold sm:text-xl">
                       {c.label}
-                    </span>
-                    <span className="mt-2 hidden items-center justify-center gap-2 whitespace-nowrap text-[11px] tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-gold sm:inline-flex">
-                      View the collection
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </button>
                 );
               })}
             </div>
-            <div className="mt-6 hidden items-center justify-center gap-3 md:flex">
-              <button
-                type="button"
-                aria-label="Scroll categories left"
-                onClick={() => {
-                  const el = document.getElementById("category-rail");
-                  el?.scrollBy({ left: -el.clientWidth * 0.8, behavior: "smooth" });
-                }}
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground hover:border-gold hover:text-gold"
-              >
-                <ArrowRight className="h-4 w-4 rotate-180" />
-              </button>
-              <button
-                type="button"
-                aria-label="Scroll categories right"
-                onClick={() => {
-                  const el = document.getElementById("category-rail");
-                  el?.scrollBy({ left: el.clientWidth * 0.8, behavior: "smooth" });
-                }}
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground hover:border-gold hover:text-gold"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="Scroll categories left"
+              onClick={() => categoryRailRef.current?.scrollBy({ left: -categoryRailRef.current.clientWidth * 0.8, behavior: "smooth" })}
+              className="absolute left-0 top-[48%] grid h-12 w-12 -translate-x-1/4 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold sm:h-14 sm:w-14 sm:-translate-x-1/3"
+            >
+              <ArrowRight className="h-5 w-5 rotate-180" />
+            </button>
+            <button
+              type="button"
+              aria-label="Scroll categories right"
+              onClick={() => categoryRailRef.current?.scrollBy({ left: categoryRailRef.current.clientWidth * 0.8, behavior: "smooth" })}
+              className="absolute right-0 top-[48%] grid h-12 w-12 translate-x-1/4 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold sm:h-14 sm:w-14 sm:translate-x-1/3"
+            >
+              <ArrowRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </section>
 
       {/* FEATURED */}
       {assurance.enabled && assurance.items.length > 0 ? (
-        <section className="bg-onyx text-cream">
-          <div className="container-x mx-auto max-w-[1400px] py-12">
+        <section className="bg-secondary/40 text-foreground">
+          <div className="container-x mx-auto max-w-[1600px] pb-12 pt-2 sm:pb-16">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {assurance.items.map((it, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 rounded-2xl border border-gold/25 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-gold)_6%,transparent),transparent)] px-5 py-5 transition-colors hover:border-gold/50"
+                  className="flex items-center gap-4 rounded-2xl border border-gold/25 bg-background/70 px-5 py-5 transition-all hover:border-gold/55 hover:bg-background"
                 >
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-gold/30 text-gold">
+                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-gold/30 bg-background text-gold">
                     <SiteIcon name={it.icon} className="h-7 w-7" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold tracking-[0.02em] text-cream sm:text-base">
+                    <span className="block truncate text-sm font-semibold tracking-[0.02em] text-foreground sm:text-base">
                       {it.title}
                     </span>
-                    <span className="mt-1 block truncate text-xs text-cream/60 sm:text-sm">{it.subtitle}</span>
+                    <span className="mt-1 block truncate text-xs text-muted-foreground sm:text-sm">{it.subtitle}</span>
                   </span>
                 </div>
               ))}
