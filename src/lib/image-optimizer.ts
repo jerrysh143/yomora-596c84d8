@@ -20,7 +20,7 @@ export function canOptimizeImageUrl(url: string) {
   if (!url || url.startsWith("data:") || url.startsWith("blob:")) return false;
   // Bundled assets are already fingerprinted by Vite and cannot be replaced in the CMS.
   if (url.startsWith("/assets/") || url.startsWith("/src/")) return false;
-  return url.startsWith("/") || /^https?:\/\//i.test(url);
+  return (url.startsWith("/") && !url.startsWith("//")) || /^https:\/\//i.test(url);
 }
 
 export async function optimizeImageUrl(url: string): Promise<ImageOptimizationResult> {
