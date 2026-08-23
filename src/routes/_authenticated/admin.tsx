@@ -8,7 +8,7 @@ import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, 
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
-import { productsQuery } from "@/lib/products.queries";
+import { adminProductsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import {
   checkIsAdminFn,
@@ -147,7 +147,7 @@ function AdminPage() {
     queryFn: () => checkAdmin(),
   });
 
-  const { data: products = [] } = useQuery(productsQuery());
+  const { data: products = [] } = useQuery(adminProductsQuery());
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: orders = [], refetch: refetchOrders, isFetching: ordersRefreshing } = useQuery({
     queryKey: ["orders"],
