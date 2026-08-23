@@ -6,7 +6,7 @@ import { ImageDown, Loader2, Plus, Trash2 } from "lucide-react";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { canOptimizeImageUrl, optimizeImageUrl, type ImageOptimizationResult } from "@/lib/image-optimizer";
 import { updateProductImagesFn } from "@/lib/products.functions";
-import { productsQuery } from "@/lib/products.queries";
+import { adminProductsQuery } from "@/lib/products.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { updateSiteContentFn } from "@/lib/site-content.functions";
 import {
@@ -136,7 +136,7 @@ function SectionCard<T>({
 export function SiteContentEditor() {
   const qc = useQueryClient();
   const { data: content = SITE_CONTENT_DEFAULTS } = useQuery(siteContentQuery());
-  const { data: products = [] } = useQuery(productsQuery());
+  const { data: products = [] } = useQuery(adminProductsQuery());
   const save = useServerFn(updateSiteContentFn);
   const updateProductImages = useServerFn(updateProductImagesFn);
   const [optimizing, setOptimizing] = useState(false);
