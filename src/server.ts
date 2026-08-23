@@ -56,6 +56,8 @@ function withSecurityHeaders(request: Request, response: Response): Response {
     response.status >= 400
   ) {
     headers.set("Cache-Control", "private, no-store, max-age=0");
+  } else if (headers.get("content-type")?.includes("text/html")) {
+    headers.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=600");
   }
 
   return new Response(response.body, {
