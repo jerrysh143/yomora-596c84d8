@@ -5,7 +5,7 @@ import { Heart } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatINR, productImage, productGallery, isProductNew, type Category, type CategoryRow, type Product, cleanProductName } from "@/lib/products";
-import { productsQuery } from "@/lib/products.queries";
+import { productsQuery, productQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
 import { cart } from "@/lib/cart";
@@ -62,9 +62,10 @@ export const Route = createFileRoute("/products/$category")({
     }
 
     // Check if param is a valid product ID
-    const product = products.find((p) => p.id === params.category);
-    if (product) {
-      return { type: "product" as const, product, products, categories };
+    const productSummary = products.find((p) => p.id === params.category);
+    if (productSummary) {
+      const product = await context.queryClient.ensureQueryData(productQuery(params.category));
+      if (product) return { type: "product" as const, product, products, categories };
     }
 
     // Neither category nor product found
