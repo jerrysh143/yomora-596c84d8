@@ -14,6 +14,15 @@ const ICONS: Record<SocialPlatform, React.ComponentType<{ className?: string }>>
   LinkedIn: Linkedin,
 };
 
+function secureSocialUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function SocialLinks({
   placement,
   className = "",
@@ -31,10 +40,12 @@ export function SocialLinks({
     <div className={`flex items-center gap-2 ${className}`}>
       {social.items.map((s, i) => {
         const Icon = ICONS[s.platform] ?? Instagram;
+        const href = secureSocialUrl(s.url);
+        if (!href) return null;
         return (
           <a
             key={i}
-            href={s.url}
+            href={href}
             aria-label={s.label || s.platform}
             target="_blank"
             rel="noopener noreferrer"

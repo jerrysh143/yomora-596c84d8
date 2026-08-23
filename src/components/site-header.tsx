@@ -58,7 +58,7 @@ export function SiteHeader() {
           </div>
 
           <Link to="/" className="flex min-w-0 shrink items-center justify-self-center" aria-label={`${header.brand_name} home`}>
-            <img src="/yomora-logo.png" alt={`${header.brand_name} - ${header.brand_tagline}`} className="h-10 w-auto max-w-[150px] object-contain sm:h-12 sm:max-w-[240px] xl:h-14 xl:max-w-[285px]" />
+            <img src="/yomora-logo.svg" width={1200} height={260} alt={`${header.brand_name} - ${header.brand_tagline}`} className="h-10 w-auto max-w-[150px] object-contain sm:h-12 sm:max-w-[240px] xl:h-14 xl:max-w-[285px]" />
           </Link>
 
           <div className="flex shrink-0 items-center justify-self-end gap-0.5 text-white/90 sm:gap-1">

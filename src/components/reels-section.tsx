@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { siteContentQuery } from "@/lib/site-content.queries";
@@ -29,8 +29,15 @@ function loadInstagramEmbedScript() {
 }
 
 function normalizeUrl(u: string) {
-  const trimmed = u.trim().split("?")[0].replace(/\/$/, "");
-  return trimmed.endsWith("/") ? trimmed : trimmed + "/";
+  try {
+    const url = new URL(u.trim());
+    if (url.protocol !== "https:" || !/(^|\.)instagram\.com$/i.test(url.hostname)) return null;
+    url.search = "";
+    url.hash = "";
+    return url.toString().replace(/\/$/, "") + "/";
+  } catch {
+    return null;
+  }
 }
 
 export function ReelsSection() {
@@ -39,17 +46,33 @@ export function ReelsSection() {
   const social = content?.social ?? SITE_CONTENT_DEFAULTS.social;
   const instagram = social.items.find((i) => i.platform === "Instagram");
   const ref = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [shouldLoadEmbeds, setShouldLoadEmbeds] = useState(false);
 
   useEffect(() => {
-    if (!reels.enabled || reels.items.length === 0) return;
+    if (!reels.enabled || reels.items.length === 0 || !sectionRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldLoadEmbeds(true);
+        observer.disconnect();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [reels.enabled, reels.items.length]);
+
+  useEffect(() => {
+    if (!shouldLoadEmbeds) return;
     loadInstagramEmbedScript();
     const t = setTimeout(() => window.instgrm?.Embeds?.process(), 400);
     return () => clearTimeout(t);
-  }, [reels.enabled, reels.items.length]);
+  }, [shouldLoadEmbeds]);
 
   // Apply autoplay/loop hints to the rendered Instagram iframes.
   useEffect(() => {
-    if (!reels.enabled || !ref.current) return;
+    if (!reels.enabled || !shouldLoadEmbeds || !ref.current) return;
     const root = ref.current;
 
     const apply = () => {
@@ -95,38 +118,40 @@ export function ReelsSection() {
       mo.disconnect();
       window.removeEventListener("message", onMsg);
     };
-  }, [reels.enabled, reels.autoplay, reels.loop, reels.items.length]);
+  }, [reels.enabled, reels.autoplay, reels.loop, reels.items.length, shouldLoadEmbeds]);
 
   if (!reels.enabled || reels.items.length === 0) return null;
 
   return (
-    <section className="bg-onyx">
+    <section ref={sectionRef} className="bg-onyx">
       <div className="mx-auto flex max-w-[1400px] flex-col items-center py-20">
         <div
           ref={ref}
           className="no-scrollbar flex w-full snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 md:justify-center md:gap-6 md:px-10"
         >
           {reels.items.map((r, i) => (
+            normalizeUrl(r.url) ? (
             <div
               key={i}
               className="group relative aspect-[9/16] w-[78vw] max-w-[320px] flex-none snap-center overflow-hidden border border-gold/40 bg-[#0d0d0d] shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:-translate-y-1 hover:border-gold sm:w-[280px] md:w-[300px]"
             >
               <blockquote
                 className="instagram-media !m-0 !min-w-0 !w-full h-full"
-                data-instgrm-permalink={normalizeUrl(r.url)}
+                data-instgrm-permalink={normalizeUrl(r.url)!}
                 data-instgrm-version="14"
                 style={{ background: "#0d0d0d", margin: 0, minWidth: 0, width: "100%" }}
               />
               {/* Block clicks on Instagram's overlay link so the tile stays visual-only. */}
               <div className="pointer-events-none absolute inset-0" aria-hidden />
             </div>
+            ) : null
           ))}
         </div>
 
-        {instagram && (
+        {instagram && normalizeUrl(instagram.url) && (
           <div className="mt-12 flex flex-col items-center">
             <a
-              href={instagram.url}
+              href={normalizeUrl(instagram.url)!}
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 border border-gold/60 px-10 py-3.5 text-[12px] tracking-[0.28em] text-gold transition-colors hover:border-gold hover:bg-gold/10"
