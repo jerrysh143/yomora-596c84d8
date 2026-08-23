@@ -57,28 +57,6 @@ function Index() {
     audiences: Array<"men" | "women">;
   } | null>(null);
   const categoryRailRef = useRef<HTMLDivElement>(null);
-  const [categoryRailState, setCategoryRailState] = useState({ active: 0, pages: 1 });
-
-  useEffect(() => {
-    const rail = categoryRailRef.current;
-    if (!rail) return;
-
-    const syncRail = () => {
-      const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
-      const pages = Math.max(1, Math.ceil(rail.scrollWidth / Math.max(1, rail.clientWidth)));
-      const active = maxScroll > 0 ? Math.round((rail.scrollLeft / maxScroll) * (pages - 1)) : 0;
-      setCategoryRailState({ active, pages });
-    };
-
-    syncRail();
-    rail.addEventListener("scroll", syncRail, { passive: true });
-    const observer = new ResizeObserver(syncRail);
-    observer.observe(rail);
-    return () => {
-      rail.removeEventListener("scroll", syncRail);
-      observer.disconnect();
-    };
-  }, [CATEGORIES.length]);
 
   useEffect(() => {
     if (!selectedCategory) return;
@@ -101,22 +79,12 @@ function Index() {
 
       {/* CATEGORIES */}
       <section className="overflow-hidden bg-secondary/40">
-        <div className="container-x mx-auto max-w-[1600px] pb-10 pt-8 sm:pb-14 sm:pt-10">
+        <div className="mx-auto max-w-[1900px] pb-9 pt-4 md:px-2 md:pb-12 md:pt-6">
           <div className="relative">
-            <div className="mb-5 flex items-center justify-center gap-3" aria-label="Category carousel position">
-              {Array.from({ length: categoryRailState.pages }).map((_, index) => (
-                <span
-                  key={index}
-                  className={`block h-2 rounded-full transition-all duration-300 ${
-                    index === categoryRailState.active ? "w-12 bg-foreground/55" : "w-2 bg-foreground/20"
-                  }`}
-                />
-              ))}
-            </div>
             <div
               ref={categoryRailRef}
               id="category-rail"
-              className="-mx-4 flex touch-pan-x snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-3 sm:mx-0 sm:gap-7 sm:px-12 lg:gap-8 lg:px-14 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+              className="flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-3 pb-2 md:gap-4 md:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORIES.map((c) => {
                 const categoryProducts = products.filter((x) => x.category === c.slug);
@@ -132,9 +100,9 @@ function Index() {
                     key={c.slug}
                     onClick={() => setSelectedCategory({ slug: c.slug, label: c.label, audiences })}
                     aria-label={`Choose who is shopping for ${c.label}`}
-                    className="group w-[62%] max-w-[220px] shrink-0 snap-start text-center min-[420px]:w-[44%] sm:w-[31%] md:w-[23%] lg:w-[17%]"
+                    className="group w-20 shrink-0 snap-start text-center md:w-[142px] xl:w-[calc((100%-7rem)/8)]"
                   >
-                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[1.75rem] border border-gold/45 bg-secondary/40 transition-all duration-500 group-hover:-translate-y-1 group-hover:border-gold group-hover:shadow-[0_20px_45px_-24px_color-mix(in_oklab,var(--color-gold)_75%,transparent)] sm:rounded-[2rem]">
+                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-xl border border-gold/45 bg-secondary/40 transition-all duration-500 group-hover:-translate-y-1 group-hover:border-gold group-hover:shadow-[0_20px_45px_-24px_color-mix(in_oklab,var(--color-gold)_75%,transparent)] md:rounded-[1.75rem]">
                         <img
                           src={img}
                           width={600}
@@ -145,7 +113,7 @@ function Index() {
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                     </div>
-                    <span className="mt-5 block text-lg font-medium tracking-[0.04em] text-foreground transition-colors group-hover:text-gold sm:text-xl">
+                    <span className="mt-3 block truncate text-sm font-medium text-foreground transition-colors group-hover:text-gold md:mt-4 md:text-[21.6px] md:font-normal md:leading-[1.8]">
                       {c.label}
                     </span>
                   </button>
@@ -156,7 +124,7 @@ function Index() {
               type="button"
               aria-label="Scroll categories left"
               onClick={() => categoryRailRef.current?.scrollBy({ left: -categoryRailRef.current.clientWidth * 0.8, behavior: "smooth" })}
-              className="absolute left-0 top-[48%] grid h-12 w-12 -translate-x-1/4 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold sm:h-14 sm:w-14 sm:-translate-x-1/3"
+              className="absolute left-0 top-[36%] hidden h-14 w-14 -translate-x-1/3 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold md:grid"
             >
               <ArrowRight className="h-5 w-5 rotate-180" />
             </button>
@@ -164,7 +132,7 @@ function Index() {
               type="button"
               aria-label="Scroll categories right"
               onClick={() => categoryRailRef.current?.scrollBy({ left: categoryRailRef.current.clientWidth * 0.8, behavior: "smooth" })}
-              className="absolute right-0 top-[48%] grid h-12 w-12 translate-x-1/4 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold sm:h-14 sm:w-14 sm:translate-x-1/3"
+              className="absolute right-0 top-[36%] hidden h-14 w-14 translate-x-1/3 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold md:grid"
             >
               <ArrowRight className="h-5 w-5" />
             </button>
