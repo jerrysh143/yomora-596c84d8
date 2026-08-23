@@ -47,7 +47,6 @@ function Index() {
   const legacy = content.legacy;
   const catsSection = content.categories_section;
   const assurance = content.assurance_bar;
-  const featuredSection = content.featured_section;
   const ctaStrip = content.cta_strip;
   // 3 products per category, in category order; categories without products are skipped
   const featured = CATEGORIES.flatMap((c) => products.filter((p) => p.category === c.slug).slice(0, 3));
@@ -199,8 +198,11 @@ function Index() {
         <div className="container-x mx-auto max-w-[1400px] py-20">
           <div className="flex items-end justify-between gap-6">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{featuredSection.eyebrow}</p>
-              <h2 className="mt-3 font-display text-4xl text-foreground">{featuredSection.title}</h2>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">CURATED FOR YOU</p>
+              <h2 className="mt-3 font-display text-4xl text-foreground">The YOMORA Edit</h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Handpicked 925 silver designs for moments that deserve distinction.
+              </p>
             </div>
             <Link
               to="/products"
