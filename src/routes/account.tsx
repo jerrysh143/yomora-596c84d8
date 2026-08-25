@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyOrdersFn, type Order } from "@/lib/orders.functions";
 import { formatINR } from "@/lib/products";
-import { useWishlist } from "@/lib/wishlist";
+import { useWishlist, wishlist } from "@/lib/wishlist";
 import { listMyReviewsFn, type ProductReview } from "@/lib/reviews.functions";
 
 export const Route = createFileRoute("/account")({
@@ -23,10 +23,21 @@ export const Route = createFileRoute("/account")({
   component: AccountPage,
 });
 
-type Address = { id: string; label: string; value: string };
+type Address = {
+  id: string;
+  label: string;
+  value: string;
+  full_name?: string;
+  address_line?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+};
+type AddressDraft = { full_name: string; address_line: string; pincode: string; city: string; state: string };
 type Profile = { full_name: string; phone: string; addresses: Address[]; marketing_opt_in: boolean };
 
 const emptyProfile: Profile = { full_name: "", phone: "", addresses: [], marketing_opt_in: false };
+const emptyAddress: AddressDraft = { full_name: "", address_line: "", pincode: "", city: "", state: "" };
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -45,7 +56,7 @@ function AccountPage() {
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [tab, setTab] = useState<"dashboard" | "orders" | "addresses" | "wishlist" | "reviews" | "details">("dashboard");
   const [saving, setSaving] = useState(false);
-  const [newAddress, setNewAddress] = useState("");
+  const [newAddress, setNewAddress] = useState<AddressDraft>(emptyAddress);
 
   useEffect(() => {
     let active = true;
@@ -107,10 +118,15 @@ function AccountPage() {
   };
 
   const addAddress = async () => {
-    const value = newAddress.trim();
-    if (value.length < 10) { toast.error("Enter a complete address"); return; }
-    const next = { ...profile, addresses: [...profile.addresses, { id: crypto.randomUUID(), label: `Address ${profile.addresses.length + 1}`, value }] };
-    if (await saveProfile(next)) setNewAddress("");
+    const fields = Object.fromEntries(Object.entries(newAddress).map(([key, value]) => [key, value.trim()])) as AddressDraft;
+    if (!fields.full_name || !fields.address_line || !/^\d{6}$/.test(fields.pincode) || !fields.city || !fields.state) {
+      toast.error("Complete all address fields and enter a valid 6-digit pincode");
+      return;
+    }
+    const value = [fields.full_name, fields.address_line, fields.city, fields.state, fields.pincode].join(", ");
+    const nextAddress: Address = { id: crypto.randomUUID(), label: `Address ${profile.addresses.length + 1}`, value, ...fields };
+    const next = { ...profile, addresses: [...profile.addresses, nextAddress] };
+    if (await saveProfile(next)) setNewAddress(emptyAddress);
   };
 
   const removeAddress = (id: string) => saveProfile({ ...profile, addresses: profile.addresses.filter((address) => address.id !== id) });
@@ -165,6 +181,70 @@ function Stat({ value, label }: { value: string | number; label: string }) { ret
 function OrderRows({ orders }: { orders: Order[] }) { return <ul className="divide-y divide-border text-sm">{orders.map((order) => <li key={order.id} className="grid grid-cols-1 gap-2 px-5 py-4 sm:grid-cols-[1.3fr_1fr_1fr_auto] sm:items-center"><span className="text-gold">Order #{order.id.slice(0, 8).toUpperCase()}</span><span className="text-muted-foreground">{formatDate(order.created_at)}</span><span>{statusLabel(order.status)}</span><span className="flex items-center gap-3 sm:justify-end"><span>{formatINR(order.total)}</span><Link to="/invoice/$id" params={{ id: order.id }} className="text-[10px] font-semibold tracking-[0.16em] text-gold hover:text-foreground">INVOICE</Link></span>{order.status === "completed" && <div className="flex flex-wrap gap-2 sm:col-span-4">{order.items.map((item) => <Link key={item.id} to="/products/$category" params={{ category: item.id }} hash="reviews" className="border border-gold/50 px-3 py-1.5 text-[9px] font-semibold tracking-[0.14em] text-gold hover:bg-gold hover:text-onyx">REVIEW {item.name.toUpperCase()}</Link>)}</div>}</li>)}</ul>; }
 function Orders({ orders, loading }: { orders: Order[]; loading: boolean }) { return <><h1 className="font-display text-4xl">My Orders</h1><div className="mt-6 border border-border">{loading ? <div className="p-6 text-sm text-muted-foreground">Loading your orders…</div> : orders.length ? <OrderRows orders={orders} /> : <div className="p-6 text-sm text-muted-foreground">No orders found for this account.</div>}</div></>; }
 function MyReviews({ reviews, loading }: { reviews: ProductReview[]; loading: boolean }) { return <><h1 className="font-display text-4xl">My Reviews</h1><div className="mt-6 grid gap-4">{loading ? <p className="border border-border p-6 text-sm text-muted-foreground">Loading your reviews…</p> : reviews.length ? reviews.map((review) => <article key={review.id} className="border border-border p-5"><div className="flex flex-wrap items-center justify-between gap-3"><Link to="/products/$category" params={{ category: review.product_id }} hash="reviews" className="text-xs font-semibold tracking-[0.16em] text-gold hover:text-foreground">VIEW PRODUCT</Link><span className="flex text-gold">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`h-4 w-4 ${star <= review.rating ? "fill-current" : "opacity-25"}`} />)}</span></div><p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{review.comment}</p>{review.media_urls.length > 0 && <div className="mt-4 flex gap-2 overflow-x-auto">{review.media_urls.map((url) => /\.(mp4|webm|mov)(?:\?|$)/i.test(url) ? <video key={url} src={url} controls preload="metadata" className="h-24 w-24 shrink-0 bg-onyx object-cover" /> : <img key={url} src={url} alt="Your product review" loading="lazy" className="h-24 w-24 shrink-0 object-cover" />)}</div>}<time className="mt-3 block text-[10px] tracking-[0.14em] text-muted-foreground">{formatDate(review.created_at)}</time></article>) : <p className="border border-border p-6 text-sm text-muted-foreground">You have not submitted a review yet. Review buttons appear under delivered orders.</p>}</div></>; }
-function Addresses({ addresses, newAddress, setNewAddress, addAddress, removeAddress, saving }: { addresses: Address[]; newAddress: string; setNewAddress: (value: string) => void; addAddress: () => void; removeAddress: (id: string) => void; saving: boolean }) { return <><h1 className="font-display text-4xl">My Addresses</h1><div className="mt-6 grid gap-3">{addresses.length ? addresses.map((address) => <div key={address.id} className="flex items-start justify-between gap-4 border border-border p-5"><div><p className="text-xs tracking-[0.18em] text-gold">{address.label.toUpperCase()}</p><p className="mt-2 whitespace-pre-wrap text-sm">{address.value}</p></div><button aria-label="Delete address" onClick={() => removeAddress(address.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button></div>) : <p className="text-sm text-muted-foreground">No saved addresses yet.</p>}</div><div className="mt-6 border border-border p-5"><label className="text-xs tracking-[0.18em] text-muted-foreground">ADD A NEW ADDRESS</label><textarea value={newAddress} onChange={(event) => setNewAddress(event.target.value)} rows={4} className="mt-3 w-full border border-border bg-background p-3 text-sm outline-none focus:border-gold" placeholder="House / street, area, city, state and PIN code" /><button disabled={saving} onClick={addAddress} className="mt-3 inline-flex items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Plus className="h-4 w-4" /> SAVE ADDRESS</button></div></>; }
-function Wishlist({ items }: { items: { id: string; name: string; price: number; image: string }[] }) { return <><h1 className="font-display text-4xl">My Wishlist</h1><div className="mt-6 grid gap-4 sm:grid-cols-2">{items.length ? items.map((item) => <Link to="/products/$category" params={{ category: item.id }} key={item.id} className="flex gap-4 border border-border p-3 hover:border-gold"><img src={item.image} alt="" className="h-20 w-20 object-cover" /><div><p className="font-display text-lg">{item.name}</p><p className="mt-1 text-sm text-gold">{formatINR(item.price)}</p></div></Link>) : <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>}</div></>; }
+function Addresses({ addresses, newAddress, setNewAddress, addAddress, removeAddress, saving }: { addresses: Address[]; newAddress: AddressDraft; setNewAddress: React.Dispatch<React.SetStateAction<AddressDraft>>; addAddress: () => void; removeAddress: (id: string) => void; saving: boolean }) {
+  const [pincodeStatus, setPincodeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  useEffect(() => {
+    if (newAddress.pincode.length !== 6) { setPincodeStatus("idle"); return; }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setPincodeStatus("loading");
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${newAddress.pincode}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Pincode lookup failed");
+        const payload = await response.json() as Array<{ Status?: string; PostOffice?: Array<{ District?: string; State?: string }> }>;
+        const office = payload?.[0]?.PostOffice?.[0];
+        if (payload?.[0]?.Status !== "Success" || !office?.District || !office?.State) throw new Error("Pincode not found");
+        setNewAddress((current) => ({ ...current, city: office.District ?? current.city, state: office.State ?? current.state }));
+        setPincodeStatus("success");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setPincodeStatus("error");
+      }
+    }, 350);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [newAddress.pincode, setNewAddress]);
+
+  const field = (key: keyof AddressDraft, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className={key === "address_line" ? "block md:col-span-2" : "block"}>
+      <span className="mb-1 block text-[11px] tracking-[0.2em] text-muted-foreground">{label.toUpperCase()}</span>
+      <input
+        {...props}
+        required
+        value={newAddress[key]}
+        onChange={(event) => setNewAddress((current) => ({ ...current, [key]: key === "pincode" ? event.target.value.replace(/\D/g, "").slice(0, 6) : event.target.value }))}
+        className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+      />
+    </label>
+  );
+
+  return <>
+    <h1 className="font-display text-4xl">My Addresses</h1>
+    <div className="mt-6 grid gap-3">
+      {addresses.length ? addresses.map((address) => <div key={address.id} className="flex items-start justify-between gap-4 border border-border p-5"><div><p className="text-xs tracking-[0.18em] text-gold">{address.label.toUpperCase()}</p><p className="mt-2 whitespace-pre-wrap text-sm">{address.value}</p></div><button aria-label={`Delete ${address.label}`} onClick={() => removeAddress(address.id)} className="grid h-9 w-9 shrink-0 place-items-center text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button></div>) : <p className="text-sm text-muted-foreground">No saved addresses yet.</p>}
+    </div>
+    <div className="mt-6 border border-border p-5">
+      <p className="text-xs tracking-[0.18em] text-muted-foreground">ADD A NEW ADDRESS</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {field("full_name", "Full name", { autoComplete: "name" })}
+        <div>
+          {field("pincode", "Pincode", { inputMode: "numeric", autoComplete: "postal-code", maxLength: 6, pattern: "[0-9]{6}" })}
+          <p className={`mt-1 text-[10px] ${pincodeStatus === "error" ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
+            {pincodeStatus === "loading" && "Finding city and state…"}
+            {pincodeStatus === "success" && "City and state filled automatically."}
+            {pincodeStatus === "error" && "Pincode not found. Enter city and state manually."}
+          </p>
+        </div>
+        {field("address_line", "Address line", { autoComplete: "street-address" })}
+        {field("city", "City", { autoComplete: "address-level2" })}
+        {field("state", "State", { autoComplete: "address-level1" })}
+      </div>
+      <button disabled={saving} onClick={addAddress} className="mt-5 inline-flex items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Plus className="h-4 w-4" /> {saving ? "SAVING…" : "SAVE ADDRESS"}</button>
+    </div>
+  </>;
+}
+
+function Wishlist({ items }: { items: { id: string; name: string; price: number; image: string }[] }) {
+  return <><h1 className="font-display text-4xl">My Wishlist</h1><div className="mt-6 grid gap-4 sm:grid-cols-2">{items.length ? items.map((item) => <article key={item.id} className="flex items-start gap-4 border border-border p-3 transition-colors hover:border-gold"><Link to="/products/$category" params={{ category: item.id }} className="shrink-0"><img src={item.image} alt={item.name} width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 object-cover" /></Link><div className="min-w-0 flex-1"><Link to="/products/$category" params={{ category: item.id }} className="font-display text-lg hover:text-gold">{item.name}</Link><p className="mt-1 text-sm text-gold">{formatINR(item.price)}</p></div><button type="button" onClick={() => { wishlist.remove(item.id); toast.success(`${item.name} removed from wishlist`); }} aria-label={`Remove ${item.name} from wishlist`} title="Remove from wishlist" className="grid h-9 w-9 shrink-0 place-items-center text-muted-foreground transition-colors hover:text-destructive"><Trash2 className="h-4 w-4" /></button></article>) : <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>}</div></>;
+}
 function Details({ profile, setProfile, save, saving, email }: { profile: Profile; setProfile: (profile: Profile) => void; save: () => void; saving: boolean; email: string }) { return <><h1 className="font-display text-4xl">Account Details</h1><div className="mt-6 grid max-w-xl gap-4 border border-border p-6"><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">FULL NAME<input value={profile.full_name} onChange={(event) => setProfile({ ...profile, full_name: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">EMAIL<input value={email} disabled className="border border-border bg-secondary/40 px-3 py-2.5 text-sm text-muted-foreground" /></label><label className="grid gap-2 text-xs tracking-[0.18em] text-muted-foreground">PHONE NUMBER<input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} className="border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold" /></label><label className="flex items-start gap-3 border border-border p-4 text-xs text-muted-foreground"><input type="checkbox" checked={profile.marketing_opt_in} onChange={(event) => setProfile({ ...profile, marketing_opt_in: event.target.checked })} className="mt-0.5" /><span><b className="block text-foreground">Future updates: {profile.marketing_opt_in ? "Active" : "Inactive"}</b><span className="mt-1 block">Receive YOMORA product launches, offers and membership updates by email or phone.</span></span></label><button disabled={saving} onClick={save} className="inline-flex w-fit items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"><Save className="h-4 w-4" /> SAVE CHANGES</button></div></>; }
