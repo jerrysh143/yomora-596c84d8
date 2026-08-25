@@ -105,7 +105,7 @@ function ProductsPage() {
                 {p.sold_out && (
                   <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
                 )}
-                {(p.is_new || (hydrated && isProductNew(p))) && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                {hydrated && isProductNew(p) && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
