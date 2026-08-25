@@ -103,9 +103,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/yomora-favicon.svg?v=3", type: "image/svg+xml" },
-      { rel: "shortcut icon", href: "/yomora-favicon.svg?v=3", type: "image/svg+xml" },
-      { rel: "apple-touch-icon", href: "/yomora-option-3-symbol.png?v=2" },
+      { rel: "icon", href: "/yomora-option-3-symbol.png?v=3", type: "image/png" },
+      { rel: "shortcut icon", href: "/yomora-option-3-symbol.png?v=3", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/yomora-option-3-symbol.png?v=3" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
