@@ -57,15 +57,15 @@ export const formatINR = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-// A product is treated as "new" when the admin flagged it, OR when it was
-// created within the last 7 days (auto-tag for a week).
+// Every product is treated as "new" only during its first seven days.
+// The legacy admin flag must never keep the badge visible beyond this window.
 export const NEW_WINDOW_DAYS = 7;
 export const isProductNew = (p: Pick<Product, "is_new" | "created_at">) => {
-  if (p.is_new) return true;
   if (!p.created_at) return false;
   const created = new Date(p.created_at).getTime();
   if (Number.isNaN(created)) return false;
-  return Date.now() - created < NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const age = Date.now() - created;
+  return age >= 0 && age < NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 };
 
 // Remove "CATEGORY: X" suffix that may leak from admin data entry
