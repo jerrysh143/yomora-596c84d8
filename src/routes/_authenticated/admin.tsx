@@ -7,7 +7,7 @@ import { listNotifyRequestsFn } from "@/lib/notify.functions";
 import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
-import { AUDIENCES, formatINR, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
+import { AUDIENCES, formatINR, isProductNew, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
 import { adminProductsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import {
@@ -65,7 +65,6 @@ type FormState = {
   description: string;
   image_url: string;
   gallery_urls: string[];
-  is_new: boolean;
   sold_out: boolean;
 };
 
@@ -79,7 +78,6 @@ const emptyForm: FormState = {
   description: "",
   image_url: "",
   gallery_urls: [],
-  is_new: false,
   sold_out: false,
 };
 
@@ -208,7 +206,6 @@ function AdminPage() {
         gallery_urls: Array.from(
           new Set([p.image_url ?? "", ...(p.gallery_urls ?? [])].filter(Boolean)),
         ),
-        is_new: p.is_new,
         sold_out: !!p.sold_out,
       });
     } else {
@@ -586,7 +583,7 @@ function AdminPage() {
       description: form.description.trim(),
       image_url: imageUrl || null,
       gallery_urls: images.slice(1),
-      is_new: form.is_new,
+      is_new: false,
       sold_out: form.sold_out,
     });
   };
@@ -786,7 +783,7 @@ on conflict do nothing;`}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-display text-lg text-foreground">{p.name}</span>
-                            {p.is_new && <span className="bg-gold px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                            {isProductNew(p) && <span className="bg-gold px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
                             {p.sold_out && <span className="bg-onyx px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-cream">SOLD OUT</span>}
                           </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">{p.tagline || "—"}</div>
@@ -1415,11 +1412,6 @@ on conflict do nothing;`}
                 className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
               />
             </Field>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.is_new} onChange={(e) => setForm({ ...form, is_new: e.target.checked })} className="accent-[color:var(--gold)]" />
-              Mark as New Arrival
-            </label>
 
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.sold_out} onChange={(e) => setForm({ ...form, sold_out: e.target.checked })} className="accent-[color:var(--gold)]" />
