@@ -72,7 +72,7 @@ export function SiteHeader() {
           </div>
 
           <Link to="/" className="flex min-w-0 shrink items-center justify-self-center" aria-label={`${header.brand_name} home`}>
-            <img src="/yomora-logo.svg" width={1200} height={260} alt={`${header.brand_name} - ${header.brand_tagline}`} className="h-9 w-auto max-w-[175px] object-contain sm:h-12 sm:max-w-[240px] xl:h-14 xl:max-w-[285px]" />
+            <img src="/yomora-logo.png" width={1800} height={390} alt={`${header.brand_name} - ${header.brand_tagline}`} className="h-9 w-auto max-w-[175px] object-contain sm:h-12 sm:max-w-[240px] xl:h-14 xl:max-w-[285px]" />
           </Link>
 
           <div className="flex shrink-0 items-center justify-self-end gap-0.5 text-white/90 sm:gap-1">
@@ -127,7 +127,7 @@ export function SiteHeader() {
         <aside className="relative flex h-full w-[88%] max-w-[410px] flex-col overflow-y-auto bg-onyx text-cream shadow-2xl">
           <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-5">
             <Link to="/" onClick={() => setMenuOpen(false)} aria-label="YOMORA home">
-              <img src="/yomora-logo.svg" width={1200} height={260} alt="YOMORA" className="h-10 w-auto max-w-[210px] object-contain" />
+              <img src="/yomora-logo.png" width={1800} height={390} alt="YOMORA" className="h-10 w-auto max-w-[210px] object-contain" />
             </Link>
             <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="grid h-11 w-11 place-items-center transition-colors hover:text-gold">
               <X className="h-6 w-6" />
