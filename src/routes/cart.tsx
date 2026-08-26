@@ -35,26 +35,26 @@ function CartPage() {
           </div>
         ) : (
           <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px]">
-            <div className="border border-border">
-              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b border-border px-5 py-3 text-[11px] font-semibold tracking-[0.2em] text-muted-foreground">
+            <div className="min-w-0 border border-border">
+              <div className="hidden grid-cols-[1fr_auto_auto_auto] gap-4 border-b border-border px-5 py-3 text-[11px] font-semibold tracking-[0.2em] text-muted-foreground sm:grid">
                 <span>PRODUCT</span><span>PRICE</span><span>QUANTITY</span><span>TOTAL</span>
               </div>
               {items.map((i) => (
-                <div key={i.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b border-border px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <img src={i.image} alt={i.name} width={64} height={64} loading="lazy" decoding="async" className="h-16 w-16 object-cover" />
-                    <div>
-                      <div className="font-display text-base">{i.name}</div>
+                <div key={i.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:gap-4 sm:px-5">
+                  <div className="col-span-2 flex min-w-0 items-center gap-3 sm:col-span-1">
+                    <img src={i.image} alt={i.name} width={64} height={64} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 object-cover sm:h-16 sm:w-16" />
+                    <div className="min-w-0">
+                      <div className="line-clamp-2 font-display text-base">{i.name}</div>
                       {i.variant && <div className="text-xs text-muted-foreground">{i.variant}</div>}
                     </div>
                   </div>
-                  <div className="text-sm">{formatINR(i.price)}</div>
+                  <div className="hidden text-sm sm:block">{formatINR(i.price)}</div>
                   <div className="inline-flex items-center border border-border">
                     <button onClick={() => cart.update(i.id, i.qty - 1)} className="p-2 hover:text-gold"><Minus className="h-3.5 w-3.5" /></button>
                     <span className="min-w-6 text-center text-sm">{i.qty}</span>
                     <button onClick={() => cart.update(i.id, i.qty + 1)} className="p-2 hover:text-gold"><Plus className="h-3.5 w-3.5" /></button>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center justify-end gap-3 text-sm">
                     {formatINR(i.price * i.qty)}
                     <button onClick={() => cart.remove(i.id)} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
                   </div>
