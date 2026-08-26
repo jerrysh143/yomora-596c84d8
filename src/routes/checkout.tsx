@@ -17,6 +17,30 @@ import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
+type CheckoutAddress = {
+  id: string;
+  label: string;
+  value: string;
+  full_name?: string;
+  house_number?: string;
+  address_line?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+};
+
+function normaliseSavedAddress(address: CheckoutAddress, fallbackName: string) {
+  const legacyPincode = address.value.match(/\b\d{6}\b/)?.[0] ?? "";
+  return {
+    full_name: address.full_name?.trim() || fallbackName,
+    house_number: address.house_number?.trim() || "",
+    address_line: address.address_line?.trim() || address.value.replace(/(?:,?\s*)\b\d{6}\b\s*$/, "").trim(),
+    pincode: address.pincode?.trim() || legacyPincode,
+    city: address.city?.trim() || "",
+    state: address.state?.trim() || "",
+  };
+}
+
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
@@ -41,10 +65,15 @@ function CheckoutPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
   const [addressLine, setAddressLine] = useState("");
   const [pincode, setPincode] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [savedAddresses, setSavedAddresses] = useState<CheckoutAddress[]>([]);
+  const [addressMode, setAddressMode] = useState<"saved" | "new">("new");
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [pincodeStatus, setPincodeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [authReady, setAuthReady] = useState(false);
   const [couponInput, setCouponInput] = useState("");
@@ -72,6 +101,30 @@ function CheckoutPage() {
   const qualifiesForMembership = total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD;
   const membershipRemaining = Math.max(0, COMPLIMENTARY_MEMBERSHIP_THRESHOLD - total);
 
+  const applyAddress = (address: CheckoutAddress, fallbackName = customerName) => {
+    const fields = normaliseSavedAddress(address, fallbackName);
+    setSelectedAddressId(address.id);
+    setCustomerName(fields.full_name);
+    setHouseNumber(fields.house_number);
+    setAddressLine(fields.address_line);
+    setPincode(fields.pincode);
+    setCity(fields.city);
+    setState(fields.state);
+    setPincodeStatus("idle");
+  };
+
+  const startNewAddress = (fallbackName = customerName) => {
+    setAddressMode("new");
+    setSelectedAddressId("");
+    setCustomerName(fallbackName);
+    setHouseNumber("");
+    setAddressLine("");
+    setPincode("");
+    setCity("");
+    setState("");
+    setPincodeStatus("idle");
+  };
+
   useEffect(() => {
     let active = true;
     const applySession = (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
@@ -81,16 +134,26 @@ function CheckoutPage() {
       }
       if (!active) return;
       const metadata = session.user.user_metadata ?? {};
-      const addresses = Array.isArray(metadata.addresses) ? metadata.addresses : [];
-      const firstAddress = addresses.find((address: unknown) => !!address && typeof address === "object" && typeof (address as { value?: unknown }).value === "string") as { value?: string } | undefined;
+      const addresses = (Array.isArray(metadata.addresses) ? metadata.addresses : []).filter((address: unknown): address is CheckoutAddress =>
+        !!address && typeof address === "object" && typeof (address as CheckoutAddress).id === "string" && typeof (address as CheckoutAddress).value === "string",
+      );
+      const profileName = typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : "";
       setCustomerEmail(session.user.email ?? "");
-      setCustomerName(typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : "");
+      setCustomerName(profileName);
       setCustomerPhone(typeof metadata.phone === "string" ? metadata.phone : "");
-      setAddressLine(firstAddress?.value ?? "");
+      setSavedAddresses(addresses);
+      if (addresses.length) {
+        setAddressMode("saved");
+        applyAddress(addresses[0], profileName);
+      } else {
+        startNewAddress(profileName);
+      }
       setAuthReady(true);
     };
     supabase.auth.getSession().then(({ data }) => applySession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) navigate({ to: "/auth", search: { redirect: "/checkout" }, replace: true });
+    });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, [navigate]);
 
@@ -162,16 +225,23 @@ function CheckoutPage() {
             const form = new FormData(e.currentTarget);
             setSubmitting(true);
             try {
+              const submittedName = String(form.get("customer_name") ?? "").trim();
+              const submittedHouse = String(form.get("house_number") ?? "").trim();
+              const submittedAddress = String(form.get("address_line") ?? "").trim();
+              const submittedCity = String(form.get("city") ?? "").trim();
+              const submittedState = String(form.get("state") ?? "").trim();
+              const submittedPincode = String(form.get("pincode") ?? "").trim();
               const order = await createOrder({
                 data: {
-                  customer_name: String(form.get("customer_name") ?? ""),
+                  customer_name: submittedName,
                   customer_email: String(form.get("customer_email") ?? ""),
                   customer_phone: String(form.get("customer_phone") ?? ""),
                   shipping_address: [
-                    form.get("address_line"),
-                    form.get("city"),
-                    form.get("state"),
-                    form.get("pincode"),
+                    submittedHouse,
+                    submittedAddress,
+                    submittedCity,
+                    submittedState,
+                    submittedPincode,
                   ]
                     .map((value) => String(value ?? "").trim())
                     .filter(Boolean)
@@ -181,6 +251,27 @@ function CheckoutPage() {
                   items: items.map((item) => ({ id: item.id, quantity: item.qty })),
                 },
               });
+              if (addressMode === "new" && saveNewAddress) {
+                const value = [submittedName, submittedHouse, submittedAddress, submittedCity, submittedState, submittedPincode].join(", ");
+                const savedAddress: CheckoutAddress = {
+                  id: crypto.randomUUID(),
+                  label: `Address ${savedAddresses.length + 1}`,
+                  value,
+                  full_name: submittedName,
+                  house_number: submittedHouse,
+                  address_line: submittedAddress,
+                  city: submittedCity,
+                  state: submittedState,
+                  pincode: submittedPincode,
+                };
+                const { error: saveAddressError } = await supabase.auth.updateUser({ data: { addresses: [...savedAddresses, savedAddress] } });
+                if (saveAddressError) {
+                  console.error("Unable to save checkout address", saveAddressError);
+                  toast.warning("Order placed, but the address could not be saved to My Addresses");
+                } else {
+                  setSavedAddresses((current) => [...current, savedAddress]);
+                }
+              }
               cart.clear();
               setOrderId(order.id);
               toast.success("Order placed successfully");
@@ -211,8 +302,45 @@ function CheckoutPage() {
             </fieldset>
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">2. SHIPPING ADDRESS</legend>
+              <div className="mb-5 grid grid-cols-2 gap-2 rounded-sm bg-secondary/40 p-1">
+                <button
+                  type="button"
+                  disabled={!savedAddresses.length}
+                  onClick={() => {
+                    setAddressMode("saved");
+                    const selected = savedAddresses.find((address) => address.id === selectedAddressId) ?? savedAddresses[0];
+                    if (selected) applyAddress(selected);
+                  }}
+                  className={`px-3 py-2.5 text-[10px] font-semibold tracking-[0.16em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${addressMode === "saved" ? "bg-onyx text-cream" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  CHOOSE SAVED ADDRESS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startNewAddress()}
+                  className={`px-3 py-2.5 text-[10px] font-semibold tracking-[0.16em] transition-colors ${addressMode === "new" ? "bg-onyx text-cream" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  ADD NEW ADDRESS
+                </button>
+              </div>
+              {addressMode === "saved" && savedAddresses.length > 0 && (
+                <div className="mb-5 grid gap-2">
+                  {savedAddresses.map((address) => (
+                    <label key={address.id} className={`flex cursor-pointer items-start gap-3 border p-3 text-sm ${selectedAddressId === address.id ? "border-gold bg-gold/5" : "border-border"}`}>
+                      <input
+                        type="radio"
+                        name="saved_address"
+                        checked={selectedAddressId === address.id}
+                        onChange={() => applyAddress(address)}
+                        className="mt-0.5 accent-[color:var(--gold)]"
+                      />
+                      <span><b className="block text-[10px] tracking-[0.16em] text-gold">{address.label.toUpperCase()}</b><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{address.value}</span></span>
+                    </label>
+                  ))}
+                </div>
+              )}
               <div className="grid gap-4 md:grid-cols-2">
-                <Input name="customer_name" label="Full name" required value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
+                <Input name="customer_name" label="Full name" required autoComplete="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
                 <div>
                   <Input
                     name="pincode"
@@ -234,10 +362,12 @@ function CheckoutPage() {
                     {pincodeStatus === "error" && "Pincode not found. Please enter city and state manually."}
                   </p>
                 </div>
-                <Input name="address_line" label="Address line" required className="md:col-span-2" value={addressLine} onChange={(event) => setAddressLine(event.target.value)} />
+                <Input name="house_number" label="House / Apartment number" required={addressMode === "new"} autoComplete="address-line1" value={houseNumber} onChange={(event) => setHouseNumber(event.target.value)} />
+                <Input name="address_line" label="Address line" required className="md:col-span-2" autoComplete="street-address" value={addressLine} onChange={(event) => setAddressLine(event.target.value)} />
                 <Input name="city" label="City" required autoComplete="address-level2" value={city} onChange={(event) => setCity(event.target.value)} />
                 <Input name="state" label="State" required autoComplete="address-level1" value={state} onChange={(event) => setState(event.target.value)} />
               </div>
+              {addressMode === "new" && <label className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={saveNewAddress} onChange={(event) => setSaveNewAddress(event.target.checked)} className="accent-[color:var(--gold)]" /> Save this address in My Addresses</label>}
             </fieldset>
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">3. PAYMENT METHOD</legend>
