@@ -83,14 +83,21 @@ export function ProductReviews({ productId, productName }: { productId: string; 
     try {
       for (const file of files) {
         const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || (file.type.startsWith("video/") ? "mp4" : "jpg");
-        const path = `${userId}/${crypto.randomUUID()}.${extension}`;
-        const { error } = await supabase.storage.from("review-media").upload(path, file, {
-          contentType: file.type,
-          cacheControl: "31536000",
-          upsert: false,
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) throw new Error("Your session expired. Please sign in again.");
+        const body = new FormData();
+        body.set("product_id", productId);
+        body.set("order_id", eligibility.orderId);
+        body.set("file", file, `${crypto.randomUUID()}.${extension}`);
+        const response = await fetch("/api/review-media", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body,
         });
-        if (error) throw error;
-        uploadedPaths.push(path);
+        const result = await response.json().catch(() => ({})) as { message?: string; path?: string };
+        if (!response.ok || !result.path) throw new Error(result.message || "Unable to upload media");
+        uploadedPaths.push(result.path);
       }
       await submitReview({
         data: {
@@ -110,7 +117,17 @@ export function ProductReviews({ productId, productName }: { productId: string; 
       ]);
       toast.success("Thank you. Your verified review is live.");
     } catch (error) {
-      if (uploadedPaths.length) await supabase.storage.from("review-media").remove(uploadedPaths);
+      if (uploadedPaths.length) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (token) {
+          await fetch("/api/review-media", {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ paths: uploadedPaths }),
+          }).catch(() => undefined);
+        }
+      }
       toast.error(error instanceof Error ? error.message : "Unable to publish review");
     } finally {
       setSubmitting(false);
