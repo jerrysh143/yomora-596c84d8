@@ -17,6 +17,14 @@ import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
+function checkoutErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : "";
+  if (/Missing Supabase environment variable|SUPABASE_SERVICE_ROLE_KEY|Connect Supabase in Lovable Cloud/i.test(message)) {
+    return "Checkout is temporarily unavailable. Please try again later.";
+  }
+  return message || fallback;
+}
+
 type CheckoutAddress = {
   id: string;
   label: string;
@@ -276,7 +284,7 @@ function CheckoutPage() {
               setOrderId(order.id);
               toast.success("Order placed successfully");
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Unable to place order");
+              toast.error(checkoutErrorMessage(error, "Unable to place order"));
             } finally {
               setSubmitting(false);
             }
@@ -494,7 +502,7 @@ function CheckoutPage() {
                         toast.success(`Coupon applied. You save ${formatINR(result.discount)}`);
                       } catch (error) {
                         setAppliedCoupon(null);
-                        toast.error(error instanceof Error ? error.message : "Unable to apply coupon");
+                        toast.error(checkoutErrorMessage(error, "Unable to apply coupon"));
                       } finally {
                         setValidatingCoupon(false);
                       }
