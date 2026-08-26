@@ -28,16 +28,17 @@ type Address = {
   label: string;
   value: string;
   full_name?: string;
+  house_number?: string;
   address_line?: string;
   pincode?: string;
   city?: string;
   state?: string;
 };
-type AddressDraft = { full_name: string; address_line: string; pincode: string; city: string; state: string };
+type AddressDraft = { full_name: string; house_number: string; address_line: string; pincode: string; city: string; state: string };
 type Profile = { full_name: string; phone: string; addresses: Address[]; marketing_opt_in: boolean };
 
 const emptyProfile: Profile = { full_name: "", phone: "", addresses: [], marketing_opt_in: false };
-const emptyAddress: AddressDraft = { full_name: "", address_line: "", pincode: "", city: "", state: "" };
+const emptyAddress: AddressDraft = { full_name: "", house_number: "", address_line: "", pincode: "", city: "", state: "" };
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -119,11 +120,11 @@ function AccountPage() {
 
   const addAddress = async () => {
     const fields = Object.fromEntries(Object.entries(newAddress).map(([key, value]) => [key, value.trim()])) as AddressDraft;
-    if (!fields.full_name || !fields.address_line || !/^\d{6}$/.test(fields.pincode) || !fields.city || !fields.state) {
+    if (!fields.full_name || !fields.house_number || !fields.address_line || !/^\d{6}$/.test(fields.pincode) || !fields.city || !fields.state) {
       toast.error("Complete all address fields and enter a valid 6-digit pincode");
       return;
     }
-    const value = [fields.full_name, fields.address_line, fields.city, fields.state, fields.pincode].join(", ");
+    const value = [fields.full_name, fields.house_number, fields.address_line, fields.city, fields.state, fields.pincode].join(", ");
     const nextAddress: Address = { id: crypto.randomUUID(), label: `Address ${profile.addresses.length + 1}`, value, ...fields };
     const next = { ...profile, addresses: [...profile.addresses, nextAddress] };
     if (await saveProfile(next)) setNewAddress(emptyAddress);
@@ -235,6 +236,7 @@ function Addresses({ addresses, newAddress, setNewAddress, addAddress, removeAdd
             {pincodeStatus === "error" && "Pincode not found. Enter city and state manually."}
           </p>
         </div>
+        {field("house_number", "House / Apartment number", { autoComplete: "address-line1" })}
         {field("address_line", "Address line", { autoComplete: "street-address" })}
         {field("city", "City", { autoComplete: "address-level2" })}
         {field("state", "State", { autoComplete: "address-level1" })}
