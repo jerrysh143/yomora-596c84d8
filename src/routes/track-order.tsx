@@ -2,13 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2 } from "lucide-react";
+import { Check, ExternalLink, Loader2, MapPin, PackageCheck, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
-import { trackOrderFn, type OrderStatus } from "@/lib/orders.functions";
+import { type OrderStatus } from "@/lib/orders.functions";
+import { trackShipmentFn } from "@/lib/shipments.functions";
+
+type TrackingResult = Awaited<ReturnType<typeof trackShipmentFn>>;
 
 export const Route = createFileRoute("/track-order")({
   head: () => ({
@@ -23,12 +26,12 @@ export const Route = createFileRoute("/track-order")({
 });
 
 function TrackPage() {
-  const trackOrder = useServerFn(trackOrderFn);
+  const trackOrder = useServerFn(trackShipmentFn);
   const [tracking, setTracking] = useState(false);
-  const [result, setResult] = useState<{ id: string; status: OrderStatus; created_at: string; updated_at: string } | null>(null);
+  const [result, setResult] = useState<TrackingResult | null>(null);
   const { data } = useQuery(siteContentQuery());
   const c = data?.page_track_order ?? SITE_CONTENT_DEFAULTS.page_track_order;
-  const steps = result ? orderSteps(result.status, result.created_at, result.updated_at) : [];
+  const steps = result && !result.shipment ? orderSteps(result.order.status as OrderStatus, result.order.created_at, result.order.updated_at) : [];
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -44,7 +47,7 @@ function TrackPage() {
             setResult(null);
             try {
               const order = await trackOrder({ data: { order_id: String(form.get("order_id") ?? ""), customer_email: String(form.get("customer_email") ?? "") } });
-              setResult(order as { id: string; status: OrderStatus; created_at: string; updated_at: string });
+              setResult(order);
             } catch (error) {
               toast.error(error instanceof Error ? error.message : "Unable to track this order");
             } finally {
@@ -65,8 +68,28 @@ function TrackPage() {
           <div className="border border-border p-6">
             {result ? (
               <>
-              <p className="mb-5 text-xs text-muted-foreground">Order #{result.id.slice(0, 8).toUpperCase()}</p>
-              <ol className="space-y-6">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-border pb-5">
+                <div><p className="text-[10px] font-semibold tracking-[0.22em] text-gold">YOMORA DELIVERY</p><p className="mt-1 text-xs text-muted-foreground">Order #{result.order.id.slice(0, 8).toUpperCase()}</p></div>
+                {result.shipment?.awbCode && <div className="text-right"><p className="text-[10px] tracking-[0.18em] text-muted-foreground">AWB</p><p className="font-mono text-xs">{result.shipment.awbCode}</p></div>}
+              </div>
+              {result.shipment ? <>
+                <div className="mb-6 grid gap-3 bg-onyx p-5 text-cream sm:grid-cols-2">
+                  <div><p className="text-[10px] tracking-[0.2em] text-gold">CURRENT STATUS</p><p className="mt-1 font-display text-2xl capitalize">{result.shipment.status.replaceAll("_", " ")}</p></div>
+                  <div className="sm:text-right"><p className="text-[10px] tracking-[0.2em] text-gold">COURIER</p><p className="mt-1 text-sm">{result.shipment.carrierName || "Courier assignment in progress"}</p></div>
+                </div>
+                <ol className="space-y-0">
+                  {(result.shipment.activities.length ? result.shipment.activities : [{ activity: "Shipment created", date: result.order.updated_at, location: "YOMORA" }]).map((activity, i, all) => (
+                    <li key={`${activity.date}-${i}`} className="flex gap-4">
+                      <div className="flex flex-col items-center"><div className="grid h-9 w-9 place-items-center rounded-full bg-gold text-onyx">{i === 0 ? <PackageCheck className="h-4 w-4" /> : <Truck className="h-4 w-4" />}</div>{i < all.length - 1 && <div className="h-12 w-px bg-gold/35" />}</div>
+                      <div className="pb-6"><div className="text-sm font-semibold capitalize">{activity.activity.toLowerCase()}</div><div className="mt-1 text-xs text-muted-foreground">{activity.date ? new Date(activity.date.replace(" ", "T")).toLocaleString("en-IN") : ""}</div>{activity.location && <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> {activity.location}</div>}</div>
+                    </li>
+                  ))}
+                </ol>
+                {result.shipment.estimatedDeliveryDate && <p className="mt-2 border-t border-border pt-4 text-xs text-muted-foreground">Estimated delivery: <span className="font-semibold text-foreground">{new Date(result.shipment.estimatedDeliveryDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span></p>}
+                {result.shipment.trackingUrl && <a href={result.shipment.trackingUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 border border-gold px-4 py-2.5 text-[10px] font-semibold tracking-[0.18em] text-gold hover:bg-gold hover:text-onyx">OPEN COURIER TRACKING <ExternalLink className="h-3.5 w-3.5" /></a>}
+              </> : <>
+                <p className="mb-5 text-sm text-muted-foreground">Your order is confirmed. Courier tracking will appear here as soon as the shipment is created.</p>
+                <ol className="space-y-6">
                 {steps.map((s, i) => (
                   <li key={s.t} className="flex gap-4">
                     <div className="flex flex-col items-center">
@@ -81,7 +104,8 @@ function TrackPage() {
                     </div>
                   </li>
                 ))}
-              </ol>
+                </ol>
+              </>}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{c.empty_message}</p>
