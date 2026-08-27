@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Plus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { compressForWeb } from "@/lib/image-compress";
+import { uploadAdminImage } from "@/lib/admin-media-upload";
 
 export function ImageUploadField({
   value,
@@ -24,12 +24,8 @@ export function ImageUploadField({
     setBusy(true);
     try {
       const { blob, ext, contentType } = await compressForWeb(file);
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("site-images")
-        .upload(path, blob, { contentType, cacheControl: "31536000" });
-      if (error) throw error;
-      onChange(`/api/public/img/${path}`);
+      const uploaded = await uploadAdminImage(blob, `${crypto.randomUUID()}.${ext}`);
+      onChange(uploaded.url);
       toast.success("Image uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
