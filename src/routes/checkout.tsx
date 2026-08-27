@@ -254,6 +254,10 @@ function CheckoutPage() {
                     .map((value) => String(value ?? "").trim())
                     .filter(Boolean)
                     .join(", "),
+                  address_line: [submittedHouse, submittedAddress].filter(Boolean).join(", "),
+                  city: submittedCity,
+                  state: submittedState,
+                  pincode: submittedPincode,
                   payment_method: pay as "upi" | "card" | "netbank" | "cod",
                   coupon_code: currentCoupon?.code,
                   items: items.map((item) => ({ id: item.id, quantity: item.qty })),
