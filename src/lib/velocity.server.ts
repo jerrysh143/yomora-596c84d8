@@ -39,7 +39,11 @@ function requiredEnv(name: string) {
   return value;
 }
 
-async function velocityRequest<T>(path: string, init: RequestInit = {}, authenticated = true): Promise<T> {
+async function velocityRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  authenticated = true,
+): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
   if (authenticated) headers.set("Authorization", await getVelocityToken());
@@ -48,28 +52,70 @@ async function velocityRequest<T>(path: string, init: RequestInit = {}, authenti
     headers,
     signal: AbortSignal.timeout(12_000),
   });
-  const payload = await response.json().catch(() => null) as T | { error?: string; errors?: string[] } | null;
+  const responseText = await response.text();
+  let payload: unknown;
+  try {
+    payload = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    payload = responseText;
+  }
   if (!response.ok) {
-    const message = payload && typeof payload === "object" &&
-      ("error" in payload ? payload.error : "errors" in payload ? payload.errors?.join(", ") : "") ||
-      `Velocity request failed (${response.status})`;
-    throw new Error(String(message));
+    const details: string[] = [];
+    const collect = (value: unknown, depth = 0) => {
+      if (depth > 3 || details.length >= 8 || value == null) return;
+      if (typeof value === "string") {
+        const clean = value.replace(/\s+/g, " ").trim();
+        if (clean && clean.length <= 500 && !details.includes(clean)) details.push(clean);
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item) => collect(item, depth + 1));
+        return;
+      }
+      if (typeof value === "object") {
+        const record = value as Record<string, unknown>;
+        for (const key of [
+          "error",
+          "errors",
+          "message",
+          "messages",
+          "detail",
+          "details",
+          "non_field_errors",
+          "payload",
+        ]) {
+          if (key in record) collect(record[key], depth + 1);
+        }
+      }
+    };
+    collect(payload);
+    const suffix = details.length ? `: ${details.join(", ")}` : "";
+    throw new Error(`Velocity request failed (${response.status})${suffix}`);
   }
   return payload as T;
 }
 
 export async function getVelocityToken() {
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) return tokenCache.token;
-  const payload = await velocityRequest<{ token?: string; expires_at?: string }>("/auth-token", {
-    method: "POST",
-    body: JSON.stringify({
-      username: requiredEnv("VELOCITY_USERNAME"),
-      password: requiredEnv("VELOCITY_PASSWORD"),
-    }),
-  }, false);
+  const payload = await velocityRequest<{ token?: string; expires_at?: string }>(
+    "/auth-token",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        username: requiredEnv("VELOCITY_USERNAME"),
+        password: requiredEnv("VELOCITY_PASSWORD"),
+      }),
+    },
+    false,
+  );
   if (!payload?.token) throw new Error("Velocity authentication did not return a token");
-  const expiry = payload.expires_at ? new Date(payload.expires_at).getTime() : Date.now() + 23 * 60 * 60 * 1000;
-  tokenCache = { token: payload.token, expiresAt: Number.isFinite(expiry) ? expiry : Date.now() + 23 * 60 * 60 * 1000 };
+  const expiry = payload.expires_at
+    ? new Date(payload.expires_at).getTime()
+    : Date.now() + 23 * 60 * 60 * 1000;
+  tokenCache = {
+    token: payload.token,
+    expiresAt: Number.isFinite(expiry) ? expiry : Date.now() + 23 * 60 * 60 * 1000,
+  };
   return payload.token;
 }
 
@@ -131,7 +177,9 @@ export async function trackVelocityShipment(awb: string): Promise<VelocityTracki
   });
   const trackingData = payload?.result?.[awb]?.tracking_data;
   if (!trackingData) throw new Error("Velocity did not return tracking data for this AWB");
-  const shipment = Array.isArray(trackingData.shipment_track) ? trackingData.shipment_track[0] : null;
+  const shipment = Array.isArray(trackingData.shipment_track)
+    ? trackingData.shipment_track[0]
+    : null;
   return {
     status: String(trackingData.shipment_status || shipment?.current_status || "unknown"),
     activities: Array.isArray(trackingData.shipment_track_activities)
@@ -143,7 +191,10 @@ export async function trackVelocityShipment(awb: string): Promise<VelocityTracki
       : [],
     trackingUrl: typeof trackingData.track_url === "string" ? trackingData.track_url : null,
     carrierName: typeof shipment?.courier_name === "string" ? shipment.courier_name : null,
-    estimatedDeliveryDate: typeof shipment?.estimated_delivery_date === "string" ? shipment.estimated_delivery_date : null,
+    estimatedDeliveryDate:
+      typeof shipment?.estimated_delivery_date === "string"
+        ? shipment.estimated_delivery_date
+        : null,
     deliveredAt: typeof shipment?.delivered_date === "string" ? shipment.delivered_date : null,
   };
 }
