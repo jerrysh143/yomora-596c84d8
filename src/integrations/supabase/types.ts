@@ -190,6 +190,89 @@ export type Database = {
           },
         ]
       }
+      order_shipments: {
+        Row: {
+          address_line: string
+          awb_code: string | null
+          carrier_id: string | null
+          carrier_name: string | null
+          city: string
+          created_at: string
+          delivered_at: string | null
+          estimated_delivery_date: string | null
+          id: string
+          label_url: string | null
+          last_error: string | null
+          last_synced_at: string | null
+          order_id: string
+          payment_method: string
+          pincode: string
+          shipment_id: string | null
+          state: string
+          status: string
+          sub_status: string | null
+          tracking_activities: Json
+          tracking_url: string | null
+          updated_at: string
+          velocity_order_id: string | null
+        }
+        Insert: {
+          address_line?: string
+          awb_code?: string | null
+          carrier_id?: string | null
+          carrier_name?: string | null
+          city?: string
+          created_at?: string
+          delivered_at?: string | null
+          estimated_delivery_date?: string | null
+          id?: string
+          label_url?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          order_id: string
+          payment_method?: string
+          pincode?: string
+          shipment_id?: string | null
+          state?: string
+          status?: string
+          sub_status?: string | null
+          tracking_activities?: Json
+          tracking_url?: string | null
+          updated_at?: string
+          velocity_order_id?: string | null
+        }
+        Update: {
+          address_line?: string
+          awb_code?: string | null
+          carrier_id?: string | null
+          carrier_name?: string | null
+          city?: string
+          delivered_at?: string | null
+          estimated_delivery_date?: string | null
+          label_url?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          payment_method?: string
+          pincode?: string
+          shipment_id?: string | null
+          state?: string
+          status?: string
+          sub_status?: string | null
+          tracking_activities?: Json
+          tracking_url?: string | null
+          updated_at?: string
+          velocity_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           coupon_code: string | null
@@ -534,6 +617,29 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      velocity_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          payload: Json
+          received_at: string
+          shipment_id: string | null
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          payload: Json
+          received_at?: string
+          shipment_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          payload?: Json
+          received_at?: string
+          shipment_id?: string | null
         }
         Relationships: []
       }
