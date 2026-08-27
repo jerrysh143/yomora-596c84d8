@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Plus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { compressForWeb } from "@/lib/image-compress";
+import { uploadAdminImage } from "@/lib/admin-media-upload";
 
 const MAX_IMAGES = 8;
 
@@ -36,12 +36,8 @@ export function GalleryUploadField({
     try {
       for (const file of batch) {
         const { blob, ext, contentType } = await compressForWeb(file);
-        const path = `${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage
-          .from("site-images")
-          .upload(path, blob, { contentType, cacheControl: "31536000" });
-        if (error) throw error;
-        uploaded.push(`/api/public/img/${path}`);
+        const result = await uploadAdminImage(blob, `${crypto.randomUUID()}.${ext}`);
+        uploaded.push(result.url);
       }
       onChange([...value, ...uploaded]);
       toast.success(`${uploaded.length} image${uploaded.length > 1 ? "s" : ""} uploaded`);
