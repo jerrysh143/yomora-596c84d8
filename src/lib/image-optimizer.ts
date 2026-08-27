@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
 import { compressForWeb } from "@/lib/image-compress";
+import { uploadAdminImage } from "@/lib/admin-media-upload";
 
 const ALREADY_OPTIMIZED_BYTES = 400 * 1024;
 
@@ -46,16 +46,11 @@ export async function optimizeImageUrl(url: string): Promise<ImageOptimizationRe
       return { status: "skipped", url, beforeBytes: source.size, afterBytes: source.size };
     }
 
-    const path = `optimized/${crypto.randomUUID()}.${optimized.ext}`;
-    const { error } = await supabase.storage.from("site-images").upload(path, optimized.blob, {
-      contentType: optimized.contentType,
-      cacheControl: "31536000",
-    });
-    if (error) throw error;
+    const uploaded = await uploadAdminImage(optimized.blob, `${crypto.randomUUID()}.${optimized.ext}`);
 
     return {
       status: "optimized",
-      url: `/api/public/img/${path}`,
+      url: uploaded.url,
       beforeBytes: source.size,
       afterBytes: optimized.blob.size,
     };
