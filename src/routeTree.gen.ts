@@ -28,6 +28,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsCategoryRouteImport } from './routes/products.$category'
+import { Route as ApiVelocityWebhookRouteImport } from './routes/api/velocity-webhook'
+import { Route as ApiReviewMediaRouteImport } from './routes/api/review-media'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedInvoiceIdRouteImport } from './routes/_authenticated/invoice.$id'
@@ -127,6 +129,16 @@ const ProductsCategoryRoute = ProductsCategoryRouteImport.update({
   path: '/products/$category',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVelocityWebhookRoute = ApiVelocityWebhookRouteImport.update({
+  id: '/api/velocity-webhook',
+  path: '/api/velocity-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReviewMediaRoute = ApiReviewMediaRouteImport.update({
+  id: '/api/review-media',
+  path: '/api/review-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedMembershipDashboardRoute =
   AuthenticatedMembershipDashboardRouteImport.update({
     id: '/membership-dashboard',
@@ -168,6 +180,8 @@ export interface FileRoutesByFullPath {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/review-media': typeof ApiReviewMediaRoute
+  '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
   '/products/': typeof ProductsIndexRoute
   '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
@@ -192,6 +206,8 @@ export interface FileRoutesByTo {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/review-media': typeof ApiReviewMediaRoute
+  '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
   '/products': typeof ProductsIndexRoute
   '/invoice/$id': typeof AuthenticatedInvoiceIdRoute
@@ -218,6 +234,8 @@ export interface FileRoutesById {
   '/women': typeof WomenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/review-media': typeof ApiReviewMediaRoute
+  '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
   '/products/': typeof ProductsIndexRoute
   '/_authenticated/invoice/$id': typeof AuthenticatedInvoiceIdRoute
@@ -244,6 +262,8 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
+    | '/api/review-media'
+    | '/api/velocity-webhook'
     | '/products/$category'
     | '/products/'
     | '/invoice/$id'
@@ -268,6 +288,8 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
+    | '/api/review-media'
+    | '/api/velocity-webhook'
     | '/products/$category'
     | '/products'
     | '/invoice/$id'
@@ -293,6 +315,8 @@ export interface FileRouteTypes {
     | '/women'
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
+    | '/api/review-media'
+    | '/api/velocity-webhook'
     | '/products/$category'
     | '/products/'
     | '/_authenticated/invoice/$id'
@@ -317,6 +341,8 @@ export interface RootRouteChildren {
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   WomenRoute: typeof WomenRoute
+  ApiReviewMediaRoute: typeof ApiReviewMediaRoute
+  ApiVelocityWebhookRoute: typeof ApiVelocityWebhookRoute
   ProductsCategoryRoute: typeof ProductsCategoryRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
@@ -457,6 +483,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsCategoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/velocity-webhook': {
+      id: '/api/velocity-webhook'
+      path: '/api/velocity-webhook'
+      fullPath: '/api/velocity-webhook'
+      preLoaderRoute: typeof ApiVelocityWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/review-media': {
+      id: '/api/review-media'
+      path: '/api/review-media'
+      fullPath: '/api/review-media'
+      preLoaderRoute: typeof ApiReviewMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/membership-dashboard': {
       id: '/_authenticated/membership-dashboard'
       path: '/membership-dashboard'
@@ -521,6 +561,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   WomenRoute: WomenRoute,
+  ApiReviewMediaRoute: ApiReviewMediaRoute,
+  ApiVelocityWebhookRoute: ApiVelocityWebhookRoute,
   ProductsCategoryRoute: ProductsCategoryRoute,
   ProductsIndexRoute: ProductsIndexRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
