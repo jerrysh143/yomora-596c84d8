@@ -30,6 +30,7 @@ import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsCategoryRouteImport } from './routes/products.$category'
 import { Route as ApiVelocityWebhookRouteImport } from './routes/api/velocity-webhook'
 import { Route as ApiReviewMediaRouteImport } from './routes/api/review-media'
+import { Route as ApiAdminMediaRouteImport } from './routes/api/admin-media'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedInvoiceIdRouteImport } from './routes/_authenticated/invoice.$id'
@@ -139,6 +140,11 @@ const ApiReviewMediaRoute = ApiReviewMediaRouteImport.update({
   path: '/api/review-media',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminMediaRoute = ApiAdminMediaRouteImport.update({
+  id: '/api/admin-media',
+  path: '/api/admin-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedMembershipDashboardRoute =
   AuthenticatedMembershipDashboardRouteImport.update({
     id: '/membership-dashboard',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/admin-media': typeof ApiAdminMediaRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/women': typeof WomenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/admin-media': typeof ApiAdminMediaRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/women': typeof WomenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
+  '/api/admin-media': typeof ApiAdminMediaRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
+    | '/api/admin-media'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/admin'
     | '/membership-dashboard'
+    | '/api/admin-media'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/women'
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
+    | '/api/admin-media'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -341,6 +353,7 @@ export interface RootRouteChildren {
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   WomenRoute: typeof WomenRoute
+  ApiAdminMediaRoute: typeof ApiAdminMediaRoute
   ApiReviewMediaRoute: typeof ApiReviewMediaRoute
   ApiVelocityWebhookRoute: typeof ApiVelocityWebhookRoute
   ProductsCategoryRoute: typeof ProductsCategoryRoute
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin-media': {
+      id: '/api/admin-media'
+      path: '/api/admin-media'
+      fullPath: '/api/admin-media'
+      preLoaderRoute: typeof ApiAdminMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/membership-dashboard': {
       id: '/_authenticated/membership-dashboard'
       path: '/membership-dashboard'
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   WomenRoute: WomenRoute,
+  ApiAdminMediaRoute: ApiAdminMediaRoute,
   ApiReviewMediaRoute: ApiReviewMediaRoute,
   ApiVelocityWebhookRoute: ApiVelocityWebhookRoute,
   ProductsCategoryRoute: ProductsCategoryRoute,
