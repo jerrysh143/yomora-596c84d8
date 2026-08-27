@@ -53,6 +53,10 @@ const checkoutInput = z.object({
   customer_email: z.string().trim().email().max(200),
   customer_phone: z.string().trim().min(6).max(30).regex(/^[0-9+()\-\s]+$/, "Invalid phone"),
   shipping_address: z.string().trim().min(10).max(600),
+  address_line: z.string().trim().min(5).max(400),
+  city: z.string().trim().min(2).max(100),
+  state: z.string().trim().min(2).max(100),
+  pincode: z.string().trim().regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
   payment_method: z.enum(["upi", "card", "netbank", "cod"]),
   coupon_code: z.string().trim().max(40).optional(),
   items: z
@@ -154,6 +158,18 @@ export const createOrderFn = createServerFn({ method: "POST" })
       .select("id,total")
       .single();
     if (error) throw new Error(error.message);
+
+    // Shipping data is isolated from the order. A Velocity outage must never roll
+    // back a valid checkout or alter existing customer/order records.
+    await supabaseAdmin.from("order_shipments").insert({
+      order_id: order.id,
+      payment_method: data.payment_method === "cod" ? "COD" : "PREPAID",
+      address_line: data.address_line,
+      city: data.city,
+      state: data.state,
+      pincode: data.pincode,
+      status: "pending_sync",
+    });
 
     if (data.coupon_code) {
       const { data: redeemed, error: couponError } = await supabaseAdmin.rpc("redeem_coupon_for_order", {
