@@ -62,10 +62,12 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ orderId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     await isAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Use the authenticated administrator's session for this action. The
+    // order_shipments RLS policy independently verifies the admin role.
+    const db = context.supabase;
     const [{ data: order, error: orderError }, { data: existing }] = await Promise.all([
-      supabaseAdmin.from("orders").select("*").eq("id", data.orderId).single(),
-      supabaseAdmin.from("order_shipments").select("*").eq("order_id", data.orderId).maybeSingle(),
+      db.from("orders").select("*").eq("id", data.orderId).single(),
+      db.from("order_shipments").select("*").eq("order_id", data.orderId).maybeSingle(),
     ]);
     if (orderError || !order) throw new Error(orderError?.message || "Order not found");
     if (existing?.awb_code) return publicShipment(existing as unknown as ShippingRow);
@@ -84,7 +86,7 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
     }
 
     if (!existing) {
-      const { error } = await supabaseAdmin.from("order_shipments").insert({
+      const { error } = await db.from("order_shipments").insert({
         order_id: order.id,
         payment_method: shipping.payment_method,
         address_line: shipping.address_line,
@@ -116,7 +118,7 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
         subtotal: Number(order.total),
       });
       const now = new Date().toISOString();
-      const { data: saved, error } = await supabaseAdmin.from("order_shipments").update({
+      const { data: saved, error } = await db.from("order_shipments").update({
         status: "ready_to_ship",
         velocity_order_id: created.order_id || null,
         shipment_id: created.shipment_id,
@@ -130,7 +132,7 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return publicShipment(saved as unknown as ShippingRow);
     } catch (error) {
-      await supabaseAdmin.from("order_shipments").update({
+      await db.from("order_shipments").update({
         status: "sync_failed",
         last_error: error instanceof Error ? error.message.slice(0, 500) : "Velocity request failed",
         last_synced_at: new Date().toISOString(),
