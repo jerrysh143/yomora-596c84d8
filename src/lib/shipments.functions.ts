@@ -145,7 +145,16 @@ const trackingInput = z.object({
 });
 
 export const trackShipmentFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => trackingInput.parse(data))
+  .inputValidator((data: unknown) => {
+    const parsed = trackingInput.safeParse(data);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new Error(issue?.path[0] === "order_id"
+        ? "Please enter the complete Order ID from your confirmation email."
+        : "Please enter a valid email address.");
+    }
+    return parsed.data;
+  })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin.from("orders")
