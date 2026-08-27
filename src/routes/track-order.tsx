@@ -29,6 +29,7 @@ function TrackPage() {
   const trackOrder = useServerFn(trackShipmentFn);
   const [tracking, setTracking] = useState(false);
   const [result, setResult] = useState<TrackingResult | null>(null);
+  const [formError, setFormError] = useState("");
   const { data } = useQuery(siteContentQuery());
   const c = data?.page_track_order ?? SITE_CONTENT_DEFAULTS.page_track_order;
   const steps = result && !result.shipment ? orderSteps(result.order.status as OrderStatus, result.order.created_at, result.order.updated_at) : [];
@@ -43,13 +44,22 @@ function TrackPage() {
             e.preventDefault();
             if (tracking) return;
             const form = new FormData(e.currentTarget);
+            const orderId = String(form.get("order_id") ?? "").trim();
+            const customerEmail = String(form.get("customer_email") ?? "").trim();
+            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)) {
+              setFormError("Please enter the complete Order ID from your confirmation email.");
+              return;
+            }
             setTracking(true);
             setResult(null);
+            setFormError("");
             try {
-              const order = await trackOrder({ data: { order_id: String(form.get("order_id") ?? ""), customer_email: String(form.get("customer_email") ?? "") } });
+              const order = await trackOrder({ data: { order_id: orderId, customer_email: customerEmail } });
               setResult(order);
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Unable to track this order");
+              const message = friendlyTrackingError(error);
+              setFormError(message);
+              toast.error(message);
             } finally {
               setTracking(false);
             }
@@ -63,6 +73,7 @@ function TrackPage() {
               <input name="customer_email" required type="email" placeholder="Enter your Email" className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" />
             </label>
             <button disabled={tracking} className="flex w-full items-center justify-center gap-2 bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-50">{tracking && <Loader2 className="h-4 w-4 animate-spin" />}{tracking ? "TRACKING…" : c.button_label}</button>
+            {formError && <p role="alert" className="border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{formError}</p>}
             <p className="pt-2 text-xs text-muted-foreground">{c.help_text}</p>
           </form>
           <div className="border border-border p-6">
@@ -116,6 +127,20 @@ function TrackPage() {
       <SiteFooter />
     </div>
   );
+}
+
+function friendlyTrackingError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/order_id|uuid|complete order id|invalid_format/i.test(message)) {
+    return "Please enter the complete Order ID from your confirmation email.";
+  }
+  if (/customer_email|email/i.test(message) && /invalid|valid|format/i.test(message)) {
+    return "Please enter a valid email address.";
+  }
+  if (/no order matches/i.test(message)) {
+    return "We couldn't find an order matching that Order ID and email address.";
+  }
+  return "We couldn't track this order right now. Please try again shortly.";
 }
 
 function orderSteps(status: OrderStatus, createdAt: string, updatedAt: string) {
