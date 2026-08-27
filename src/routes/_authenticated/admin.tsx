@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle, Users } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle, Users, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
 import { AUDIENCES, formatINR, isProductNew, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
@@ -44,6 +44,7 @@ import {
 } from "@/lib/memberships-admin.functions";
 import { listCustomersFn } from "@/lib/customers-admin.functions";
 import { listInquiriesFn } from "@/lib/inquiries.functions";
+import { createVelocityShipmentFn } from "@/lib/shipments.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -139,6 +140,7 @@ function AdminPage() {
   const addMembership = useServerFn(createMembershipFn);
   const listCustomers = useServerFn(listCustomersFn);
   const listInquiries = useServerFn(listInquiriesFn);
+  const createVelocityShipment = useServerFn(createVelocityShipmentFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -297,6 +299,15 @@ function AdminPage() {
     mutationFn: (id: string) => removeOrder({ data: { id } }),
     onSuccess: () => {
       toast.success("Order deleted");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const velocityShipmentMut = useMutation({
+    mutationFn: (orderId: string) => createVelocityShipment({ data: { orderId } }),
+    onSuccess: (shipment) => {
+      toast.success(`Velocity shipment ready${shipment.awbCode ? ` · AWB ${shipment.awbCode}` : ""}`);
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -929,6 +940,16 @@ on conflict do nothing;`}
                     )}
 
                     <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      {o.status !== "cancelled" && (
+                        <button
+                          type="button"
+                          disabled={velocityShipmentMut.isPending}
+                          onClick={() => velocityShipmentMut.mutate(o.id)}
+                          className="inline-flex items-center gap-1.5 border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-gold hover:bg-gold hover:text-onyx disabled:opacity-50"
+                        >
+                          <Truck className="h-3.5 w-3.5" /> CREATE VELOCITY SHIPMENT
+                        </button>
+                      )}
                       {o.status === "completed" && (
                         <button
                           type="button"
