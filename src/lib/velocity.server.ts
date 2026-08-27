@@ -74,6 +74,7 @@ async function velocityRequest<T>(
       }
       if (typeof value === "object") {
         const record = value as Record<string, unknown>;
+        let matchedKnownKey = false;
         for (const key of [
           "error",
           "errors",
@@ -84,7 +85,16 @@ async function velocityRequest<T>(
           "non_field_errors",
           "payload",
         ]) {
-          if (key in record) collect(record[key], depth + 1);
+          if (key in record) {
+            matchedKnownKey = true;
+            collect(record[key], depth + 1);
+          }
+        }
+        // Validation responses may use field names as keys, for example
+        // { billing_phone: ["is invalid"] }. Read values only and never echo
+        // request fields or credentials back to the admin UI.
+        if (!matchedKnownKey) {
+          Object.values(record).forEach((item) => collect(item, depth + 1));
         }
       }
     };
