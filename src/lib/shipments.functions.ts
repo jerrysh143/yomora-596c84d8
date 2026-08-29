@@ -81,6 +81,16 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
       state: parsed.state,
       pincode: parsed.pincode,
     }) as ShippingRow;
+    if (shipping.payment_method === "PREPAID") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: payment } = await supabaseAdmin.from("order_payments")
+        .select("status")
+        .eq("order_id", order.id)
+        .maybeSingle();
+      if (payment && payment.status !== "completed") {
+        throw new Error("PhonePe payment is not completed. Do not create this shipment yet.");
+      }
+    }
     if (!shipping.city || !shipping.state || !/^\d{6}$/.test(shipping.pincode)) {
       throw new Error("Add a complete city, state and 6-digit pincode before creating the shipment");
     }
