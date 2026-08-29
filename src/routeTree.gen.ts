@@ -13,6 +13,7 @@ import { Route as WomenRouteImport } from './routes/women'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PaymentStatusRouteImport } from './routes/payment-status'
 import { Route as MenRouteImport } from './routes/men'
 import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as KidsRouteImport } from './routes/kids'
@@ -30,6 +31,7 @@ import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsCategoryRouteImport } from './routes/products.$category'
 import { Route as ApiVelocityWebhookRouteImport } from './routes/api/velocity-webhook'
 import { Route as ApiReviewMediaRouteImport } from './routes/api/review-media'
+import { Route as ApiPhonepeWebhookRouteImport } from './routes/api/phonepe-webhook'
 import { Route as ApiAdminMediaRouteImport } from './routes/api/admin-media'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -54,6 +56,11 @@ const TrackOrderRoute = TrackOrderRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentStatusRoute = PaymentStatusRouteImport.update({
+  id: '/payment-status',
+  path: '/payment-status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenRoute = MenRouteImport.update({
@@ -140,6 +147,11 @@ const ApiReviewMediaRoute = ApiReviewMediaRouteImport.update({
   path: '/api/review-media',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPhonepeWebhookRoute = ApiPhonepeWebhookRouteImport.update({
+  id: '/api/phonepe-webhook',
+  path: '/api/phonepe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminMediaRoute = ApiAdminMediaRouteImport.update({
   id: '/api/admin-media',
   path: '/api/admin-media',
@@ -180,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
   '/men': typeof MenRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -187,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -207,6 +221,7 @@ export interface FileRoutesByTo {
   '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
   '/men': typeof MenRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -214,6 +229,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -236,6 +252,7 @@ export interface FileRoutesById {
   '/kids': typeof KidsRoute
   '/membership': typeof MembershipRoute
   '/men': typeof MenRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -243,6 +260,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
   '/products/$category': typeof ProductsCategoryRoute
@@ -265,6 +283,7 @@ export interface FileRouteTypes {
     | '/kids'
     | '/membership'
     | '/men'
+    | '/payment-status'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
@@ -272,6 +291,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/membership-dashboard'
     | '/api/admin-media'
+    | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -292,6 +312,7 @@ export interface FileRouteTypes {
     | '/kids'
     | '/membership'
     | '/men'
+    | '/payment-status'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
@@ -299,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/membership-dashboard'
     | '/api/admin-media'
+    | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -320,6 +342,7 @@ export interface FileRouteTypes {
     | '/kids'
     | '/membership'
     | '/men'
+    | '/payment-status'
     | '/sitemap.xml'
     | '/track-order'
     | '/wishlist'
@@ -327,6 +350,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
     | '/api/admin-media'
+    | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
     | '/products/$category'
@@ -349,11 +373,13 @@ export interface RootRouteChildren {
   KidsRoute: typeof KidsRoute
   MembershipRoute: typeof MembershipRoute
   MenRoute: typeof MenRoute
+  PaymentStatusRoute: typeof PaymentStatusRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   WomenRoute: typeof WomenRoute
   ApiAdminMediaRoute: typeof ApiAdminMediaRoute
+  ApiPhonepeWebhookRoute: typeof ApiPhonepeWebhookRoute
   ApiReviewMediaRoute: typeof ApiReviewMediaRoute
   ApiVelocityWebhookRoute: typeof ApiVelocityWebhookRoute
   ProductsCategoryRoute: typeof ProductsCategoryRoute
@@ -389,6 +415,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-status': {
+      id: '/payment-status'
+      path: '/payment-status'
+      fullPath: '/payment-status'
+      preLoaderRoute: typeof PaymentStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/men': {
@@ -510,6 +543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/phonepe-webhook': {
+      id: '/api/phonepe-webhook'
+      path: '/api/phonepe-webhook'
+      fullPath: '/api/phonepe-webhook'
+      preLoaderRoute: typeof ApiPhonepeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin-media': {
       id: '/api/admin-media'
       path: '/api/admin-media'
@@ -577,11 +617,13 @@ const rootRouteChildren: RootRouteChildren = {
   KidsRoute: KidsRoute,
   MembershipRoute: MembershipRoute,
   MenRoute: MenRoute,
+  PaymentStatusRoute: PaymentStatusRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   WomenRoute: WomenRoute,
   ApiAdminMediaRoute: ApiAdminMediaRoute,
+  ApiPhonepeWebhookRoute: ApiPhonepeWebhookRoute,
   ApiReviewMediaRoute: ApiReviewMediaRoute,
   ApiVelocityWebhookRoute: ApiVelocityWebhookRoute,
   ProductsCategoryRoute: ProductsCategoryRoute,
