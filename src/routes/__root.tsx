@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
+import { CheckCircle2, Info, LoaderCircle, TriangleAlert, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -152,7 +153,33 @@ function RootComponent() {
       <main id="main-content">
         <Outlet />
       </main>
-      <Toaster richColors position="top-right" />
+      <Toaster
+        className="yomora-toaster"
+        position="top-right"
+        visibleToasts={4}
+        gap={10}
+        offset={18}
+        mobileOffset={12}
+        closeButton
+        icons={{
+          success: <CheckCircle2 className="h-5 w-5" />,
+          error: <XCircle className="h-5 w-5" />,
+          warning: <TriangleAlert className="h-5 w-5" />,
+          info: <Info className="h-5 w-5" />,
+          loading: <LoaderCircle className="h-5 w-5 animate-spin" />,
+        }}
+        toastOptions={{
+          classNames: {
+            toast: "yomora-toast",
+            title: "yomora-toast-title",
+            description: "yomora-toast-description",
+            icon: "yomora-toast-icon",
+            actionButton: "yomora-toast-action",
+            cancelButton: "yomora-toast-cancel",
+            closeButton: "yomora-toast-close",
+          },
+        }}
+      />
     </QueryClientProvider>
   );
 }
