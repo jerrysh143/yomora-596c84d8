@@ -273,6 +273,60 @@ export type Database = {
           },
         ]
       }
+      order_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          error_code: string | null
+          id: string
+          merchant_order_id: string
+          order_id: string
+          paid_at: string | null
+          payment_mode: string | null
+          provider: string
+          provider_order_id: string | null
+          provider_response: Json | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          merchant_order_id: string
+          order_id: string
+          paid_at?: string | null
+          payment_mode?: string | null
+          provider?: string
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          error_code?: string | null
+          paid_at?: string | null
+          payment_mode?: string | null
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           coupon_code: string | null
