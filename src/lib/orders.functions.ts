@@ -171,6 +171,10 @@ export const createOrderFn = createServerFn({ method: "POST" })
       status: "pending_sync",
     });
 
+    let payableTotal = order.total;
+    let discount = 0;
+    let couponCode: string | null = null;
+
     if (data.coupon_code) {
       const { data: redeemed, error: couponError } = await supabaseAdmin.rpc("redeem_coupon_for_order", {
         _order_id: order.id,
@@ -182,15 +186,39 @@ export const createOrderFn = createServerFn({ method: "POST" })
         const message = couponError?.message?.replace(/^.*?: /, "") || "Unable to apply coupon";
         throw new Error(message);
       }
-      return {
-        id: order.id,
-        total: redeemed[0].total,
-        discount: redeemed[0].discount_amount,
-        couponCode: redeemed[0].coupon_code,
-      };
+      payableTotal = redeemed[0].total;
+      discount = redeemed[0].discount_amount;
+      couponCode = redeemed[0].coupon_code;
     }
 
-    return { id: order.id, total: order.total, discount: 0, couponCode: null };
+    if (data.payment_method === "cod") {
+      return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: null };
+    }
+
+    const merchantOrderId = `YOMORA_${order.id.replaceAll("-", "")}`;
+    try {
+      const { createPhonePeCheckout } = await import("@/lib/phonepe.server");
+      const redirectUrl = new URL("/payment-status", request.url);
+      redirectUrl.searchParams.set("order", order.id);
+      const payment = await createPhonePeCheckout({
+        merchantOrderId,
+        amountInRupees: payableTotal,
+        redirectUrl: redirectUrl.toString(),
+      });
+      const { error: paymentError } = await supabaseAdmin.from("order_payments").insert({
+        order_id: order.id,
+        merchant_order_id: merchantOrderId,
+        provider_order_id: payment.orderId,
+        amount: payableTotal,
+        status: "pending",
+      });
+      if (paymentError) throw new Error(paymentError.message);
+      return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: payment.redirectUrl };
+    } catch (error) {
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      console.error("Unable to start PhonePe checkout", error);
+      throw new Error("Online payment is temporarily unavailable. Please choose Cash on Delivery or try again later.");
+    }
   });
 
 export type Order = {
@@ -208,6 +236,9 @@ export type Order = {
   notes: string;
   created_at: string;
   updated_at: string;
+  payment_status?: "pending" | "completed" | "failed" | "cancelled" | null;
+  payment_mode?: string | null;
+  payment_transaction_id?: string | null;
   invoice_details?: InvoiceDetails;
 };
 
@@ -245,7 +276,21 @@ export const listOrdersFn = createServerFn({ method: "GET" })
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapOrder);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const orderIds = (data ?? []).map((order) => order.id);
+    const { data: payments } = orderIds.length
+      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id").in("order_id", orderIds)
+      : { data: [] };
+    const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
+    return (data ?? []).map((row) => {
+      const payment = byOrder.get(row.id);
+      return {
+        ...mapOrder(row),
+        payment_status: (payment?.status ?? null) as Order["payment_status"],
+        payment_mode: payment?.payment_mode ?? null,
+        payment_transaction_id: payment?.transaction_id ?? null,
+      };
+    });
   });
 
 /** Returns only the orders belonging to the currently signed-in customer's email. */
@@ -265,7 +310,20 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
       .eq("customer_email", email)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapOrder);
+    const orderIds = (data ?? []).map((order) => order.id);
+    const { data: payments } = orderIds.length
+      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id").in("order_id", orderIds)
+      : { data: [] };
+    const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
+    return (data ?? []).map((row) => {
+      const payment = byOrder.get(row.id);
+      return {
+        ...mapOrder(row),
+        payment_status: (payment?.status ?? null) as Order["payment_status"],
+        payment_mode: payment?.payment_mode ?? null,
+        payment_transaction_id: payment?.transaction_id ?? null,
+      };
+    });
   });
 
 const invoiceDetailsSchema = z.object({
