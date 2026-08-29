@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Crown, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, Crown, LockKeyhole, ShieldCheck, Smartphone, Trash2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
@@ -284,6 +284,10 @@ function CheckoutPage() {
                   setSavedAddresses((current) => [...current, savedAddress]);
                 }
               }
+              if (order.paymentUrl) {
+                window.location.assign(order.paymentUrl);
+                return;
+              }
               cart.clear();
               setOrderId(order.id);
               toast.success("Order placed successfully");
@@ -383,19 +387,31 @@ function CheckoutPage() {
             </fieldset>
             <fieldset className="border border-border p-6">
               <legend className="px-2 text-xs font-semibold tracking-[0.24em] text-gold">3. PAYMENT METHOD</legend>
-              <div className="space-y-3 text-sm">
-                {[
-                  ["upi", "UPI / Google Pay / PhonePe"],
-                  ["card", "Credit / Debit Card"],
-                  ["netbank", "Net Banking"],
-                  ["cod", "Cash on Delivery"],
-                ].map(([v, l]) => (
-                  <label key={v} className="flex items-center gap-3 border border-border px-4 py-3">
-                    <input type="radio" name="pay" value={v} checked={pay === v} onChange={() => setPay(v)} />
-                    {l}
-                  </label>
-                ))}
+              <div className="space-y-3">
+                <label className={`block cursor-pointer border p-4 transition-colors ${pay === "upi" ? "border-gold bg-gold/10" : "border-border hover:border-gold/60"}`}>
+                  <div className="flex items-start gap-3">
+                    <input type="radio" name="pay" value="upi" checked={pay === "upi"} onChange={() => setPay("upi")} className="mt-1 accent-[color:var(--gold)]" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-display text-lg">YOMORA Secure Online Payment</span>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.16em] text-gold"><ShieldCheck className="h-3.5 w-3.5" /> VERIFIED AT PHONEPE</span>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">Complete payment on PhonePe's encrypted checkout. YOMORA never receives or stores your card number, UPI PIN or banking password.</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold tracking-[0.1em] text-foreground/75">
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><Smartphone className="h-3.5 w-3.5 text-gold" /> UPI & GOOGLE PAY</span>
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><CreditCard className="h-3.5 w-3.5 text-gold" /> CREDIT / DEBIT CARD</span>
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><LockKeyhole className="h-3.5 w-3.5 text-gold" /> NET BANKING</span>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                <label className={`flex cursor-pointer items-center gap-3 border p-4 transition-colors ${pay === "cod" ? "border-gold bg-gold/10" : "border-border hover:border-gold/60"}`}>
+                  <input type="radio" name="pay" value="cod" checked={pay === "cod"} onChange={() => setPay("cod")} className="accent-[color:var(--gold)]" />
+                  <Banknote className="h-5 w-5 text-gold" />
+                  <div><span className="font-display text-lg">Cash on Delivery</span><p className="mt-0.5 text-xs text-muted-foreground">Pay when your YOMORA parcel arrives.</p></div>
+                </label>
               </div>
+              {pay !== "cod" && <div className="mt-4 flex items-start gap-2 border-l-2 border-gold bg-secondary/30 px-3 py-2.5 text-[11px] leading-5 text-muted-foreground"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span>After selecting Pay Securely, you will temporarily continue to PhonePe to authorize payment and return automatically to YOMORA for verified confirmation.</span></div>}
             </fieldset>
           </div>
           <aside className="border border-border p-6 h-max">
@@ -522,9 +538,9 @@ function CheckoutPage() {
               </p>
             </div>
             <button disabled={items.length === 0 || submitting} className="mt-6 w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-40">
-              {submitting ? "PLACING ORDER…" : "PLACE ORDER"}
+              {submitting ? (pay === "cod" ? "PLACING ORDER…" : "OPENING SECURE PAYMENT…") : (pay === "cod" ? "PLACE ORDER" : "PAY SECURELY WITH PHONEPE")}
             </button>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">Your order is saved securely and will appear in YOMORA Admin.</p>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">{pay === "cod" ? "Your order will be saved securely in YOMORA Admin." : "UPI, Google Pay, PhonePe, cards and net banking are processed securely by PhonePe."}</p>
           </aside>
         </form>
         )}
