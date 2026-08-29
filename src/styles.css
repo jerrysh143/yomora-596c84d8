@@ -67,6 +67,86 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* YOMORA notification system — one consistent palette for every toast type. */
+[data-sonner-toaster].yomora-toaster {
+  --normal-bg: var(--onyx);
+  --normal-text: var(--cream);
+  --normal-border: color-mix(in oklab, var(--gold) 55%, transparent);
+  --success-bg: var(--onyx);
+  --success-text: var(--cream);
+  --success-border: color-mix(in oklab, var(--gold) 55%, transparent);
+  --error-bg: var(--onyx);
+  --error-text: var(--cream);
+  --error-border: color-mix(in oklab, var(--gold) 55%, transparent);
+  --warning-bg: var(--onyx);
+  --warning-text: var(--cream);
+  --warning-border: color-mix(in oklab, var(--gold) 55%, transparent);
+  --info-bg: var(--onyx);
+  --info-text: var(--cream);
+  --info-border: color-mix(in oklab, var(--gold) 55%, transparent);
+}
+
+[data-sonner-toaster].yomora-toaster [data-sonner-toast].yomora-toast {
+  min-height: 64px;
+  border: 1px solid color-mix(in oklab, var(--gold) 55%, transparent) !important;
+  border-left: 3px solid var(--gold) !important;
+  border-radius: 2px !important;
+  background: var(--onyx) !important;
+  color: var(--cream) !important;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.28) !important;
+  padding: 15px 17px !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-icon {
+  color: var(--gold) !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-title {
+  color: var(--cream) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-description {
+  color: color-mix(in oklab, var(--cream) 68%, transparent) !important;
+  font-size: 11px !important;
+  line-height: 1.55 !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-action {
+  border-radius: 1px !important;
+  background: var(--gold) !important;
+  color: var(--onyx) !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-cancel {
+  border: 1px solid color-mix(in oklab, var(--cream) 24%, transparent) !important;
+  border-radius: 1px !important;
+  background: transparent !important;
+  color: var(--cream) !important;
+}
+
+[data-sonner-toaster].yomora-toaster .yomora-toast-close {
+  border: 1px solid color-mix(in oklab, var(--gold) 45%, transparent) !important;
+  background: var(--onyx) !important;
+  color: var(--gold) !important;
+}
+
+@media (max-width: 640px) {
+  [data-sonner-toaster].yomora-toaster {
+    width: calc(100vw - 24px) !important;
+  }
+
+  [data-sonner-toaster].yomora-toaster [data-sonner-toast].yomora-toast {
+    width: 100% !important;
+  }
+}
+
 :root {
   --radius: 0.25rem;
   --onyx: oklch(0.15 0.005 60);
