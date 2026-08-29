@@ -14,6 +14,7 @@
     "zip-code": "node scripts/zip-code.mjs"
   },
   "dependencies": {
+    "@phonepe-pg/pg-sdk-node": "^2.0.6",
     "@supabase/supabase-js": "^2.110.5",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.101.1",
