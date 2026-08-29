@@ -876,6 +876,11 @@ on conflict do nothing;`}
                         <div className="flex items-center gap-2">
                           <span className="font-display text-lg text-foreground">{o.customer_name}</span>
                           <StatusBadge status={o.status} />
+                          {o.payment_status && (
+                            <span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${o.payment_status === "completed" ? "bg-emerald-100 text-emerald-800" : o.payment_status === "pending" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"}`}>
+                              PAYMENT {o.payment_status.toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-0.5 text-xs text-muted-foreground">
                           {o.customer_email}
