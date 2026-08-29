@@ -27,7 +27,7 @@ const CONTENT_SECURITY_POLICY = [
   "upgrade-insecure-requests",
 ].join("; ");
 
-const SENSITIVE_PATH_PREFIXES = ["/account", "/admin", "/auth", "/membership-dashboard"];
+const SENSITIVE_PATH_PREFIXES = ["/account", "/admin", "/auth", "/membership-dashboard", "/payment-status"];
 
 function withSecurityHeaders(request: Request, response: Response): Response {
   const headers = new Headers(response.headers);
