@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS order_payments_status_idx ON public.order_payments(st
 DROP TRIGGER IF EXISTS order_payments_set_updated_at ON public.order_payments;
 CREATE TRIGGER order_payments_set_updated_at
   BEFORE UPDATE ON public.order_payments
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 ALTER TABLE public.order_payments ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.order_payments FROM anon, authenticated;
