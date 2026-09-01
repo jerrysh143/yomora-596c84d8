@@ -273,6 +273,44 @@ export type Database = {
           },
         ]
       }
+      customer_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          order_id: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          order_id?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          kind?: string
+          message?: string
+          order_id?: string | null
+          read_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_payments: {
         Row: {
           amount: number
@@ -283,12 +321,18 @@ export type Database = {
           order_id: string
           paid_at: string | null
           payment_mode: string | null
+          proof_url: string | null
           provider: string
           provider_order_id: string | null
           provider_response: Json | null
           status: string
+          submitted_at: string | null
           transaction_id: string | null
           updated_at: string
+          verification_code: string | null
+          verified_at: string | null
+          verified_by: string | null
+          rejection_reason: string | null
         }
         Insert: {
           amount: number
@@ -299,23 +343,35 @@ export type Database = {
           order_id: string
           paid_at?: string | null
           payment_mode?: string | null
+          proof_url?: string | null
           provider?: string
           provider_order_id?: string | null
           provider_response?: Json | null
           status?: string
+          submitted_at?: string | null
           transaction_id?: string | null
           updated_at?: string
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          rejection_reason?: string | null
         }
         Update: {
           amount?: number
           error_code?: string | null
           paid_at?: string | null
           payment_mode?: string | null
+          proof_url?: string | null
           provider_order_id?: string | null
           provider_response?: Json | null
           status?: string
+          submitted_at?: string | null
           transaction_id?: string | null
           updated_at?: string
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          rejection_reason?: string | null
         }
         Relationships: [
           {

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Banknote, CreditCard, Crown, LockKeyhole, ShieldCheck, Smartphone, Trash2 } from "lucide-react";
+import { Banknote, CheckCircle2, Crown, LockKeyhole, QrCode, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
+import { submitManualPaymentFn } from "@/lib/manual-payments.functions";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
@@ -65,11 +66,18 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal } = useCart();
   const createOrder = useServerFn(createOrderFn);
+  const submitManualPayment = useServerFn(submitManualPaymentFn);
   const validateCoupon = useServerFn(validateCouponFn);
   const getMyMembership = useServerFn(getMyMembershipFn);
   const [pay, setPay] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentCode, setPaymentCode] = useState<string | null>(null);
+  const [paymentTotal, setPaymentTotal] = useState(0);
+  const [transactionId, setTransactionId] = useState("");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [proofSubmitting, setProofSubmitting] = useState(false);
+  const [proofSubmitted, setProofSubmitted] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -211,7 +219,57 @@ function CheckoutPage() {
       <SiteHeader />
       <section className="container-x mx-auto max-w-[1400px] py-12">
         <h1 className="font-display text-4xl">Checkout</h1>
-        {orderId ? (
+        {orderId && pay !== "cod" ? (
+          <div className="mt-8 grid max-w-5xl gap-8 lg:grid-cols-[360px_1fr]">
+            <div className="border border-gold/40 bg-white p-5 shadow-sm">
+              <img src="/devika-jewellers-phonepe-qr.jpeg" alt="Devika Jewellers PhonePe business QR code" className="mx-auto w-full max-w-[320px] object-contain" />
+            </div>
+            <div className="border border-border bg-secondary/20 p-6 sm:p-8">
+              <p className="text-[11px] font-semibold tracking-[0.24em] text-gold">PAYMENT VERIFICATION</p>
+              <h2 className="mt-2 font-display text-3xl">Pay {formatINR(paymentTotal)} using any UPI app</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Scan the PhonePe Business QR, pay the exact amount, then upload the successful-payment screenshot and enter its UTR or transaction ID.</p>
+              <div className="mt-5 border border-gold/40 bg-gold/10 p-4">
+                <span className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">UNIQUE PAYMENT CODE</span>
+                <code className="mt-1 block text-lg font-semibold tracking-[0.12em] text-gold">{paymentCode}</code>
+                <p className="mt-1 text-xs text-muted-foreground">Admin will match this code with order #{orderId.slice(0, 8).toUpperCase()}.</p>
+              </div>
+              {proofSubmitted ? (
+                <div className="mt-6 flex items-start gap-3 border border-gold bg-onyx p-4 text-cream"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" /><div><p className="font-semibold">Payment sent for verification</p><p className="mt-1 text-xs leading-5 text-white/65">You will receive a YOMORA notification after admin verifies the transaction and accepts the order.</p></div></div>
+              ) : (
+                <form className="mt-6 grid gap-4" onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (!paymentProof || !orderId || proofSubmitting) return;
+                  setProofSubmitting(true);
+                  try {
+                    const { data: session } = await supabase.auth.getSession();
+                    const token = session.session?.access_token;
+                    if (!token) throw new Error("Sign in again before uploading payment proof");
+                    const upload = new FormData();
+                    upload.set("order_id", orderId);
+                    upload.set("file", paymentProof);
+                    const response = await fetch("/api/payment-proof", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: upload });
+                    const result = await response.json() as { message?: string; url?: string };
+                    if (!response.ok || !result.url) throw new Error(result.message || "Unable to upload payment proof");
+                    await submitManualPayment({ data: { order_id: orderId, transaction_id: transactionId, proof_url: result.url } });
+                    setProofSubmitted(true);
+                    toast.success("Payment submitted for verification");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Unable to submit payment proof");
+                  } finally { setProofSubmitting(false); }
+                }}>
+                  <Input label="UPI UTR / transaction ID" value={transactionId} minLength={8} maxLength={40} required onChange={(event) => setTransactionId(event.target.value.replace(/[^A-Za-z0-9_-]/g, ""))} placeholder="Example: 426512345678" />
+                  <label className="block cursor-pointer border border-dashed border-gold/60 bg-background p-4 text-center">
+                    <Upload className="mx-auto h-5 w-5 text-gold" />
+                    <span className="mt-2 block text-xs font-semibold tracking-[0.12em]">{paymentProof ? paymentProof.name : "UPLOAD PAYMENT SCREENSHOT"}</span>
+                    <span className="mt-1 block text-[10px] text-muted-foreground">JPG, PNG or WebP · maximum 5 MB</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" required className="sr-only" onChange={(event) => setPaymentProof(event.target.files?.[0] ?? null)} />
+                  </label>
+                  <button disabled={proofSubmitting || !paymentProof || transactionId.length < 8} className="bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.2em] text-onyx disabled:opacity-40">{proofSubmitting ? "SUBMITTING…" : "SUBMIT PAYMENT FOR VERIFICATION"}</button>
+                </form>
+              )}
+            </div>
+          </div>
+        ) : orderId ? (
           <div className="mt-8 max-w-2xl border border-gold bg-gold/10 p-8">
             <p className="text-[11px] font-semibold tracking-[0.24em] text-gold">ORDER RECEIVED</p>
             <h2 className="mt-2 font-display text-3xl">Thank you for shopping with YOMORA.</h2>
@@ -284,12 +342,10 @@ function CheckoutPage() {
                   setSavedAddresses((current) => [...current, savedAddress]);
                 }
               }
-              if (order.paymentUrl) {
-                window.location.assign(order.paymentUrl);
-                return;
-              }
               cart.clear();
               setOrderId(order.id);
+              setPaymentCode(order.verificationCode ?? null);
+              setPaymentTotal(order.total);
               toast.success("Order placed successfully");
             } catch (error) {
               toast.error(checkoutErrorMessage(error, "Unable to place order"));
@@ -393,14 +449,14 @@ function CheckoutPage() {
                     <input type="radio" name="pay" value="upi" checked={pay === "upi"} onChange={() => setPay("upi")} className="mt-1 accent-[color:var(--gold)]" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-display text-lg">YOMORA Secure Online Payment</span>
-                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.16em] text-gold"><ShieldCheck className="h-3.5 w-3.5" /> VERIFIED AT PHONEPE</span>
+                        <span className="font-display text-lg">PhonePe Business QR Payment</span>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.16em] text-gold"><ShieldCheck className="h-3.5 w-3.5" /> ADMIN VERIFIED</span>
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">Complete payment on PhonePe's encrypted checkout. YOMORA never receives or stores your card number, UPI PIN or banking password.</p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">Place the order, scan Devika Jewellers' PhonePe Business QR using any UPI app, and upload the successful transaction screenshot for verification.</p>
                       <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold tracking-[0.1em] text-foreground/75">
-                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><Smartphone className="h-3.5 w-3.5 text-gold" /> UPI & GOOGLE PAY</span>
-                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><CreditCard className="h-3.5 w-3.5 text-gold" /> CREDIT / DEBIT CARD</span>
-                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><LockKeyhole className="h-3.5 w-3.5 text-gold" /> NET BANKING</span>
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><QrCode className="h-3.5 w-3.5 text-gold" /> PHONEPE QR</span>
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-gold" /> UTR + PROOF CHECK</span>
+                        <span className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1.5"><LockKeyhole className="h-3.5 w-3.5 text-gold" /> NO UPI PIN STORED</span>
                       </div>
                     </div>
                   </div>
@@ -411,7 +467,7 @@ function CheckoutPage() {
                   <div><span className="font-display text-lg">Cash on Delivery</span><p className="mt-0.5 text-xs text-muted-foreground">Pay when your YOMORA parcel arrives.</p></div>
                 </label>
               </div>
-              {pay !== "cod" && <div className="mt-4 flex items-start gap-2 border-l-2 border-gold bg-secondary/30 px-3 py-2.5 text-[11px] leading-5 text-muted-foreground"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span>After selecting Pay Securely, you will temporarily continue to PhonePe to authorize payment and return automatically to YOMORA for verified confirmation.</span></div>}
+              {pay !== "cod" && <div className="mt-4 flex items-start gap-2 border-l-2 border-gold bg-secondary/30 px-3 py-2.5 text-[11px] leading-5 text-muted-foreground"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span>Your order remains pending until YOMORA Admin matches the UTR, payment screenshot, amount, and unique payment code.</span></div>}
             </fieldset>
           </div>
           <aside className="border border-border p-6 h-max">
@@ -538,9 +594,9 @@ function CheckoutPage() {
               </p>
             </div>
             <button disabled={items.length === 0 || submitting} className="mt-6 w-full bg-gold py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-40">
-              {submitting ? (pay === "cod" ? "PLACING ORDER…" : "OPENING SECURE PAYMENT…") : (pay === "cod" ? "PLACE ORDER" : "PAY SECURELY WITH PHONEPE")}
+              {submitting ? "PLACING ORDER…" : (pay === "cod" ? "PLACE ORDER" : "CONTINUE TO PHONEPE QR")}
             </button>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">{pay === "cod" ? "Your order will be saved securely in YOMORA Admin." : "UPI, Google Pay, PhonePe, cards and net banking are processed securely by PhonePe."}</p>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">{pay === "cod" ? "Your order will be saved securely in YOMORA Admin." : "Pay using any UPI app. Admin verification is required before order acceptance."}</p>
           </aside>
         </form>
         )}

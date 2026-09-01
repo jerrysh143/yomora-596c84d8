@@ -196,29 +196,21 @@ export const createOrderFn = createServerFn({ method: "POST" })
     }
 
     const merchantOrderId = `YOMORA_${order.id.replaceAll("-", "")}`;
-    try {
-      const { createPhonePeCheckout } = await import("@/lib/phonepe.server");
-      const redirectUrl = new URL("/payment-status", request.url);
-      redirectUrl.searchParams.set("order", order.id);
-      const payment = await createPhonePeCheckout({
-        merchantOrderId,
-        amountInRupees: payableTotal,
-        redirectUrl: redirectUrl.toString(),
-      });
-      const { error: paymentError } = await supabaseAdmin.from("order_payments").insert({
-        order_id: order.id,
-        merchant_order_id: merchantOrderId,
-        provider_order_id: payment.orderId,
-        amount: payableTotal,
-        status: "pending",
-      });
-      if (paymentError) throw new Error(paymentError.message);
-      return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: payment.redirectUrl };
-    } catch (error) {
+    const verificationCode = `YP-${order.id.slice(0, 4).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+    const { error: paymentError } = await supabaseAdmin.from("order_payments").insert({
+      order_id: order.id,
+      provider: "manual_phonepe",
+      merchant_order_id: merchantOrderId,
+      amount: payableTotal,
+      status: "pending",
+      payment_mode: "UPI_QR",
+      verification_code: verificationCode,
+    });
+    if (paymentError) {
       await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      console.error("Unable to start PhonePe checkout", error);
-      throw new Error("Online payment is temporarily unavailable. Please choose Cash on Delivery or try again later.");
+      throw new Error("Unable to prepare QR payment. Please try again.");
     }
+    return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: null, verificationCode };
   });
 
 export type Order = {
@@ -236,9 +228,12 @@ export type Order = {
   notes: string;
   created_at: string;
   updated_at: string;
-  payment_status?: "pending" | "completed" | "failed" | "cancelled" | null;
+  payment_status?: "pending" | "proof_submitted" | "completed" | "failed" | "cancelled" | "rejected" | null;
   payment_mode?: string | null;
   payment_transaction_id?: string | null;
+  payment_verification_code?: string | null;
+  payment_proof_url?: string | null;
+  payment_rejection_reason?: string | null;
   invoice_details?: InvoiceDetails;
 };
 
@@ -279,7 +274,7 @@ export const listOrdersFn = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const orderIds = (data ?? []).map((order) => order.id);
     const { data: payments } = orderIds.length
-      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id").in("order_id", orderIds)
+      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason").in("order_id", orderIds)
       : { data: [] };
     const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
     return (data ?? []).map((row) => {
@@ -289,6 +284,9 @@ export const listOrdersFn = createServerFn({ method: "GET" })
         payment_status: (payment?.status ?? null) as Order["payment_status"],
         payment_mode: payment?.payment_mode ?? null,
         payment_transaction_id: payment?.transaction_id ?? null,
+        payment_verification_code: payment?.verification_code ?? null,
+        payment_proof_url: payment?.proof_url ?? null,
+        payment_rejection_reason: payment?.rejection_reason ?? null,
       };
     });
   });
@@ -312,7 +310,7 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const orderIds = (data ?? []).map((order) => order.id);
     const { data: payments } = orderIds.length
-      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id").in("order_id", orderIds)
+      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason").in("order_id", orderIds)
       : { data: [] };
     const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
     return (data ?? []).map((row) => {
@@ -322,6 +320,9 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
         payment_status: (payment?.status ?? null) as Order["payment_status"],
         payment_mode: payment?.payment_mode ?? null,
         payment_transaction_id: payment?.transaction_id ?? null,
+        payment_verification_code: payment?.verification_code ?? null,
+        payment_proof_url: payment?.proof_url ?? null,
+        payment_rejection_reason: payment?.rejection_reason ?? null,
       };
     });
   });

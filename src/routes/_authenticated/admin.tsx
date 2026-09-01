@@ -45,6 +45,7 @@ import {
 import { listCustomersFn } from "@/lib/customers-admin.functions";
 import { listInquiriesFn } from "@/lib/inquiries.functions";
 import { createVelocityShipmentFn } from "@/lib/shipments.functions";
+import { verifyManualPaymentFn } from "@/lib/manual-payments.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -141,6 +142,7 @@ function AdminPage() {
   const listCustomers = useServerFn(listCustomersFn);
   const listInquiries = useServerFn(listInquiriesFn);
   const createVelocityShipment = useServerFn(createVelocityShipmentFn);
+  const verifyManualPayment = useServerFn(verifyManualPaymentFn);
 
   const { data: adminInfo, isLoading: checkingAdmin } = useQuery({
     queryKey: ["me", "isAdmin"],
@@ -299,6 +301,15 @@ function AdminPage() {
     mutationFn: (id: string) => removeOrder({ data: { id } }),
     onSuccess: () => {
       toast.success("Order deleted");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const paymentVerificationMut = useMutation({
+    mutationFn: (value: { order_id: string; decision: "approve" | "reject"; reason?: string }) => verifyManualPayment({ data: value }),
+    onSuccess: (result) => {
+      toast.success(result.status === "completed" ? "Payment verified and order accepted" : "Payment rejected and customer notified");
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -918,6 +929,27 @@ on conflict do nothing;`}
                       <div className="border-t border-border pt-3 text-xs text-muted-foreground">
                         <span className="text-[10px] tracking-[0.2em] text-foreground/70">SHIP TO</span>
                         <div className="mt-1 whitespace-pre-wrap">{o.shipping_address}</div>
+                      </div>
+                    )}
+
+                    {o.payment_verification_code && (
+                      <div className="grid gap-3 border border-gold/40 bg-gold/5 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">MANUAL PHONEPE VERIFICATION</p>
+                          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+                            <span>Code: <code className="font-semibold text-foreground">{o.payment_verification_code}</code></span>
+                            <span>UTR: <code className="font-semibold text-foreground">{o.payment_transaction_id || "Waiting for customer"}</code></span>
+                            <span>Amount: <strong>{formatINR(o.total)}</strong></span>
+                          </div>
+                          {o.payment_rejection_reason && <p className="mt-2 text-xs text-destructive">Last rejection: {o.payment_rejection_reason}</p>}
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                          {o.payment_proof_url && <a href={o.payment_proof_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.16em] hover:border-gold hover:text-gold"><ExternalLink className="h-3.5 w-3.5" /> VIEW PROOF</a>}
+                          {o.payment_status === "proof_submitted" && <>
+                            <button disabled={paymentVerificationMut.isPending} onClick={() => paymentVerificationMut.mutate({ order_id: o.id, decision: "approve" })} className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-onyx disabled:opacity-50"><Check className="h-3.5 w-3.5" /> VERIFY & ACCEPT</button>
+                            <button disabled={paymentVerificationMut.isPending} onClick={() => { const reason = window.prompt("Why could this payment not be verified?")?.trim(); if (reason) paymentVerificationMut.mutate({ order_id: o.id, decision: "reject", reason }); }} className="inline-flex items-center gap-1.5 border border-destructive/50 px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive disabled:opacity-50"><X className="h-3.5 w-3.5" /> REJECT</button>
+                          </>}
+                        </div>
                       </div>
                     )}
 

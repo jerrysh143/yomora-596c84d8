@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, User, ShoppingBag, Heart, LogOut, Menu, X, ChevronRight, Crown, Gem, PackageSearch } from "lucide-react";
+import { Search, User, ShoppingBag, Heart, LogOut, Menu, X, ChevronRight, Crown, Gem, PackageSearch, Bell, CheckCircle2, AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +8,14 @@ import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { SearchOverlay } from "@/components/search-overlay";
+import { useServerFn } from "@tanstack/react-start";
+import { listMyNotificationsFn, markNotificationReadFn } from "@/lib/manual-payments.functions";
 
 export function SiteHeader() {
   const [signedIn, setSignedIn] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerH, setHeaderH] = useState(0);
@@ -51,6 +54,16 @@ export function SiteHeader() {
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
+  const listNotifications = useServerFn(listMyNotificationsFn);
+  const markNotificationRead = useServerFn(markNotificationReadFn);
+  const notificationsQuery = useQuery({
+    queryKey: ["customer-notifications"],
+    queryFn: () => listNotifications(),
+    enabled: signedIn,
+    refetchInterval: 20_000,
+  });
+  const notifications = notificationsQuery.data ?? [];
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
 
   return (
     <>
@@ -85,6 +98,21 @@ export function SiteHeader() {
           >
             <User className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
           </Link>
+          {signedIn && <div className="relative">
+            <button type="button" aria-label={`Notifications (${unreadCount} unread)`} aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 items-center p-1.5 transition-colors hover:text-gold sm:p-2">
+              <Bell className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
+              {unreadCount > 0 && <span className="absolute right-0.5 top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[8px] font-bold text-onyx">{Math.min(unreadCount, 9)}</span>}
+            </button>
+            {notificationsOpen && <div className="absolute right-0 top-12 z-[90] w-[min(92vw,380px)] border border-gold/30 bg-onyx text-cream shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><p className="text-[10px] font-semibold tracking-[0.2em] text-gold">YOMORA UPDATES</p><p className="mt-0.5 text-xs text-white/55">Payments and order notifications</p></div><button onClick={() => setNotificationsOpen(false)} aria-label="Close notifications"><X className="h-4 w-4" /></button></div>
+              <div className="max-h-[420px] overflow-y-auto">
+                {notifications.length ? notifications.map((notification) => <button key={notification.id} type="button" onClick={async () => { if (!notification.read_at) { await markNotificationRead({ data: { id: notification.id } }); void notificationsQuery.refetch(); } }} className={`flex w-full items-start gap-3 border-b border-white/10 px-4 py-4 text-left transition-colors hover:bg-white/5 ${notification.read_at ? "opacity-65" : "bg-gold/[0.07]"}`}>
+                  {notification.kind === "payment_rejected" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />}
+                  <span className="min-w-0"><span className="block text-sm font-semibold">{notification.title}</span><span className="mt-1 block text-xs leading-5 text-white/60">{notification.message}</span><span className="mt-2 block text-[9px] tracking-[0.12em] text-gold/80">{new Date(notification.created_at).toLocaleString()}</span></span>
+                </button>) : <p className="px-5 py-8 text-center text-xs text-white/55">No notifications yet.</p>}
+              </div>
+            </div>}
+          </div>}
           <Link to="/wishlist" aria-label={`Wishlist (${wishlistCount} items)`} className="relative hidden h-10 items-center gap-1 p-1.5 transition-colors hover:text-gold sm:p-2 md:flex">
             <Heart className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
             <span className="min-w-3 text-center text-[11px] font-semibold leading-none">{wishlistCount}</span>

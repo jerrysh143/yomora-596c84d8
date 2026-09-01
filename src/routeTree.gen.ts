@@ -32,6 +32,7 @@ import { Route as ProductsCategoryRouteImport } from './routes/products.$categor
 import { Route as ApiVelocityWebhookRouteImport } from './routes/api/velocity-webhook'
 import { Route as ApiReviewMediaRouteImport } from './routes/api/review-media'
 import { Route as ApiPhonepeWebhookRouteImport } from './routes/api/phonepe-webhook'
+import { Route as ApiPaymentProofRouteImport } from './routes/api/payment-proof'
 import { Route as ApiAdminMediaRouteImport } from './routes/api/admin-media'
 import { Route as AuthenticatedMembershipDashboardRouteImport } from './routes/_authenticated/membership-dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -152,6 +153,11 @@ const ApiPhonepeWebhookRoute = ApiPhonepeWebhookRouteImport.update({
   path: '/api/phonepe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentProofRoute = ApiPaymentProofRouteImport.update({
+  id: '/api/payment-proof',
+  path: '/api/payment-proof',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminMediaRoute = ApiAdminMediaRouteImport.update({
   id: '/api/admin-media',
   path: '/api/admin-media',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/payment-proof': typeof ApiPaymentProofRoute
   '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/payment-proof': typeof ApiPaymentProofRoute
   '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/membership-dashboard': typeof AuthenticatedMembershipDashboardRoute
   '/api/admin-media': typeof ApiAdminMediaRoute
+  '/api/payment-proof': typeof ApiPaymentProofRoute
   '/api/phonepe-webhook': typeof ApiPhonepeWebhookRoute
   '/api/review-media': typeof ApiReviewMediaRoute
   '/api/velocity-webhook': typeof ApiVelocityWebhookRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/membership-dashboard'
     | '/api/admin-media'
+    | '/api/payment-proof'
     | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/membership-dashboard'
     | '/api/admin-media'
+    | '/api/payment-proof'
     | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/membership-dashboard'
     | '/api/admin-media'
+    | '/api/payment-proof'
     | '/api/phonepe-webhook'
     | '/api/review-media'
     | '/api/velocity-webhook'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   WishlistRoute: typeof WishlistRoute
   WomenRoute: typeof WomenRoute
   ApiAdminMediaRoute: typeof ApiAdminMediaRoute
+  ApiPaymentProofRoute: typeof ApiPaymentProofRoute
   ApiPhonepeWebhookRoute: typeof ApiPhonepeWebhookRoute
   ApiReviewMediaRoute: typeof ApiReviewMediaRoute
   ApiVelocityWebhookRoute: typeof ApiVelocityWebhookRoute
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPhonepeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/payment-proof': {
+      id: '/api/payment-proof'
+      path: '/api/payment-proof'
+      fullPath: '/api/payment-proof'
+      preLoaderRoute: typeof ApiPaymentProofRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin-media': {
       id: '/api/admin-media'
       path: '/api/admin-media'
@@ -623,6 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   WishlistRoute: WishlistRoute,
   WomenRoute: WomenRoute,
   ApiAdminMediaRoute: ApiAdminMediaRoute,
+  ApiPaymentProofRoute: ApiPaymentProofRoute,
   ApiPhonepeWebhookRoute: ApiPhonepeWebhookRoute,
   ApiReviewMediaRoute: ApiReviewMediaRoute,
   ApiVelocityWebhookRoute: ApiVelocityWebhookRoute,
