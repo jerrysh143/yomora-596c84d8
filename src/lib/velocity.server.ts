@@ -44,15 +44,28 @@ async function velocityRequest<T>(
   init: RequestInit = {},
   authenticated = true,
 ): Promise<T> {
-  const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
-  if (authenticated) headers.set("Authorization", await getVelocityToken());
-  const response = await fetch(`${VELOCITY_BASE_URL}${path}`, {
-    ...init,
-    headers,
-    signal: AbortSignal.timeout(12_000),
-  });
-  const responseText = await response.text();
+  const request = async (forceTokenRefresh = false) => {
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "application/json");
+    if (authenticated) headers.set("Authorization", await getVelocityToken(forceTokenRefresh));
+    const response = await fetch(`${VELOCITY_BASE_URL}${path}`, {
+      ...init,
+      headers,
+      signal: AbortSignal.timeout(12_000),
+    });
+    return { response, responseText: await response.text() };
+  };
+
+  let { response, responseText } = await request();
+  const shouldRefreshToken = authenticated && !response.ok && (
+    response.status === 401 ||
+    response.status === 403 ||
+    /not\s+(?:yet\s+)?activated|token\s+(?:expired|invalid)/i.test(responseText)
+  );
+  if (shouldRefreshToken) {
+    tokenCache = null;
+    ({ response, responseText } = await request(true));
+  }
   let payload: unknown;
   try {
     payload = responseText ? JSON.parse(responseText) : null;
@@ -105,8 +118,10 @@ async function velocityRequest<T>(
   return payload as T;
 }
 
-export async function getVelocityToken() {
-  if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) return tokenCache.token;
+export async function getVelocityToken(forceRefresh = false) {
+  if (!forceRefresh && tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
+    return tokenCache.token;
+  }
   const payload = await velocityRequest<{ token?: string; expires_at?: string }>(
     "/auth-token",
     {
@@ -208,3 +223,4 @@ export async function trackVelocityShipment(awb: string): Promise<VelocityTracki
     deliveredAt: typeof shipment?.delivered_date === "string" ? shipment.delivered_date : null,
   };
 }
+
