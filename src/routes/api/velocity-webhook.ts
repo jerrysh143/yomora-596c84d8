@@ -39,9 +39,50 @@ export const Route = createFileRoute("/api/velocity-webhook")({
         }
 
         const parsed = webhookSchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) return Response.json({ message: "Invalid webhook payload" }, { status: 400 });
+        if (!parsed.success)
+          return Response.json({ message: "Invalid webhook payload" }, { status: 400 });
         const event = parsed.data;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        // Apply the shipment update before acknowledging the event. If the
+        // database update fails, Velocity can safely retry the same event.
+        // Replaying an already-applied update is idempotent.
+        const update = {
+          status: event.data.status,
+          ...(event.data.sub_status !== undefined
+            ? { sub_status: event.data.sub_status || null }
+            : {}),
+          ...(event.data.tracking_number !== undefined
+            ? { awb_code: event.data.tracking_number }
+            : {}),
+          ...(event.data.carrier_name !== undefined
+            ? { carrier_name: event.data.carrier_name || null }
+            : {}),
+          ...(event.data.tracking_url !== undefined
+            ? { tracking_url: event.data.tracking_url }
+            : {}),
+          ...(event.data.estimated_delivery_date !== undefined
+            ? { estimated_delivery_date: event.data.estimated_delivery_date }
+            : {}),
+          ...(event.data.delivered_at !== undefined
+            ? { delivered_at: event.data.delivered_at }
+            : {}),
+          last_error: null,
+          last_synced_at: new Date().toISOString(),
+        };
+        const { data: shipment, error: updateError } = await supabaseAdmin
+          .from("order_shipments")
+          .update(update)
+          .eq("shipment_id", event.data.shipment_id)
+          .select("id")
+          .maybeSingle();
+        if (updateError)
+          return Response.json({ message: "Unable to update shipment" }, { status: 500 });
+        if (!shipment) {
+          // The webhook can arrive immediately after Velocity creates the
+          // shipment, before YOMORA has stored the returned shipment ID.
+          return Response.json({ message: "Shipment is not ready for update" }, { status: 503 });
+        }
+
         const { error: eventError } = await supabaseAdmin.from("velocity_webhook_events").insert({
           event_id: event.event_id,
           event_type: event.event,
@@ -49,25 +90,11 @@ export const Route = createFileRoute("/api/velocity-webhook")({
           payload: event,
         });
         if (eventError?.code === "23505") return Response.json({ ok: true, duplicate: true });
-        if (eventError) return Response.json({ message: "Unable to record webhook" }, { status: 500 });
-
-        const update = {
-          status: event.data.status,
-          sub_status: event.data.sub_status || null,
-          awb_code: event.data.tracking_number || null,
-          carrier_name: event.data.carrier_name || null,
-          tracking_url: event.data.tracking_url || null,
-          estimated_delivery_date: event.data.estimated_delivery_date || null,
-          delivered_at: event.data.delivered_at || null,
-          last_error: null,
-          last_synced_at: new Date().toISOString(),
-        };
-        const { error: updateError } = await supabaseAdmin.from("order_shipments")
-          .update(update)
-          .eq("shipment_id", event.data.shipment_id);
-        if (updateError) return Response.json({ message: "Unable to update shipment" }, { status: 500 });
-        return Response.json({ ok: true });
+        if (eventError)
+          return Response.json({ message: "Unable to record webhook" }, { status: 500 });
+        return Response.json({ ok: true, duplicate: false });
       },
     },
   },
 });
+
