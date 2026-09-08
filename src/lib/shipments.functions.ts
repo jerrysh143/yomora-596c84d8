@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createVelocityShipment, trackVelocityShipment, type VelocityActivity } from "@/lib/velocity.server";
+import {
+  createVelocityShipment,
+  trackVelocityShipment,
+  type VelocityActivity,
+} from "@/lib/velocity.server";
 
 type ShippingRow = {
   order_id: string;
@@ -24,6 +28,7 @@ type ShippingRow = {
   tracking_activities: VelocityActivity[];
   last_error: string | null;
   last_synced_at: string | null;
+  created_at: string;
 };
 
 function publicShipment(row: ShippingRow) {
@@ -37,7 +42,29 @@ function publicShipment(row: ShippingRow) {
     deliveredAt: row.delivered_at,
     activities: Array.isArray(row.tracking_activities) ? row.tracking_activities : [],
     lastSyncedAt: row.last_synced_at,
+    paymentMethod: row.payment_method,
+    createdAt: row.created_at,
   };
+}
+
+function publicPayment(
+  row: {
+    status: string;
+    payment_mode: string | null;
+    submitted_at: string | null;
+    verified_at: string | null;
+    paid_at: string | null;
+  } | null,
+) {
+  return row
+    ? {
+        status: row.status,
+        mode: row.payment_mode,
+        submittedAt: row.submitted_at,
+        verifiedAt: row.verified_at,
+        paidAt: row.paid_at,
+      }
+    : null;
 }
 
 async function isAdmin(context: any) {
@@ -49,7 +76,10 @@ async function isAdmin(context: any) {
 }
 
 function fallbackAddress(value: string) {
-  const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  const parts = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
   const pincode = parts.at(-1)?.match(/^\d{6}$/)?.[0] || "";
   if (pincode) parts.pop();
   const state = parts.pop() || "";
@@ -83,7 +113,8 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
     }) as ShippingRow;
     if (shipping.payment_method === "PREPAID") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: payment } = await supabaseAdmin.from("order_payments")
+      const { data: payment } = await supabaseAdmin
+        .from("order_payments")
         .select("status")
         .eq("order_id", order.id)
         .maybeSingle();
@@ -92,7 +123,9 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
       }
     }
     if (!shipping.city || !shipping.state || !/^\d{6}$/.test(shipping.pincode)) {
-      throw new Error("Add a complete city, state and 6-digit pincode before creating the shipment");
+      throw new Error(
+        "Add a complete city, state and 6-digit pincode before creating the shipment",
+      );
     }
 
     if (!existing) {
@@ -128,25 +161,34 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
         subtotal: Number(order.total),
       });
       const now = new Date().toISOString();
-      const { data: saved, error } = await db.from("order_shipments").update({
-        status: "ready_to_ship",
-        velocity_order_id: created.order_id || null,
-        shipment_id: created.shipment_id,
-        awb_code: created.awb_code,
-        carrier_id: created.courier_company_id || null,
-        carrier_name: created.courier_name || null,
-        label_url: created.label_url || null,
-        last_error: null,
-        last_synced_at: now,
-      }).eq("order_id", order.id).select("*").single();
+      const { data: saved, error } = await db
+        .from("order_shipments")
+        .update({
+          status: "ready_to_ship",
+          velocity_order_id: created.order_id || null,
+          shipment_id: created.shipment_id,
+          awb_code: created.awb_code,
+          carrier_id: created.courier_company_id || null,
+          carrier_name: created.courier_name || null,
+          label_url: created.label_url || null,
+          last_error: null,
+          last_synced_at: now,
+        })
+        .eq("order_id", order.id)
+        .select("*")
+        .single();
       if (error) throw new Error(error.message);
       return publicShipment(saved as unknown as ShippingRow);
     } catch (error) {
-      await db.from("order_shipments").update({
-        status: "sync_failed",
-        last_error: error instanceof Error ? error.message.slice(0, 500) : "Velocity request failed",
-        last_synced_at: new Date().toISOString(),
-      }).eq("order_id", order.id);
+      await db
+        .from("order_shipments")
+        .update({
+          status: "sync_failed",
+          last_error:
+            error instanceof Error ? error.message.slice(0, 500) : "Velocity request failed",
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("order_id", order.id);
       throw error;
     }
   });
@@ -161,24 +203,43 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
     const parsed = trackingInput.safeParse(data);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
-      throw new Error(issue?.path[0] === "order_id"
-        ? "Please enter the complete Order ID from your confirmation email."
-        : "Please enter a valid email address.");
+      throw new Error(
+        issue?.path[0] === "order_id"
+          ? "Please enter the complete Order ID from your confirmation email."
+          : "Please enter a valid email address.",
+      );
     }
     return parsed.data;
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error } = await supabaseAdmin.from("orders")
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
       .select("id,status,created_at,updated_at")
       .eq("id", data.order_id)
       .eq("customer_email", data.customer_email.toLowerCase())
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!order) throw new Error("No order matches that order ID and email address");
-    const { data: shipment } = await supabaseAdmin.from("order_shipments")
-      .select("*").eq("order_id", order.id).maybeSingle();
-    if (!shipment?.awb_code) return { order, shipment: null };
+    const { data: shipment } = await supabaseAdmin
+      .from("order_shipments")
+      .select("*")
+      .eq("order_id", order.id)
+      .maybeSingle();
+    const { data: payment } = await supabaseAdmin
+      .from("order_payments")
+      .select("status,payment_mode,submitted_at,verified_at,paid_at")
+      .eq("order_id", order.id)
+      .maybeSingle();
+    const safePayment = publicPayment(payment);
+    if (!shipment) return { order, payment: safePayment, shipment: null };
+    if (!shipment.awb_code) {
+      return {
+        order,
+        payment: safePayment,
+        shipment: publicShipment(shipment as unknown as ShippingRow),
+      };
+    }
 
     try {
       const live = await trackVelocityShipment(shipment.awb_code);
@@ -194,8 +255,17 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
         last_synced_at: now,
       };
       await supabaseAdmin.from("order_shipments").update(update).eq("order_id", order.id);
-      return { order, shipment: publicShipment({ ...shipment, ...update } as ShippingRow) };
+      return {
+        order,
+        payment: safePayment,
+        shipment: publicShipment({ ...shipment, ...update } as ShippingRow),
+      };
     } catch {
-      return { order, shipment: publicShipment(shipment as unknown as ShippingRow) };
+      return {
+        order,
+        payment: safePayment,
+        shipment: publicShipment(shipment as unknown as ShippingRow),
+      };
     }
   });
+
