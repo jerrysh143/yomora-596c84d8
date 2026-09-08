@@ -43,6 +43,7 @@ import {
 } from "@/lib/products";
 import { adminProductsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
+import { formatOrderNumber } from "@/lib/order-reference";
 import { checkIsAdminFn, deleteProductFn, upsertProductFn } from "@/lib/products.functions";
 import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
 import {
@@ -132,7 +133,7 @@ function openWhatsAppInvoice(order: Order) {
   const message = [
     `Hello ${order.customer_name},`,
     "",
-    `Your YOMORA order #${order.id.slice(0, 8).toUpperCase()} has been completed.`,
+    `Your YOMORA order #${order.orderNumber ?? formatOrderNumber(order.id)} has been completed.`,
     `Order total: ${formatINR(order.total)}`,
     "",
     `View or download your invoice: ${invoiceUrl}`,
@@ -914,7 +915,7 @@ on conflict do nothing;`}
                                 className="flex items-center justify-between gap-3 border-b border-border pb-2 text-xs"
                               >
                                 <span>
-                                  #{order.id.slice(0, 8).toUpperCase()}
+                                  #{order.orderNumber ?? formatOrderNumber(order.id)}
                                   <span className="mt-0.5 block text-[10px] text-muted-foreground">
                                     {new Date(order.created_at).toLocaleDateString("en-IN")} ·{" "}
                                     {order.status}
@@ -1162,7 +1163,8 @@ on conflict do nothing;`}
                             {o.customer_phone ? ` · ${o.customer_phone}` : ""}
                           </div>
                           <div className="mt-0.5 text-[11px] text-muted-foreground">
-                            #{o.id.slice(0, 8)} · {new Date(o.created_at).toLocaleString()}
+                            #{o.orderNumber ?? formatOrderNumber(o.id)} ·{" "}
+                            {new Date(o.created_at).toLocaleString()}
                           </div>
                         </div>
                         <div className="text-right">
@@ -1363,7 +1365,7 @@ on conflict do nothing;`}
                                     },
                                   })
                                 }
-                                placeholder={`YM-${o.id.slice(0, 8).toUpperCase()}`}
+                                placeholder={o.orderNumber ?? formatOrderNumber(o.id)}
                                 className={invoiceInputCls}
                               />
                             </Field>
@@ -2315,4 +2317,3 @@ function MembershipStatusBadge({
     </span>
   );
 }
-

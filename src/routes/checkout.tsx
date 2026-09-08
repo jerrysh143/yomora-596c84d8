@@ -25,6 +25,7 @@ import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 import { submitManualPaymentFn } from "@/lib/manual-payments.functions";
 import { siteContentQuery } from "@/lib/site-content.queries";
+import { formatOrderNumber } from "@/lib/order-reference";
 
 const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
 
@@ -87,6 +88,7 @@ function CheckoutPage() {
   const [pay, setPay] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [paymentCode, setPaymentCode] = useState<string | null>(null);
   const [paymentTotal, setPaymentTotal] = useState(0);
   const [transactionId, setTransactionId] = useState("");
@@ -288,7 +290,8 @@ function CheckoutPage() {
                   {paymentCode}
                 </code>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Admin will match this code with order #{orderId.slice(0, 8).toUpperCase()}.
+                  Admin will match this code with order #{orderNumber ?? formatOrderNumber(orderId)}
+                  .
                 </p>
               </div>
               {proofSubmitted ? (
@@ -387,7 +390,10 @@ function CheckoutPage() {
               Your order has been saved and is now visible in YOMORA Admin.
             </p>
             <p className="mt-5 text-sm">
-              Order number: <span className="font-mono font-semibold text-gold">{orderId}</span>
+              Order number:{" "}
+              <span className="font-mono font-semibold text-gold">
+                {orderNumber ?? formatOrderNumber(orderId)}
+              </span>
             </p>
             <Link
               to="/products"
@@ -468,6 +474,7 @@ function CheckoutPage() {
                 }
                 cart.clear();
                 setOrderId(order.id);
+                setOrderNumber(order.orderNumber);
                 setPaymentCode(order.verificationCode ?? null);
                 setPaymentTotal(order.total);
                 toast.success("Order placed successfully");
@@ -925,4 +932,3 @@ function Row({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
     </div>
   );
 }
-

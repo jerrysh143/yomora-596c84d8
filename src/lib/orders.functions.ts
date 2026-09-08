@@ -3,6 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  formatOrderNumber,
+  isValidOrderReference,
+  matchesOrderReference,
+} from "@/lib/order-reference";
 
 export type OrderStatus = "pending" | "completed" | "cancelled";
 export const COMPLIMENTARY_MEMBERSHIP_THRESHOLD = 25_000;
@@ -45,7 +50,11 @@ function notesWithoutInvoiceDetails(notes: string | null | undefined) {
 }
 
 function mapOrder(row: any): Order {
-  return { ...row, invoice_details: invoiceDetailsFromNotes(row.notes) } as Order;
+  return {
+    ...row,
+    orderNumber: formatOrderNumber(row.id),
+    invoice_details: invoiceDetailsFromNotes(row.notes),
+  } as Order;
 }
 
 const checkoutInput = z.object({
@@ -74,7 +83,7 @@ const checkoutInput = z.object({
 });
 
 const trackOrderInput = z.object({
-  order_id: z.string().trim().uuid("Enter the complete order ID"),
+  order_id: z.string().trim().refine(isValidOrderReference, "Enter a valid YOMORA order number"),
   customer_email: z.string().trim().email().max(200),
 });
 
@@ -207,7 +216,14 @@ export const createOrderFn = createServerFn({ method: "POST" })
     }
 
     if (data.payment_method === "cod") {
-      return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: null };
+      return {
+        id: order.id,
+        orderNumber: formatOrderNumber(order.id),
+        total: payableTotal,
+        discount,
+        couponCode,
+        paymentUrl: null,
+      };
     }
 
     const merchantOrderId = `YOMORA_${order.id.replaceAll("-", "")}`;
@@ -227,6 +243,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
     }
     return {
       id: order.id,
+      orderNumber: formatOrderNumber(order.id),
       total: payableTotal,
       discount,
       couponCode,
@@ -237,6 +254,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
 
 export type Order = {
   id: string;
+  orderNumber?: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -305,15 +323,19 @@ export const trackOrderFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => trackOrderInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error } = await supabaseAdmin
+    const { data: matchingOrders, error } = await supabaseAdmin
       .from("orders")
       .select("id,status,created_at,updated_at")
-      .eq("id", data.order_id)
       .eq("customer_email", data.customer_email.toLowerCase())
-      .maybeSingle();
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
+    const matches = (matchingOrders ?? []).filter((candidate) =>
+      matchesOrderReference(candidate.id, data.order_id),
+    );
+    if (matches.length > 1) throw new Error("This short order number is ambiguous");
+    const order = matches[0];
     if (!order) throw new Error("No order matches that order ID and email address");
-    return order;
+    return { ...order, orderNumber: formatOrderNumber(order.id) };
   });
 
 async function assertAdmin(ctx: { supabase: SupabaseClient<Database>; userId: string }) {
@@ -355,6 +377,7 @@ export const listOrdersFn = createServerFn({ method: "GET" })
       const payment = byOrder.get(row.id);
       return {
         ...mapOrder(row),
+        orderNumber: formatOrderNumber(row.id),
         payment_status: (payment?.status ?? null) as Order["payment_status"],
         payment_mode: payment?.payment_mode ?? null,
         payment_transaction_id: payment?.transaction_id ?? null,
@@ -399,6 +422,7 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
       const payment = byOrder.get(row.id);
       return {
         ...mapOrder(row),
+        orderNumber: formatOrderNumber(row.id),
         payment_status: (payment?.status ?? null) as Order["payment_status"],
         payment_mode: payment?.payment_mode ?? null,
         payment_transaction_id: payment?.transaction_id ?? null,
@@ -551,4 +575,3 @@ export const deleteOrderFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-

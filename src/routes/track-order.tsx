@@ -24,6 +24,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { trackShipmentFn } from "@/lib/shipments.functions";
+import { isValidOrderReference } from "@/lib/order-reference";
 
 type TrackingResult = Awaited<ReturnType<typeof trackShipmentFn>>;
 
@@ -61,12 +62,8 @@ function TrackPage() {
               const form = new FormData(e.currentTarget);
               const orderId = String(form.get("order_id") ?? "").trim();
               const customerEmail = String(form.get("customer_email") ?? "").trim();
-              if (
-                !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-                  orderId,
-                )
-              ) {
-                setFormError("Please enter the complete Order ID from your confirmation email.");
+              if (!isValidOrderReference(orderId)) {
+                setFormError("Enter your short order number, for example YM-3A7F91C2.");
                 return;
               }
               setTracking(true);
@@ -94,7 +91,7 @@ function TrackPage() {
               <input
                 name="order_id"
                 required
-                placeholder="Enter your complete Order ID"
+                placeholder="Example: YM-3A7F91C2"
                 className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
               />
             </label>
@@ -136,7 +133,7 @@ function TrackPage() {
                       YOMORA DELIVERY JOURNEY
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Order #{result.order.id.slice(0, 8).toUpperCase()}
+                      Order #{result.order.orderNumber}
                     </p>
                   </div>
                   {result.shipment?.awbCode && (
@@ -276,14 +273,14 @@ function TrackPage() {
 
 function friendlyTrackingError(error: unknown) {
   const message = error instanceof Error ? error.message : "";
-  if (/order_id|uuid|complete order id|invalid_format/i.test(message)) {
-    return "Please enter the complete Order ID from your confirmation email.";
+  if (/order_id|uuid|order number|invalid_format/i.test(message)) {
+    return "Please enter your short order number, for example YM-3A7F91C2.";
   }
   if (/customer_email|email/i.test(message) && /invalid|valid|format/i.test(message)) {
     return "Please enter a valid email address.";
   }
   if (/no order matches/i.test(message)) {
-    return "We couldn't find an order matching that Order ID and email address.";
+    return "We couldn't find an order matching that order number and email address.";
   }
   return "We couldn't track this order right now. Please try again shortly.";
 }
@@ -515,4 +512,3 @@ function formatTrackingDate(value: string | null | undefined) {
   const date = new Date(value.includes("T") ? value : value.replace(" ", "T"));
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-IN");
 }
-

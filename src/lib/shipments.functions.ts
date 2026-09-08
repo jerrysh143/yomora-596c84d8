@@ -6,6 +6,11 @@ import {
   trackVelocityShipment,
   type VelocityActivity,
 } from "@/lib/velocity.server";
+import {
+  formatOrderNumber,
+  isValidOrderReference,
+  matchesOrderReference,
+} from "@/lib/order-reference";
 
 type ShippingRow = {
   order_id: string;
@@ -194,7 +199,7 @@ export const createVelocityShipmentFn = createServerFn({ method: "POST" })
   });
 
 const trackingInput = z.object({
-  order_id: z.string().trim().uuid("Enter the complete order ID"),
+  order_id: z.string().trim().refine(isValidOrderReference, "Enter a valid YOMORA order number"),
   customer_email: z.string().trim().email().max(200),
 });
 
@@ -205,7 +210,7 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
       const issue = parsed.error.issues[0];
       throw new Error(
         issue?.path[0] === "order_id"
-          ? "Please enter the complete Order ID from your confirmation email."
+          ? "Please enter your short order number, for example YM-3A7F91C2."
           : "Please enter a valid email address.",
       );
     }
@@ -213,14 +218,21 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error } = await supabaseAdmin
+    const { data: matchingOrders, error } = await supabaseAdmin
       .from("orders")
       .select("id,status,created_at,updated_at")
-      .eq("id", data.order_id)
       .eq("customer_email", data.customer_email.toLowerCase())
-      .maybeSingle();
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
+    const matches = (matchingOrders ?? []).filter((candidate) =>
+      matchesOrderReference(candidate.id, data.order_id),
+    );
+    if (matches.length > 1) {
+      throw new Error("This short order number is ambiguous. Please contact YOMORA support.");
+    }
+    const order = matches[0];
     if (!order) throw new Error("No order matches that order ID and email address");
+    const publicOrder = { ...order, orderNumber: formatOrderNumber(order.id) };
     const { data: shipment } = await supabaseAdmin
       .from("order_shipments")
       .select("*")
@@ -232,10 +244,10 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
       .eq("order_id", order.id)
       .maybeSingle();
     const safePayment = publicPayment(payment);
-    if (!shipment) return { order, payment: safePayment, shipment: null };
+    if (!shipment) return { order: publicOrder, payment: safePayment, shipment: null };
     if (!shipment.awb_code) {
       return {
-        order,
+        order: publicOrder,
         payment: safePayment,
         shipment: publicShipment(shipment as unknown as ShippingRow),
       };
@@ -256,16 +268,15 @@ export const trackShipmentFn = createServerFn({ method: "POST" })
       };
       await supabaseAdmin.from("order_shipments").update(update).eq("order_id", order.id);
       return {
-        order,
+        order: publicOrder,
         payment: safePayment,
         shipment: publicShipment({ ...shipment, ...update } as ShippingRow),
       };
     } catch {
       return {
-        order,
+        order: publicOrder,
         payment: safePayment,
         shipment: publicShipment(shipment as unknown as ShippingRow),
       };
     }
   });
-
