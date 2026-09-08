@@ -4,17 +4,46 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listNotifyRequestsFn } from "@/lib/notify.functions";
-import { LogOut, Plus, Pencil, Trash2, Package, ExternalLink, Tag, ShoppingBag, Check, RotateCcw, X, Sparkles, LayoutTemplate, Crown, BellRing, RefreshCw, FileText, Save, MessageCircle, Users, Truck } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  Pencil,
+  Trash2,
+  Package,
+  ExternalLink,
+  Tag,
+  ShoppingBag,
+  Check,
+  RotateCcw,
+  X,
+  Sparkles,
+  LayoutTemplate,
+  Crown,
+  BellRing,
+  RefreshCw,
+  FileText,
+  Save,
+  MessageCircle,
+  Users,
+  Truck,
+  QrCode,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GalleryUploadField } from "@/components/admin/gallery-upload-field";
-import { AUDIENCES, formatINR, isProductNew, isValidImageUrl, productImage, type Audience, type Category, type CategoryRow, type Product } from "@/lib/products";
+import {
+  AUDIENCES,
+  formatINR,
+  isProductNew,
+  isValidImageUrl,
+  productImage,
+  type Audience,
+  type Category,
+  type CategoryRow,
+  type Product,
+} from "@/lib/products";
 import { adminProductsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
-import {
-  checkIsAdminFn,
-  deleteProductFn,
-  upsertProductFn,
-} from "@/lib/products.functions";
+import { checkIsAdminFn, deleteProductFn, upsertProductFn } from "@/lib/products.functions";
 import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
 import {
   listOrdersFn,
@@ -46,13 +75,11 @@ import { listCustomersFn } from "@/lib/customers-admin.functions";
 import { listInquiriesFn } from "@/lib/inquiries.functions";
 import { createVelocityShipmentFn } from "@/lib/shipments.functions";
 import { verifyManualPaymentFn } from "@/lib/manual-payments.functions";
+import { PaymentQrManager } from "@/components/admin/payment-qr-manager";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
-    meta: [
-      { title: "Admin — YOMORA" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Admin — YOMORA" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminPage,
 });
@@ -83,7 +110,8 @@ const emptyForm: FormState = {
   sold_out: false,
 };
 
-const invoiceInputCls = "w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold";
+const invoiceInputCls =
+  "w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold";
 
 function whatsappNumber(phone: string) {
   let digits = phone.replace(/\D/g, "");
@@ -151,7 +179,11 @@ function AdminPage() {
 
   const { data: products = [] } = useQuery(adminProductsQuery());
   const { data: categories = [] } = useQuery(categoriesQuery());
-  const { data: orders = [], refetch: refetchOrders, isFetching: ordersRefreshing } = useQuery({
+  const {
+    data: orders = [],
+    refetch: refetchOrders,
+    isFetching: ordersRefreshing,
+  } = useQuery({
     queryKey: ["orders"],
     queryFn: () => listOrders(),
     enabled: !!adminInfo?.isAdmin,
@@ -174,15 +206,33 @@ function AdminPage() {
     queryFn: () => listMemberships(),
     enabled: !!adminInfo?.isAdmin,
   });
-  const { data: customers = [], refetch: refetchCustomers, isFetching: customersRefreshing } = useQuery({
+  const {
+    data: customers = [],
+    refetch: refetchCustomers,
+    isFetching: customersRefreshing,
+  } = useQuery({
     queryKey: ["admin", "customers"],
     queryFn: () => listCustomers(),
     enabled: !!adminInfo?.isAdmin,
   });
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "customers" | "alerts" | "subscription" | "memberships" | "coupons" | "site">("products");
+  const [tab, setTab] = useState<
+    | "products"
+    | "categories"
+    | "orders"
+    | "customers"
+    | "alerts"
+    | "subscription"
+    | "memberships"
+    | "coupons"
+    | "site"
+    | "payment-qr"
+  >("products");
   const [orderFilter, setOrderFilter] = useState<OrderStatus>("pending");
-  const [invoiceEditor, setInvoiceEditor] = useState<{ id: string; details: InvoiceDetails } | null>(null);
+  const [invoiceEditor, setInvoiceEditor] = useState<{
+    id: string;
+    details: InvoiceDetails;
+  } | null>(null);
 
   // Admin session stays active until an explicit sign-out.
 
@@ -215,7 +265,7 @@ function AdminPage() {
     } else {
       setEditing(null);
       setCreating(true);
-      setForm({ ...emptyForm, category: (categories[0]?.slug ?? "") });
+      setForm({ ...emptyForm, category: categories[0]?.slug ?? "" });
     }
   };
   const close = () => {
@@ -235,7 +285,10 @@ function AdminPage() {
       setCatForm({ slug: "", label: "", sort_order: String(categories.length + 1) });
     }
   };
-  const closeCat = () => { setCatEditing(null); setCatCreating(false); };
+  const closeCat = () => {
+    setCatEditing(null);
+    setCatCreating(false);
+  };
   const catOpen = catEditing !== null || catCreating;
 
   const friendlyProductError = (msg: string) => {
@@ -249,8 +302,7 @@ function AdminPage() {
   };
 
   const saveMut = useMutation({
-    mutationFn: (data: Product & { image_url: string | null }) =>
-      upsert({ data }),
+    mutationFn: (data: Product & { image_url: string | null }) => upsert({ data }),
     onSuccess: () => {
       toast.success("Product saved");
       qc.invalidateQueries({ queryKey: ["products"] });
@@ -269,8 +321,7 @@ function AdminPage() {
   });
 
   const saveCatMut = useMutation({
-    mutationFn: (data: { slug: string; label: string; sort_order: number }) =>
-      upsertCat({ data }),
+    mutationFn: (data: { slug: string; label: string; sort_order: number }) => upsertCat({ data }),
     onSuccess: () => {
       toast.success("Category saved");
       qc.invalidateQueries({ queryKey: ["categories"] });
@@ -307,9 +358,14 @@ function AdminPage() {
   });
 
   const paymentVerificationMut = useMutation({
-    mutationFn: (value: { order_id: string; decision: "approve" | "reject"; reason?: string }) => verifyManualPayment({ data: value }),
+    mutationFn: (value: { order_id: string; decision: "approve" | "reject"; reason?: string }) =>
+      verifyManualPayment({ data: value }),
     onSuccess: (result) => {
-      toast.success(result.status === "completed" ? "Payment verified and order accepted" : "Payment rejected and customer notified");
+      toast.success(
+        result.status === "completed"
+          ? "Payment verified and order accepted"
+          : "Payment rejected and customer notified",
+      );
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -318,14 +374,17 @@ function AdminPage() {
   const velocityShipmentMut = useMutation({
     mutationFn: (orderId: string) => createVelocityShipment({ data: { orderId } }),
     onSuccess: (shipment) => {
-      toast.success(`Velocity shipment ready${shipment.awbCode ? ` · AWB ${shipment.awbCode}` : ""}`);
+      toast.success(
+        `Velocity shipment ready${shipment.awbCode ? ` · AWB ${shipment.awbCode}` : ""}`,
+      );
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const invoiceMut = useMutation({
-    mutationFn: (value: { id: string; invoice_details: InvoiceDetails }) => updateInvoice({ data: value }),
+    mutationFn: (value: { id: string; invoice_details: InvoiceDetails }) =>
+      updateInvoice({ data: value }),
     onSuccess: () => {
       toast.success("Invoice details saved");
       qc.invalidateQueries({ queryKey: ["orders"] });
@@ -435,7 +494,9 @@ function AdminPage() {
   const [memCreating, setMemCreating] = useState(false);
   const [memForm, setMemForm] = useState<MembershipFormState>(emptyMembershipForm);
   const [memSearch, setMemSearch] = useState("");
-  const [memStatusFilter, setMemStatusFilter] = useState<"all" | "pending" | "active" | "expired" | "cancelled">("all");
+  const [memStatusFilter, setMemStatusFilter] = useState<
+    "all" | "pending" | "active" | "expired" | "cancelled"
+  >("all");
 
   const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
   const toIso = (d: string) => (d ? new Date(d + "T00:00:00Z").toISOString() : null);
@@ -461,7 +522,10 @@ function AdminPage() {
       setMemForm({ ...emptyMembershipForm, plan_id: plans[0]?.id ?? "" });
     }
   };
-  const closeMembership = () => { setMemEditing(null); setMemCreating(false); };
+  const closeMembership = () => {
+    setMemEditing(null);
+    setMemCreating(false);
+  };
   const isMemOpen = memEditing !== null || memCreating;
 
   const memUpdateMut = useMutation({
@@ -518,7 +582,8 @@ function AdminPage() {
       id: m.id,
       plan_id: m.plan_id,
       status,
-      activated_at: status === "active" && !m.activated_at ? new Date().toISOString() : m.activated_at,
+      activated_at:
+        status === "active" && !m.activated_at ? new Date().toISOString() : m.activated_at,
       expires_at: m.expires_at,
       auto_renew: m.auto_renew,
       member_number: m.member_number,
@@ -552,7 +617,10 @@ function AdminPage() {
       tagline: planForm.tagline.trim(),
       price,
       duration_label: planForm.duration_label.trim(),
-      benefits: planForm.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
+      benefits: planForm.benefits
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
       cta_label: planForm.cta_label.trim(),
       is_active: planForm.is_active,
     };
@@ -567,11 +635,14 @@ function AdminPage() {
     () => orders.filter((o) => o.status === orderFilter),
     [orders, orderFilter],
   );
-  const orderCounts = useMemo(() => ({
-    pending: orders.filter((o) => o.status === "pending").length,
-    completed: orders.filter((o) => o.status === "completed").length,
-    cancelled: orders.filter((o) => o.status === "cancelled").length,
-  }), [orders]);
+  const orderCounts = useMemo(
+    () => ({
+      pending: orders.filter((o) => o.status === "pending").length,
+      completed: orders.filter((o) => o.status === "completed").length,
+      cancelled: orders.filter((o) => o.status === "cancelled").length,
+    }),
+    [orders],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -642,7 +713,11 @@ function AdminPage() {
   };
 
   if (checkingAdmin) {
-    return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Loading dashboard…</div>;
+    return (
+      <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">
+        Loading dashboard…
+      </div>
+    );
   }
 
   if (!adminInfo?.isAdmin) {
@@ -653,15 +728,18 @@ function AdminPage() {
           <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">ACCESS PENDING</p>
           <h1 className="font-display text-4xl">Admin role required</h1>
           <p className="text-sm text-muted-foreground">
-            You're signed in, but this account doesn't have the admin role yet. Ask the store owner to
-            grant it, or promote your own account by running the SQL below in the backend once, then reload:
+            You're signed in, but this account doesn't have the admin role yet. Ask the store owner
+            to grant it, or promote your own account by running the SQL below in the backend once,
+            then reload:
           </p>
           <pre className="overflow-x-auto rounded border border-border bg-secondary/40 p-4 text-xs">
-{`insert into public.user_roles (user_id, role)
+            {`insert into public.user_roles (user_id, role)
 values ('${adminInfo?.userId ?? "YOUR_USER_ID"}', 'admin')
 on conflict do nothing;`}
           </pre>
-          <Link to="/" className="text-xs text-gold hover:underline">← Back to storefront</Link>
+          <Link to="/" className="text-xs text-gold hover:underline">
+            ← Back to storefront
+          </Link>
         </div>
       </div>
     );
@@ -676,38 +754,74 @@ on conflict do nothing;`}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">DASHBOARD</p>
             <h1 className="mt-2 font-display text-4xl">
-              {tab === "products" ? "Manage products" : tab === "categories" ? "Manage categories" : tab === "orders" ? "Manage orders" : tab === "customers" ? "Manage customers" : tab === "subscription" ? "Manage subscription" : tab === "memberships" ? "Manage memberships" : tab === "coupons" ? "Manage coupons" : "Manage site content"}
+              {tab === "products"
+                ? "Manage products"
+                : tab === "categories"
+                  ? "Manage categories"
+                  : tab === "orders"
+                    ? "Manage orders"
+                    : tab === "customers"
+                      ? "Manage customers"
+                      : tab === "subscription"
+                        ? "Manage subscription"
+                        : tab === "memberships"
+                          ? "Manage memberships"
+                          : tab === "coupons"
+                            ? "Manage coupons"
+                            : tab === "payment-qr"
+                              ? "Manage payment QR"
+                              : "Manage site content"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === "products"
                 ? `${products.length} pieces in the catalog.`
                 : tab === "categories"
-                ? `${categories.length} categories.`
-                : tab === "orders"
-                ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
-                : tab === "customers"
-                ? `${customers.length} registered customer${customers.length === 1 ? "" : "s"} · ${customers.filter((customer) => customer.marketing_opt_in).length} subscribed`
-                : tab === "subscription"
-                ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
-                : tab === "memberships"
-                ? `${memberships.length} member${memberships.length === 1 ? "" : "s"} · ${memberships.filter((m) => m.status === "active").length} active`
-                : tab === "coupons"
-                ? "Create public and members-only checkout offers."
-                : "Edit every homepage section, header and footer."}
+                  ? `${categories.length} categories.`
+                  : tab === "orders"
+                    ? `${orderCounts.pending} pending · ${orderCounts.completed} completed`
+                    : tab === "customers"
+                      ? `${customers.length} registered customer${customers.length === 1 ? "" : "s"} · ${customers.filter((customer) => customer.marketing_opt_in).length} subscribed`
+                      : tab === "subscription"
+                        ? `${plans.length} plan${plans.length === 1 ? "" : "s"} · ${plans.filter((p) => p.is_active).length} live on storefront`
+                        : tab === "memberships"
+                          ? `${memberships.length} member${memberships.length === 1 ? "" : "s"} · ${memberships.filter((m) => m.status === "active").length} active`
+                          : tab === "coupons"
+                            ? "Create public and members-only checkout offers."
+                            : tab === "payment-qr"
+                              ? "Replace the QR scanner used for checkout payments."
+                              : "Edit every homepage section, header and footer."}
             </p>
           </div>
-          {(tab === "products" || tab === "categories" || tab === "subscription" || tab === "memberships") && (
+          {(tab === "products" ||
+            tab === "categories" ||
+            tab === "subscription" ||
+            tab === "memberships") && (
             <button
-              onClick={() => (tab === "products" ? open(null) : tab === "categories" ? openCat(null) : tab === "subscription" ? openPlan(null) : openMembership(null))}
+              onClick={() =>
+                tab === "products"
+                  ? open(null)
+                  : tab === "categories"
+                    ? openCat(null)
+                    : tab === "subscription"
+                      ? openPlan(null)
+                      : openMembership(null)
+              }
               className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
             >
-              <Plus className="h-4 w-4" /> {tab === "products" ? "NEW PRODUCT" : tab === "categories" ? "NEW CATEGORY" : tab === "subscription" ? "ADD PLAN" : "ADD MEMBERSHIP"}
+              <Plus className="h-4 w-4" />{" "}
+              {tab === "products"
+                ? "NEW PRODUCT"
+                : tab === "categories"
+                  ? "NEW CATEGORY"
+                  : tab === "subscription"
+                    ? "ADD PLAN"
+                    : "ADD MEMBERSHIP"}
             </button>
           )}
         </div>
 
         <div className="mt-6 flex gap-2 overflow-x-auto border-b border-border">
-          {([
+          {[
             { k: "products" as const, label: "PRODUCTS", icon: Package },
             { k: "categories" as const, label: "CATEGORIES", icon: Tag },
             { k: "orders" as const, label: "ORDERS", icon: ShoppingBag },
@@ -717,7 +831,8 @@ on conflict do nothing;`}
             { k: "memberships" as const, label: "MEMBERSHIPS", icon: Crown },
             { k: "coupons" as const, label: "COUPONS", icon: Tag },
             { k: "site" as const, label: "SITE CONTENT", icon: LayoutTemplate },
-          ]).map((t) => {
+            { k: "payment-qr" as const, label: "PAYMENT QR", icon: QrCode },
+          ].map((t) => {
             const Icon = t.icon;
             const active = tab === t.k;
             return (
@@ -725,7 +840,9 @@ on conflict do nothing;`}
                 key={t.k}
                 onClick={() => setTab(t.k)}
                 className={`inline-flex items-center gap-2 px-4 py-3 text-[11px] font-semibold tracking-[0.24em] transition-colors ${
-                  active ? "border-b-2 border-gold text-gold" : "text-muted-foreground hover:text-foreground"
+                  active
+                    ? "border-b-2 border-gold text-gold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" /> {t.label}
@@ -737,15 +854,105 @@ on conflict do nothing;`}
         {tab === "customers" && (
           <div className="mt-8">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">Customer contact details, completed purchase totals and order history.</p>
-              <button type="button" onClick={() => refetchCustomers()} disabled={customersRefreshing} className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground hover:border-gold hover:text-gold disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${customersRefreshing ? "animate-spin" : ""}`} /> REFRESH</button>
+              <p className="text-sm text-muted-foreground">
+                Customer contact details, completed purchase totals and order history.
+              </p>
+              <button
+                type="button"
+                onClick={() => refetchCustomers()}
+                disabled={customersRefreshing}
+                className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground hover:border-gold hover:text-gold disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${customersRefreshing ? "animate-spin" : ""}`} />{" "}
+                REFRESH
+              </button>
             </div>
             <div className="overflow-x-auto border border-border">
               <table className="w-full min-w-[1100px] text-left text-sm">
-                <thead className="border-b border-border bg-secondary/30 text-[10px] tracking-[0.16em] text-muted-foreground"><tr><th className="px-4 py-3">CUSTOMER</th><th className="px-4 py-3">EMAIL</th><th className="px-4 py-3">PHONE</th><th className="px-4 py-3">TOTAL PURCHASED</th><th className="px-4 py-3">ORDERS</th><th className="px-4 py-3">FUTURE UPDATES</th><th className="px-4 py-3">JOINED</th><th className="px-4 py-3">LAST LOGIN</th></tr></thead>
-                <tbody className="divide-y divide-border">{customers.map((customer) => <tr key={customer.id} className="align-top"><td className="px-4 py-3"><div className="font-medium text-foreground">{customer.full_name || "Not provided"}</div><div className="mt-0.5 text-[10px] text-muted-foreground">{customer.email_confirmed ? "Email verified" : "Email confirmation pending"}</div></td><td className="px-4 py-3 text-muted-foreground">{customer.email || "—"}</td><td className="px-4 py-3 text-muted-foreground">{customer.phone || "—"}</td><td className="px-4 py-3 font-medium text-foreground">{formatINR(customer.total_purchased)}</td><td className="px-4 py-3"><details><summary className="cursor-pointer text-xs font-semibold text-gold">{customer.order_count} ORDER{customer.order_count === 1 ? "" : "S"}</summary><div className="mt-3 w-72 space-y-2">{customer.orders.map((order) => <Link key={order.id} to="/invoice/$id" params={{ id: order.id }} target="_blank" className="flex items-center justify-between gap-3 border-b border-border pb-2 text-xs"><span>#{order.id.slice(0, 8).toUpperCase()}<span className="mt-0.5 block text-[10px] text-muted-foreground">{new Date(order.created_at).toLocaleDateString("en-IN")} · {order.status}</span></span><span>{formatINR(order.total)}</span></Link>)}{customer.orders.length === 0 && <span className="text-xs text-muted-foreground">No orders</span>}</div></details></td><td className="px-4 py-3"><span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${customer.marketing_opt_in ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{customer.marketing_opt_in ? "ACTIVE" : "INACTIVE"}</span></td><td className="px-4 py-3 text-xs text-muted-foreground">{new Date(customer.created_at).toLocaleDateString("en-IN")}</td><td className="px-4 py-3 text-xs text-muted-foreground">{customer.last_sign_in_at ? new Date(customer.last_sign_in_at).toLocaleString("en-IN") : "Never"}</td></tr>)}</tbody>
+                <thead className="border-b border-border bg-secondary/30 text-[10px] tracking-[0.16em] text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">CUSTOMER</th>
+                    <th className="px-4 py-3">EMAIL</th>
+                    <th className="px-4 py-3">PHONE</th>
+                    <th className="px-4 py-3">TOTAL PURCHASED</th>
+                    <th className="px-4 py-3">ORDERS</th>
+                    <th className="px-4 py-3">FUTURE UPDATES</th>
+                    <th className="px-4 py-3">JOINED</th>
+                    <th className="px-4 py-3">LAST LOGIN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {customers.map((customer) => (
+                    <tr key={customer.id} className="align-top">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-foreground">
+                          {customer.full_name || "Not provided"}
+                        </div>
+                        <div className="mt-0.5 text-[10px] text-muted-foreground">
+                          {customer.email_confirmed
+                            ? "Email verified"
+                            : "Email confirmation pending"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{customer.email || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{customer.phone || "—"}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {formatINR(customer.total_purchased)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <details>
+                          <summary className="cursor-pointer text-xs font-semibold text-gold">
+                            {customer.order_count} ORDER{customer.order_count === 1 ? "" : "S"}
+                          </summary>
+                          <div className="mt-3 w-72 space-y-2">
+                            {customer.orders.map((order) => (
+                              <Link
+                                key={order.id}
+                                to="/invoice/$id"
+                                params={{ id: order.id }}
+                                target="_blank"
+                                className="flex items-center justify-between gap-3 border-b border-border pb-2 text-xs"
+                              >
+                                <span>
+                                  #{order.id.slice(0, 8).toUpperCase()}
+                                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                                    {new Date(order.created_at).toLocaleDateString("en-IN")} ·{" "}
+                                    {order.status}
+                                  </span>
+                                </span>
+                                <span>{formatINR(order.total)}</span>
+                              </Link>
+                            ))}
+                            {customer.orders.length === 0 && (
+                              <span className="text-xs text-muted-foreground">No orders</span>
+                            )}
+                          </div>
+                        </details>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${customer.marketing_opt_in ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}
+                        >
+                          {customer.marketing_opt_in ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {new Date(customer.created_at).toLocaleDateString("en-IN")}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {customer.last_sign_in_at
+                          ? new Date(customer.last_sign_in_at).toLocaleString("en-IN")
+                          : "Never"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
-              {customers.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">No registered customers yet.</p>}
+              {customers.length === 0 && (
+                <p className="p-8 text-center text-sm text-muted-foreground">
+                  No registered customers yet.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -753,12 +960,17 @@ on conflict do nothing;`}
         {tab === "categories" && (
           <div className="mt-8 grid gap-2">
             {categories.length === 0 && (
-              <p className="py-8 text-sm text-muted-foreground">No categories yet. Add your first one.</p>
+              <p className="py-8 text-sm text-muted-foreground">
+                No categories yet. Add your first one.
+              </p>
             )}
             {categories.map((c) => {
               const count = products.filter((p) => p.category === c.slug).length;
               return (
-                <div key={c.slug} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border border-border p-3">
+                <div
+                  key={c.slug}
+                  className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border border-border p-3"
+                >
                   <span className="grid h-10 w-10 place-items-center border border-border text-xs text-muted-foreground">
                     {c.sort_order}
                   </span>
@@ -766,13 +978,21 @@ on conflict do nothing;`}
                     <div className="font-display text-lg text-foreground">{c.label}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">/{c.slug}</div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{count} product{count === 1 ? "" : "s"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {count} product{count === 1 ? "" : "s"}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => openCat(c)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                    <button
+                      onClick={() => openCat(c)}
+                      className="rounded p-2 text-muted-foreground hover:text-gold"
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => { if (confirm(`Delete category "${c.label}"?`)) delCatMut.mutate(c.slug); }}
+                      onClick={() => {
+                        if (confirm(`Delete category "${c.label}"?`)) delCatMut.mutate(c.slug);
+                      }}
                       className="rounded p-2 text-muted-foreground hover:text-destructive"
                       title="Delete"
                     >
@@ -786,295 +1006,605 @@ on conflict do nothing;`}
         )}
 
         {tab === "products" && (
-        <div className="mt-8 grid gap-8">
-          {categories.map((c) => {
-            const items = grouped.get(c.slug) ?? [];
-            return (
-              <div key={c.slug}>
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <h2 className="font-display text-xl">{c.label}</h2>
-                  <span className="text-xs text-muted-foreground">{items.length}</span>
-                </div>
-                {items.length === 0 ? (
-                  <p className="py-6 text-sm text-muted-foreground">No products in this category yet.</p>
-                ) : (
-                  <div className="mt-4 grid gap-3">
-                    {items.map((p) => (
-                      <div key={p.id} className="grid grid-cols-[80px_1fr_auto] items-center gap-4 border border-border p-3">
-                        <img src={productImage(p)} alt={p.name} width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 object-cover" />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-display text-lg text-foreground">{p.name}</span>
-                            {isProductNew(p) && <span className="bg-gold px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
-                            {p.sold_out && <span className="bg-onyx px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-cream">SOLD OUT</span>}
-                          </div>
-                          <div className="mt-0.5 text-xs text-muted-foreground">{p.tagline || "—"}</div>
-                          <div className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Link to="/products/$category" params={{ category: p.id }} className="rounded p-2 text-muted-foreground hover:text-gold" title="View">
-                            <ExternalLink className="h-4 w-4" />
-                          </Link>
-                          <button onClick={() => open(p)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => { if (confirm(`Delete "${p.name}"?`)) delMut.mutate(p.id); }}
-                            className="rounded p-2 text-muted-foreground hover:text-destructive"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        )}
-
-        {tab === "orders" && (
-        <div className="mt-8 grid gap-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => refetchOrders()}
-              disabled={ordersRefreshing}
-              className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${ordersRefreshing ? "animate-spin" : ""}`} /> REFRESH
-            </button>
-            {([
-              { k: "pending" as const, label: "Pending", count: orderCounts.pending },
-              { k: "completed" as const, label: "Completed", count: orderCounts.completed },
-              { k: "cancelled" as const, label: "Cancelled", count: orderCounts.cancelled },
-            ]).map((f) => {
-              const active = orderFilter === f.k;
+          <div className="mt-8 grid gap-8">
+            {categories.map((c) => {
+              const items = grouped.get(c.slug) ?? [];
               return (
-                <button
-                  key={f.k}
-                  onClick={() => setOrderFilter(f.k)}
-                  className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] transition-colors ${
-                    active
-                      ? "border-gold bg-gold text-onyx"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  }`}
-                >
-                  {f.label.toUpperCase()}
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${active ? "bg-onyx text-gold" : "bg-secondary/40"}`}>
-                    {f.count}
-                  </span>
-                </button>
+                <div key={c.slug}>
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <h2 className="font-display text-xl">{c.label}</h2>
+                    <span className="text-xs text-muted-foreground">{items.length}</span>
+                  </div>
+                  {items.length === 0 ? (
+                    <p className="py-6 text-sm text-muted-foreground">
+                      No products in this category yet.
+                    </p>
+                  ) : (
+                    <div className="mt-4 grid gap-3">
+                      {items.map((p) => (
+                        <div
+                          key={p.id}
+                          className="grid grid-cols-[80px_1fr_auto] items-center gap-4 border border-border p-3"
+                        >
+                          <img
+                            src={productImage(p)}
+                            alt={p.name}
+                            width={80}
+                            height={80}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-20 w-20 object-cover"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-display text-lg text-foreground">{p.name}</span>
+                              {isProductNew(p) && (
+                                <span className="bg-gold px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-onyx">
+                                  NEW
+                                </span>
+                              )}
+                              {p.sold_out && (
+                                <span className="bg-onyx px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-cream">
+                                  SOLD OUT
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {p.tagline || "—"}
+                            </div>
+                            <div className="mt-1 text-sm font-semibold text-foreground">
+                              {formatINR(p.price)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to="/products/$category"
+                              params={{ category: p.id }}
+                              className="rounded p-2 text-muted-foreground hover:text-gold"
+                              title="View"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => open(p)}
+                              className="rounded p-2 text-muted-foreground hover:text-gold"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete "${p.name}"?`)) delMut.mutate(p.id);
+                              }}
+                              className="rounded p-2 text-muted-foreground hover:text-destructive"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
+        )}
 
-          {filteredOrders.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              No {orderFilter} orders.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {filteredOrders.map((o) => {
-                const items = (o.items as OrderItem[]) ?? [];
+        {tab === "orders" && (
+          <div className="mt-8 grid gap-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => refetchOrders()}
+                disabled={ordersRefreshing}
+                className="inline-flex items-center gap-2 border border-border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${ordersRefreshing ? "animate-spin" : ""}`} />{" "}
+                REFRESH
+              </button>
+              {[
+                { k: "pending" as const, label: "Pending", count: orderCounts.pending },
+                { k: "completed" as const, label: "Completed", count: orderCounts.completed },
+                { k: "cancelled" as const, label: "Cancelled", count: orderCounts.cancelled },
+              ].map((f) => {
+                const active = orderFilter === f.k;
                 return (
-                  <div key={o.id} className="grid gap-3 border border-border p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-display text-lg text-foreground">{o.customer_name}</span>
-                          <StatusBadge status={o.status} />
-                          {o.payment_status && (
-                            <span className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${o.payment_status === "completed" ? "bg-emerald-100 text-emerald-800" : o.payment_status === "pending" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"}`}>
-                              PAYMENT {o.payment_status.toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-0.5 text-xs text-muted-foreground">
-                          {o.customer_email}
-                          {o.customer_phone ? ` · ${o.customer_phone}` : ""}
-                        </div>
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">
-                          #{o.id.slice(0, 8)} · {new Date(o.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-foreground">{formatINR(o.total)}</div>
-                        {o.coupon_code && (
-                          <div className="text-[10px] font-semibold tracking-[0.12em] text-gold">
-                            {o.coupon_code} · -{formatINR(o.discount_amount)}
-                          </div>
-                        )}
-                        <div className="text-[11px] text-muted-foreground">
-                          {items.reduce((s, i) => s + i.quantity, 0)} item(s)
-                        </div>
-                      </div>
-                    </div>
-
-                    {items.length > 0 && (
-                      <div className="grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
-                        {items.map((i, idx) => (
-                          <div key={idx} className="flex justify-between">
-                            <span>{i.name} × {i.quantity}</span>
-                            <span>{formatINR(i.price * i.quantity)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {o.shipping_address && (
-                      <div className="border-t border-border pt-3 text-xs text-muted-foreground">
-                        <span className="text-[10px] tracking-[0.2em] text-foreground/70">SHIP TO</span>
-                        <div className="mt-1 whitespace-pre-wrap">{o.shipping_address}</div>
-                      </div>
-                    )}
-
-                    {o.payment_verification_code && (
-                      <div className="grid gap-3 border border-gold/40 bg-gold/5 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">MANUAL PHONEPE VERIFICATION</p>
-                          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs">
-                            <span>Code: <code className="font-semibold text-foreground">{o.payment_verification_code}</code></span>
-                            <span>UTR: <code className="font-semibold text-foreground">{o.payment_transaction_id || "Waiting for customer"}</code></span>
-                            <span>Amount: <strong>{formatINR(o.total)}</strong></span>
-                          </div>
-                          {o.payment_rejection_reason && <p className="mt-2 text-xs text-destructive">Last rejection: {o.payment_rejection_reason}</p>}
-                        </div>
-                        <div className="flex flex-wrap gap-2 sm:justify-end">
-                          {o.payment_proof_url && <a href={o.payment_proof_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.16em] hover:border-gold hover:text-gold"><ExternalLink className="h-3.5 w-3.5" /> VIEW PROOF</a>}
-                          {o.payment_status === "proof_submitted" && <>
-                            <button disabled={paymentVerificationMut.isPending} onClick={() => paymentVerificationMut.mutate({ order_id: o.id, decision: "approve" })} className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-onyx disabled:opacity-50"><Check className="h-3.5 w-3.5" /> VERIFY & ACCEPT</button>
-                            <button disabled={paymentVerificationMut.isPending} onClick={() => { const reason = window.prompt("Why could this payment not be verified?")?.trim(); if (reason) paymentVerificationMut.mutate({ order_id: o.id, decision: "reject", reason }); }} className="inline-flex items-center gap-1.5 border border-destructive/50 px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive disabled:opacity-50"><X className="h-3.5 w-3.5" /> REJECT</button>
-                          </>}
-                        </div>
-                      </div>
-                    )}
-
-                    {invoiceEditor?.id === o.id && (
-                      <div className="grid gap-3 border-t border-border pt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-[10px] font-semibold tracking-[0.22em] text-gold">INVOICE CONTENT</p>
-                            <p className="mt-1 text-xs text-muted-foreground">This information appears on the customer's downloadable invoice.</p>
-                          </div>
-                          <button type="button" onClick={() => setInvoiceEditor(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <Field label="Invoice number"><input value={invoiceEditor.details.invoice_number ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, invoice_number: e.target.value } })} placeholder={`YM-${o.id.slice(0, 8).toUpperCase()}`} className={invoiceInputCls} /></Field>
-                          <Field label="Tax rate (%)"><input type="number" min="0" max="100" value={invoiceEditor.details.tax_rate ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, tax_rate: e.target.value === "" ? undefined : Number(e.target.value) } })} className={invoiceInputCls} /></Field>
-                          <Field label="Discount (₹)"><input type="number" min="0" value={invoiceEditor.details.discount ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, discount: e.target.value === "" ? undefined : Number(e.target.value) } })} className={invoiceInputCls} /></Field>
-                          <Field label="Seller / brand name"><input value={invoiceEditor.details.seller_name ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_name: e.target.value } })} placeholder="YOMORA" className={invoiceInputCls} /></Field>
-                        </div>
-                        <Field label="Seller address"><textarea rows={2} value={invoiceEditor.details.seller_address ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_address: e.target.value } })} className={invoiceInputCls} /></Field>
-                        <div className="grid gap-3 sm:grid-cols-2"><Field label="Seller phone"><input value={invoiceEditor.details.seller_phone ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, seller_phone: e.target.value } })} className={invoiceInputCls} /></Field><Field label="Thank-you message"><input value={invoiceEditor.details.thank_you_note ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, thank_you_note: e.target.value } })} placeholder="Thank you for choosing YOMORA." className={invoiceInputCls} /></Field></div>
-                        <Field label="Bank details"><textarea rows={2} value={invoiceEditor.details.bank_details ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, bank_details: e.target.value } })} className={invoiceInputCls} /></Field>
-                        <Field label="Invoice note"><textarea rows={2} value={invoiceEditor.details.notes ?? ""} onChange={(e) => setInvoiceEditor({ ...invoiceEditor, details: { ...invoiceEditor.details, notes: e.target.value } })} className={invoiceInputCls} /></Field>
-                        <div><button type="button" disabled={invoiceMut.isPending} onClick={() => invoiceMut.mutate({ id: o.id, invoice_details: invoiceEditor.details })} className="inline-flex items-center gap-2 bg-gold px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-onyx disabled:opacity-50"><Save className="h-3.5 w-3.5" /> SAVE INVOICE</button></div>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
-                      {o.status !== "cancelled" && (
-                        <button
-                          type="button"
-                          disabled={velocityShipmentMut.isPending}
-                          onClick={() => velocityShipmentMut.mutate(o.id)}
-                          className="inline-flex items-center gap-1.5 border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-gold hover:bg-gold hover:text-onyx disabled:opacity-50"
-                        >
-                          <Truck className="h-3.5 w-3.5" /> CREATE VELOCITY SHIPMENT
-                        </button>
-                      )}
-                      {o.status === "completed" && (
-                        <button
-                          type="button"
-                          onClick={() => openWhatsAppInvoice(o)}
-                          className="inline-flex items-center gap-1.5 bg-[#25D366] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[#071b0e] hover:bg-[#20bd5a]"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setInvoiceEditor({ id: o.id, details: (o.invoice_details ?? {}) as InvoiceDetails })}
-                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-gold hover:text-gold"
-                      >
-                        <FileText className="h-3.5 w-3.5" /> INVOICE DETAILS
-                      </button>
-                      {o.status !== "pending" && (
-                        <button
-                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "pending" })}
-                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-foreground"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" /> REOPEN
-                        </button>
-                      )}
-                      {o.status !== "completed" && (
-                        <button
-                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "completed" })}
-                          className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
-                        >
-                          <Check className="h-3.5 w-3.5" /> MARK COMPLETED
-                        </button>
-                      )}
-                      {o.status !== "cancelled" && (
-                        <button
-                          onClick={() => orderStatusMut.mutate({ id: o.id, status: "cancelled" })}
-                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-destructive hover:text-destructive"
-                        >
-                          <X className="h-3.5 w-3.5" /> CANCEL
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { if (confirm("Delete this order permanently?")) orderDeleteMut.mutate(o.id); }}
-                        className="rounded p-2 text-muted-foreground hover:text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    key={f.k}
+                    onClick={() => setOrderFilter(f.k)}
+                    className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-semibold tracking-[0.24em] transition-colors ${
+                      active
+                        ? "border-gold bg-gold text-onyx"
+                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f.label.toUpperCase()}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] ${active ? "bg-onyx text-gold" : "bg-secondary/40"}`}
+                    >
+                      {f.count}
+                    </span>
+                  </button>
                 );
               })}
             </div>
-          )}
-        </div>
+
+            {filteredOrders.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                No {orderFilter} orders.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {filteredOrders.map((o) => {
+                  const items = (o.items as OrderItem[]) ?? [];
+                  return (
+                    <div key={o.id} className="grid gap-3 border border-border p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-display text-lg text-foreground">
+                              {o.customer_name}
+                            </span>
+                            <StatusBadge status={o.status} />
+                            {o.payment_status && (
+                              <span
+                                className={`inline-flex px-2 py-1 text-[9px] font-semibold tracking-[0.14em] ${o.payment_status === "completed" ? "bg-emerald-100 text-emerald-800" : o.payment_status === "pending" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"}`}
+                              >
+                                PAYMENT {o.payment_status.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {o.customer_email}
+                            {o.customer_phone ? ` · ${o.customer_phone}` : ""}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            #{o.id.slice(0, 8)} · {new Date(o.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-foreground">
+                            {formatINR(o.total)}
+                          </div>
+                          {o.coupon_code && (
+                            <div className="text-[10px] font-semibold tracking-[0.12em] text-gold">
+                              {o.coupon_code} · -{formatINR(o.discount_amount)}
+                            </div>
+                          )}
+                          <div className="text-[11px] text-muted-foreground">
+                            {items.reduce((s, i) => s + i.quantity, 0)} item(s)
+                          </div>
+                        </div>
+                      </div>
+
+                      {items.length > 0 && (
+                        <div className="grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                          {items.map((i, idx) => (
+                            <div key={idx} className="flex justify-between">
+                              <span>
+                                {i.name} × {i.quantity}
+                              </span>
+                              <span>{formatINR(i.price * i.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {o.shipping_address && (
+                        <div className="border-t border-border pt-3 text-xs text-muted-foreground">
+                          <span className="text-[10px] tracking-[0.2em] text-foreground/70">
+                            SHIP TO
+                          </span>
+                          <div className="mt-1 whitespace-pre-wrap">{o.shipping_address}</div>
+                        </div>
+                      )}
+
+                      {o.payment_verification_code && (
+                        <div className="grid gap-3 border border-gold/40 bg-gold/5 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
+                              MANUAL PHONEPE VERIFICATION
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+                              <span>
+                                Code:{" "}
+                                <code className="font-semibold text-foreground">
+                                  {o.payment_verification_code}
+                                </code>
+                              </span>
+                              <span>
+                                UTR:{" "}
+                                <code className="font-semibold text-foreground">
+                                  {o.payment_transaction_id || "Waiting for customer"}
+                                </code>
+                              </span>
+                              <span>
+                                Amount: <strong>{formatINR(o.total)}</strong>
+                              </span>
+                            </div>
+                            {o.payment_rejection_reason && (
+                              <p className="mt-2 text-xs text-destructive">
+                                Last rejection: {o.payment_rejection_reason}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:justify-end">
+                            {o.payment_proof_url && (
+                              <a
+                                href={o.payment_proof_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.16em] hover:border-gold hover:text-gold"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" /> VIEW PROOF
+                              </a>
+                            )}
+                            {o.payment_status === "proof_submitted" && (
+                              <>
+                                <button
+                                  disabled={paymentVerificationMut.isPending}
+                                  onClick={() =>
+                                    paymentVerificationMut.mutate({
+                                      order_id: o.id,
+                                      decision: "approve",
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-onyx disabled:opacity-50"
+                                >
+                                  <Check className="h-3.5 w-3.5" /> VERIFY & ACCEPT
+                                </button>
+                                <button
+                                  disabled={paymentVerificationMut.isPending}
+                                  onClick={() => {
+                                    const reason = window
+                                      .prompt("Why could this payment not be verified?")
+                                      ?.trim();
+                                    if (reason)
+                                      paymentVerificationMut.mutate({
+                                        order_id: o.id,
+                                        decision: "reject",
+                                        reason,
+                                      });
+                                  }}
+                                  className="inline-flex items-center gap-1.5 border border-destructive/50 px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive disabled:opacity-50"
+                                >
+                                  <X className="h-3.5 w-3.5" /> REJECT
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {invoiceEditor?.id === o.id && (
+                        <div className="grid gap-3 border-t border-border pt-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] font-semibold tracking-[0.22em] text-gold">
+                                INVOICE CONTENT
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                This information appears on the customer's downloadable invoice.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setInvoiceEditor(null)}
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Close
+                            </button>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Invoice number">
+                              <input
+                                value={invoiceEditor.details.invoice_number ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      invoice_number: e.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder={`YM-${o.id.slice(0, 8).toUpperCase()}`}
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                            <Field label="Tax rate (%)">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={invoiceEditor.details.tax_rate ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      tax_rate:
+                                        e.target.value === "" ? undefined : Number(e.target.value),
+                                    },
+                                  })
+                                }
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                            <Field label="Discount (₹)">
+                              <input
+                                type="number"
+                                min="0"
+                                value={invoiceEditor.details.discount ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      discount:
+                                        e.target.value === "" ? undefined : Number(e.target.value),
+                                    },
+                                  })
+                                }
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                            <Field label="Seller / brand name">
+                              <input
+                                value={invoiceEditor.details.seller_name ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      seller_name: e.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder="YOMORA"
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                          </div>
+                          <Field label="Seller address">
+                            <textarea
+                              rows={2}
+                              value={invoiceEditor.details.seller_address ?? ""}
+                              onChange={(e) =>
+                                setInvoiceEditor({
+                                  ...invoiceEditor,
+                                  details: {
+                                    ...invoiceEditor.details,
+                                    seller_address: e.target.value,
+                                  },
+                                })
+                              }
+                              className={invoiceInputCls}
+                            />
+                          </Field>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Seller phone">
+                              <input
+                                value={invoiceEditor.details.seller_phone ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      seller_phone: e.target.value,
+                                    },
+                                  })
+                                }
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                            <Field label="Thank-you message">
+                              <input
+                                value={invoiceEditor.details.thank_you_note ?? ""}
+                                onChange={(e) =>
+                                  setInvoiceEditor({
+                                    ...invoiceEditor,
+                                    details: {
+                                      ...invoiceEditor.details,
+                                      thank_you_note: e.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder="Thank you for choosing YOMORA."
+                                className={invoiceInputCls}
+                              />
+                            </Field>
+                          </div>
+                          <Field label="Bank details">
+                            <textarea
+                              rows={2}
+                              value={invoiceEditor.details.bank_details ?? ""}
+                              onChange={(e) =>
+                                setInvoiceEditor({
+                                  ...invoiceEditor,
+                                  details: {
+                                    ...invoiceEditor.details,
+                                    bank_details: e.target.value,
+                                  },
+                                })
+                              }
+                              className={invoiceInputCls}
+                            />
+                          </Field>
+                          <Field label="Invoice note">
+                            <textarea
+                              rows={2}
+                              value={invoiceEditor.details.notes ?? ""}
+                              onChange={(e) =>
+                                setInvoiceEditor({
+                                  ...invoiceEditor,
+                                  details: { ...invoiceEditor.details, notes: e.target.value },
+                                })
+                              }
+                              className={invoiceInputCls}
+                            />
+                          </Field>
+                          <div>
+                            <button
+                              type="button"
+                              disabled={invoiceMut.isPending}
+                              onClick={() =>
+                                invoiceMut.mutate({
+                                  id: o.id,
+                                  invoice_details: invoiceEditor.details,
+                                })
+                              }
+                              className="inline-flex items-center gap-2 bg-gold px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-onyx disabled:opacity-50"
+                            >
+                              <Save className="h-3.5 w-3.5" /> SAVE INVOICE
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                        {o.status !== "cancelled" && (
+                          <button
+                            type="button"
+                            disabled={velocityShipmentMut.isPending}
+                            onClick={() => velocityShipmentMut.mutate(o.id)}
+                            className="inline-flex items-center gap-1.5 border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-gold hover:bg-gold hover:text-onyx disabled:opacity-50"
+                          >
+                            <Truck className="h-3.5 w-3.5" /> CREATE VELOCITY SHIPMENT
+                          </button>
+                        )}
+                        {o.status === "completed" && (
+                          <button
+                            type="button"
+                            onClick={() => openWhatsAppInvoice(o)}
+                            className="inline-flex items-center gap-1.5 bg-[#25D366] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[#071b0e] hover:bg-[#20bd5a]"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
+                          </button>
+                        )}
+                        <button
+                          onClick={() =>
+                            setInvoiceEditor({
+                              id: o.id,
+                              details: (o.invoice_details ?? {}) as InvoiceDetails,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-gold hover:text-gold"
+                        >
+                          <FileText className="h-3.5 w-3.5" /> INVOICE DETAILS
+                        </button>
+                        {o.status !== "pending" && (
+                          <button
+                            onClick={() => orderStatusMut.mutate({ id: o.id, status: "pending" })}
+                            className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-foreground"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" /> REOPEN
+                          </button>
+                        )}
+                        {o.status !== "completed" && (
+                          <button
+                            onClick={() => orderStatusMut.mutate({ id: o.id, status: "completed" })}
+                            className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
+                          >
+                            <Check className="h-3.5 w-3.5" /> MARK COMPLETED
+                          </button>
+                        )}
+                        {o.status !== "cancelled" && (
+                          <button
+                            onClick={() => orderStatusMut.mutate({ id: o.id, status: "cancelled" })}
+                            className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-destructive hover:text-destructive"
+                          >
+                            <X className="h-3.5 w-3.5" /> CANCEL
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            if (confirm("Delete this order permanently?"))
+                              orderDeleteMut.mutate(o.id);
+                          }}
+                          className="rounded p-2 text-muted-foreground hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {tab === "site" && <SiteContentEditor />}
+
+        {tab === "payment-qr" && <PaymentQrManager />}
 
         {tab === "coupons" && <CouponManager />}
 
         {tab === "alerts" && (
           <div className="mt-8 grid gap-8">
             <div className="grid gap-2">
-            <h2 className="font-display text-2xl">Customer enquiries & subscriptions</h2>
-            {inquiriesQ.isLoading && <p className="py-4 text-sm text-muted-foreground">Loading customer enquiries…</p>}
-            {!inquiriesQ.isLoading && (inquiriesQ.data ?? []).length === 0 && <p className="py-4 text-sm text-muted-foreground">No customer enquiries yet.</p>}
-            {(inquiriesQ.data ?? []).map((inquiry) => <div key={inquiry.id} className="grid gap-2 border border-border p-3 sm:grid-cols-[1fr_auto]"><div><div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">{inquiry.inquiry_type.replace("_", " ")}</div><div className="mt-1 font-medium">{inquiry.name || inquiry.email}</div><div className="mt-0.5 text-xs text-muted-foreground">{[inquiry.email, inquiry.phone].filter(Boolean).join(" · ")}</div>{inquiry.message && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{inquiry.message}</p>}</div><span className="text-xs text-muted-foreground">{new Date(inquiry.created_at).toLocaleString("en-IN")}</span></div>)}
+              <h2 className="font-display text-2xl">Customer enquiries & subscriptions</h2>
+              {inquiriesQ.isLoading && (
+                <p className="py-4 text-sm text-muted-foreground">Loading customer enquiries…</p>
+              )}
+              {!inquiriesQ.isLoading && (inquiriesQ.data ?? []).length === 0 && (
+                <p className="py-4 text-sm text-muted-foreground">No customer enquiries yet.</p>
+              )}
+              {(inquiriesQ.data ?? []).map((inquiry) => (
+                <div
+                  key={inquiry.id}
+                  className="grid gap-2 border border-border p-3 sm:grid-cols-[1fr_auto]"
+                >
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
+                      {inquiry.inquiry_type.replace("_", " ")}
+                    </div>
+                    <div className="mt-1 font-medium">{inquiry.name || inquiry.email}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {[inquiry.email, inquiry.phone].filter(Boolean).join(" · ")}
+                    </div>
+                    {inquiry.message && (
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                        {inquiry.message}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(inquiry.created_at).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              ))}
             </div>
             <div className="grid gap-2">
-            <h2 className="font-display text-2xl">Restock alerts</h2>
-            {alertsQ.isLoading && <p className="py-8 text-sm text-muted-foreground">Loading restock alerts…</p>}
-            {!alertsQ.isLoading && (alertsQ.data ?? []).length === 0 && (
-              <p className="py-8 text-sm text-muted-foreground">No restock alerts yet.</p>
-            )}
-            {(alertsQ.data ?? []).map((a: any) => (
-              <div key={a.id} className="grid grid-cols-[1fr_auto] items-center gap-4 border border-border p-3">
-                <div className="min-w-0">
-                  <div className="font-display text-lg text-foreground">
-                    {products.find((p) => p.id === a.product_id)?.name ?? a.product_id}
+              <h2 className="font-display text-2xl">Restock alerts</h2>
+              {alertsQ.isLoading && (
+                <p className="py-8 text-sm text-muted-foreground">Loading restock alerts…</p>
+              )}
+              {!alertsQ.isLoading && (alertsQ.data ?? []).length === 0 && (
+                <p className="py-8 text-sm text-muted-foreground">No restock alerts yet.</p>
+              )}
+              {(alertsQ.data ?? []).map((a: any) => (
+                <div
+                  key={a.id}
+                  className="grid grid-cols-[1fr_auto] items-center gap-4 border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <div className="font-display text-lg text-foreground">
+                      {products.find((p) => p.id === a.product_id)?.name ?? a.product_id}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {[a.name, a.email, a.phone].filter(Boolean).join(" · ") || "—"}
+                    </div>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {[a.name, a.email, a.phone].filter(Boolean).join(" · ") || "—"}
-                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {a.created_at ? new Date(a.created_at).toLocaleDateString() : ""}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {a.created_at ? new Date(a.created_at).toLocaleDateString() : ""}
-                </span>
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         )}
@@ -1091,17 +1621,25 @@ on conflict do nothing;`}
             />
             <div className="flex flex-wrap gap-1">
               {(["all", "pending", "active", "expired", "cancelled"] as const).map((s) => {
-                const count = s === "all" ? memberships.length : memberships.filter((m) => m.status === s).length;
+                const count =
+                  s === "all"
+                    ? memberships.length
+                    : memberships.filter((m) => m.status === s).length;
                 const active = memStatusFilter === s;
                 return (
                   <button
                     key={s}
                     onClick={() => setMemStatusFilter(s)}
                     className={`inline-flex items-center gap-2 border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] ${
-                      active ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground hover:border-foreground"
+                      active
+                        ? "border-gold bg-gold/10 text-gold"
+                        : "border-border text-muted-foreground hover:border-foreground"
                     }`}
                   >
-                    {s} <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground/70">{count}</span>
+                    {s}{" "}
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground/70">
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -1133,12 +1671,18 @@ on conflict do nothing;`}
                         {m.user_email ?? "unknown email"} · {m.plan_name ?? "no plan"}
                       </div>
                       <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        User {m.user_id.slice(0, 8)} · created {new Date(m.created_at).toLocaleDateString()}
+                        User {m.user_id.slice(0, 8)} · created{" "}
+                        {new Date(m.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
-                      <div>Activated: {m.activated_at ? new Date(m.activated_at).toLocaleDateString() : "—"}</div>
-                      <div>Expires: {m.expires_at ? new Date(m.expires_at).toLocaleDateString() : "—"}</div>
+                      <div>
+                        Activated:{" "}
+                        {m.activated_at ? new Date(m.activated_at).toLocaleDateString() : "—"}
+                      </div>
+                      <div>
+                        Expires: {m.expires_at ? new Date(m.expires_at).toLocaleDateString() : "—"}
+                      </div>
                     </div>
                   </div>
 
@@ -1173,11 +1717,17 @@ on conflict do nothing;`}
                         <X className="h-3.5 w-3.5" /> CANCEL
                       </button>
                     )}
-                    <button onClick={() => openMembership(m)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                    <button
+                      onClick={() => openMembership(m)}
+                      className="rounded p-2 text-muted-foreground hover:text-gold"
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => { if (confirm("Delete this membership?")) memDeleteMut.mutate(m.id); }}
+                      onClick={() => {
+                        if (confirm("Delete this membership?")) memDeleteMut.mutate(m.id);
+                      }}
                       className="rounded p-2 text-muted-foreground hover:text-destructive"
                       title="Delete"
                     >
@@ -1192,14 +1742,19 @@ on conflict do nothing;`}
       )}
 
       {isMemOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closeMembership}>
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={closeMembership}
+        >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleMembershipSubmit}
             className="grid max-h-[90vh] w-full max-w-2xl gap-4 overflow-y-auto border border-border bg-background p-6"
           >
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl">{memEditing ? "Edit membership" : "New membership"}</h2>
+              <h2 className="font-display text-2xl">
+                {memEditing ? "Edit membership" : "New membership"}
+              </h2>
               <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
@@ -1238,14 +1793,21 @@ on conflict do nothing;`}
                 >
                   <option value="">— No plan —</option>
                   {plans.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
                   ))}
                 </select>
               </Field>
               <Field label="Status">
                 <select
                   value={memForm.status}
-                  onChange={(e) => setMemForm({ ...memForm, status: e.target.value as MembershipFormState["status"] })}
+                  onChange={(e) =>
+                    setMemForm({
+                      ...memForm,
+                      status: e.target.value as MembershipFormState["status"],
+                    })
+                  }
                   className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
                 >
                   <option value="pending">Pending</option>
@@ -1282,7 +1844,11 @@ on conflict do nothing;`}
             </Field>
 
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={closeMembership} className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary">
+              <button
+                type="button"
+                onClick={closeMembership}
+                className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary"
+              >
                 CANCEL
               </button>
               <button
@@ -1290,7 +1856,11 @@ on conflict do nothing;`}
                 disabled={memCreateMut.isPending || memUpdateMut.isPending}
                 className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
               >
-                {(memCreateMut.isPending || memUpdateMut.isPending) ? "SAVING…" : memEditing ? "SAVE MEMBERSHIP" : "CREATE MEMBERSHIP"}
+                {memCreateMut.isPending || memUpdateMut.isPending
+                  ? "SAVING…"
+                  : memEditing
+                    ? "SAVE MEMBERSHIP"
+                    : "CREATE MEMBERSHIP"}
               </button>
             </div>
           </form>
@@ -1301,28 +1871,42 @@ on conflict do nothing;`}
         <section className="container-x mx-auto max-w-5xl pb-16">
           {plans.length === 0 ? (
             <div className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-              No plans yet. Click <span className="font-semibold text-foreground">ADD PLAN</span> to create one.
+              No plans yet. Click <span className="font-semibold text-foreground">ADD PLAN</span> to
+              create one.
             </div>
           ) : (
             <div className="grid gap-3">
               {plans.map((p) => (
-                <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background p-4">
+                <div
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background p-4"
+                >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-display text-lg">{p.name}</h3>
-                      <span className={`rounded px-2 py-0.5 text-[10px] tracking-[0.2em] ${p.is_active ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"}`}>
+                      <span
+                        className={`rounded px-2 py-0.5 text-[10px] tracking-[0.2em] ${p.is_active ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"}`}
+                      >
                         {p.is_active ? "LIVE" : "HIDDEN"}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{p.tagline || "—"}</p>
-                    <p className="mt-1 text-xs">{formatINR(p.price)} · {p.duration_label} · {p.benefits.length} benefits</p>
+                    <p className="mt-1 text-xs">
+                      {formatINR(p.price)} · {p.duration_label} · {p.benefits.length} benefits
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openPlan(p)} className="rounded p-2 text-muted-foreground hover:text-gold" title="Edit">
+                    <button
+                      onClick={() => openPlan(p)}
+                      className="rounded p-2 text-muted-foreground hover:text-gold"
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => { if (confirm(`Delete plan "${p.name}"?`)) planDeleteMut.mutate(p.id); }}
+                      onClick={() => {
+                        if (confirm(`Delete plan "${p.name}"?`)) planDeleteMut.mutate(p.id);
+                      }}
                       className="rounded p-2 text-muted-foreground hover:text-destructive"
                       title="Delete"
                     >
@@ -1337,7 +1921,10 @@ on conflict do nothing;`}
       )}
 
       {isPlanOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closePlan}>
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={closePlan}
+        >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handlePlanSubmit}
@@ -1356,20 +1943,47 @@ on conflict do nothing;`}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Plan name">
-                <input required value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  required
+                  value={planForm.name}
+                  onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
               <Field label="Price (INR)">
-                <input required type="number" min={0} value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  required
+                  type="number"
+                  min={0}
+                  value={planForm.price}
+                  onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
               <Field label="Duration label">
-                <input required value={planForm.duration_label} onChange={(e) => setPlanForm({ ...planForm, duration_label: e.target.value })} placeholder="per year" className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  required
+                  value={planForm.duration_label}
+                  onChange={(e) => setPlanForm({ ...planForm, duration_label: e.target.value })}
+                  placeholder="per year"
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
               <Field label="CTA button label">
-                <input required value={planForm.cta_label} onChange={(e) => setPlanForm({ ...planForm, cta_label: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  required
+                  value={planForm.cta_label}
+                  onChange={(e) => setPlanForm({ ...planForm, cta_label: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
             </div>
             <Field label="Tagline">
-              <input value={planForm.tagline} onChange={(e) => setPlanForm({ ...planForm, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+              <input
+                value={planForm.tagline}
+                onChange={(e) => setPlanForm({ ...planForm, tagline: e.target.value })}
+                className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+              />
             </Field>
             <Field label="Benefits (one per line)">
               <textarea
@@ -1380,7 +1994,11 @@ on conflict do nothing;`}
               />
             </Field>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={closePlan} className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary">
+              <button
+                type="button"
+                onClick={closePlan}
+                className="border border-border px-5 py-3 text-[11px] font-semibold tracking-[0.24em] hover:bg-secondary"
+              >
                 CANCEL
               </button>
               <button
@@ -1388,7 +2006,11 @@ on conflict do nothing;`}
                 disabled={planCreateMut.isPending || planUpdateMut.isPending}
                 className="inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-60"
               >
-                {(planCreateMut.isPending || planUpdateMut.isPending) ? "SAVING…" : planEditing ? "SAVE PLAN" : "CREATE PLAN"}
+                {planCreateMut.isPending || planUpdateMut.isPending
+                  ? "SAVING…"
+                  : planEditing
+                    ? "SAVE PLAN"
+                    : "CREATE PLAN"}
               </button>
             </div>
           </form>
@@ -1416,7 +2038,12 @@ on conflict do nothing;`}
                 />
               </Field>
               <Field label="Name">
-                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
               <Field label="Price (INR)">
                 <input
@@ -1435,7 +2062,9 @@ on conflict do nothing;`}
                   className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
                 >
                   {categories.map((c) => (
-                    <option key={c.slug} value={c.slug}>{c.label}</option>
+                    <option key={c.slug} value={c.slug}>
+                      {c.label}
+                    </option>
                   ))}
                 </select>
               </Field>
@@ -1446,12 +2075,18 @@ on conflict do nothing;`}
                   className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
                 >
                   {AUDIENCES.map((a) => (
-                    <option key={a.value} value={a.value}>{a.label}</option>
+                    <option key={a.value} value={a.value}>
+                      {a.label}
+                    </option>
                   ))}
                 </select>
               </Field>
               <Field label="Tagline">
-                <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold" />
+                <input
+                  value={form.tagline}
+                  onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+                  className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-gold"
+                />
               </Field>
               <GalleryUploadField
                 label="Product images"
@@ -1472,12 +2107,21 @@ on conflict do nothing;`}
             </Field>
 
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.sold_out} onChange={(e) => setForm({ ...form, sold_out: e.target.checked })} className="accent-[color:var(--gold)]" />
+              <input
+                type="checkbox"
+                checked={form.sold_out}
+                onChange={(e) => setForm({ ...form, sold_out: e.target.checked })}
+                className="accent-[color:var(--gold)]"
+              />
               Mark as Sold Out (shows a “Notify Me” button instead of Add to Cart)
             </label>
 
             <div className="mt-2 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={close} className="border border-border px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] hover:border-foreground">
+              <button
+                type="button"
+                onClick={close}
+                className="border border-border px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] hover:border-foreground"
+              >
                 CANCEL
               </button>
               <button
@@ -1493,13 +2137,18 @@ on conflict do nothing;`}
       )}
 
       {catOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={closeCat}>
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={closeCat}
+        >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleCatSubmit}
             className="grid w-full max-w-md gap-4 border border-border bg-background p-6"
           >
-            <h2 className="font-display text-2xl">{catEditing ? "Edit category" : "New category"}</h2>
+            <h2 className="font-display text-2xl">
+              {catEditing ? "Edit category" : "New category"}
+            </h2>
             <Field label="Slug (URL id)">
               <input
                 required
@@ -1530,7 +2179,11 @@ on conflict do nothing;`}
               />
             </Field>
             <div className="mt-2 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={closeCat} className="border border-border px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] hover:border-foreground">
+              <button
+                type="button"
+                onClick={closeCat}
+                className="border border-border px-5 py-2.5 text-[11px] font-semibold tracking-[0.24em] hover:border-foreground"
+              >
                 CANCEL
               </button>
               <button
@@ -1557,7 +2210,10 @@ function TopBar({ onSignOut }: { onSignOut: () => void }) {
           <span className="font-display text-xl tracking-[0.18em] text-gold">YOMORA</span>
           <span className="text-[10px] tracking-[0.28em] text-cream/60">ADMIN</span>
         </Link>
-        <button onClick={onSignOut} className="inline-flex items-center gap-2 text-xs tracking-[0.18em] text-cream/85 hover:text-gold">
+        <button
+          onClick={onSignOut}
+          className="inline-flex items-center gap-2 text-xs tracking-[0.18em] text-cream/85 hover:text-gold"
+        >
           <LogOut className="h-4 w-4" /> SIGN OUT
         </button>
       </div>
@@ -1568,7 +2224,9 @@ function TopBar({ onSignOut }: { onSignOut: () => void }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-[10px] tracking-[0.2em] text-muted-foreground">{label.toUpperCase()}</span>
+      <span className="text-[10px] tracking-[0.2em] text-muted-foreground">
+        {label.toUpperCase()}
+      </span>
       {children}
     </label>
   );
@@ -1587,7 +2245,11 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function MembershipStatusBadge({ status }: { status: "pending" | "active" | "expired" | "cancelled" }) {
+function MembershipStatusBadge({
+  status,
+}: {
+  status: "pending" | "active" | "expired" | "cancelled";
+}) {
   const styles: Record<string, string> = {
     active: "bg-gold text-onyx",
     pending: "bg-secondary text-foreground",
@@ -1600,3 +2262,4 @@ function MembershipStatusBadge({ status }: { status: "pending" | "active" | "exp
     </span>
   );
 }
+

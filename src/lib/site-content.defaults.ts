@@ -105,14 +105,7 @@ export type ReelsContent = {
 };
 
 export type SocialPlatform =
-  | "Instagram"
-  | "Facebook"
-  | "YouTube"
-  | "TikTok"
-  | "X"
-  | "WhatsApp"
-  | "Pinterest"
-  | "LinkedIn";
+  "Instagram" | "Facebook" | "YouTube" | "TikTok" | "X" | "WhatsApp" | "Pinterest" | "LinkedIn";
 
 export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   "Instagram",
@@ -203,6 +196,10 @@ export type TrackOrderPageContent = {
   empty_message: string;
 };
 
+export type PaymentQrContent = {
+  image_url: string;
+};
+
 export type SiteContentMap = {
   header: HeaderContent;
   header_nav: HeaderNavContent;
@@ -223,6 +220,7 @@ export type SiteContentMap = {
   page_faq: FaqPageContent;
   page_membership: MembershipPageContent;
   page_track_order: TrackOrderPageContent;
+  payment_qr: PaymentQrContent;
 };
 
 export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
@@ -307,7 +305,13 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     whatsapp_message: "Hi! I'd like to request a custom 925 silver jewellery piece.",
   },
   homepage_banners: {
-    slides: [{ image_url: "", link: "/custom-jewellery", alt: "Three-face 925 silver pendant — YOMORA custom jewellery" }],
+    slides: [
+      {
+        image_url: "",
+        link: "/custom-jewellery",
+        alt: "Three-face 925 silver pendant — YOMORA custom jewellery",
+      },
+    ],
   },
   footer: {
     brand_blurb:
@@ -335,8 +339,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     enabled: true,
     eyebrow: "AS SEEN ON INSTAGRAM",
     title: "Reels & Stories",
-    description:
-      "Behind the craft, styling notes and new drops — follow along on Instagram.",
+    description: "Behind the craft, styling notes and new drops — follow along on Instagram.",
     autoplay: true,
     loop: true,
     items: [],
@@ -371,13 +374,26 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     hero_subtitle: "Made Just For You",
     hero_description:
       "Have a design in mind? We make personalised 925 silver jewellery as per your style and requirements.",
-    features: ["Personalized Designs", "Premium 925 Silver", "Expert Craftsmanship", "Timely Delivery"],
+    features: [
+      "Personalized Designs",
+      "Premium 925 Silver",
+      "Expert Craftsmanship",
+      "Timely Delivery",
+    ],
     steps_eyebrow: "HOW IT WORKS",
     steps: [
-      { icon: "Sparkles", title: "SHARE YOUR IDEA", description: "Share your design or inspiration with us" },
+      {
+        icon: "Sparkles",
+        title: "SHARE YOUR IDEA",
+        description: "Share your design or inspiration with us",
+      },
       { icon: "Star", title: "GET QUOTE", description: "We will send you the best quote" },
       { icon: "Hammer", title: "WE CRAFT IT", description: "Our experts craft it with perfection" },
-      { icon: "Truck", title: "DELIVERED TO YOU", description: "Delivered safely to your doorstep" },
+      {
+        icon: "Truck",
+        title: "DELIVERED TO YOU",
+        description: "Delivered safely to your doorstep",
+      },
     ],
     form_title: "Enquire Now",
     form_button_label: "SUBMIT ENQUIRY",
@@ -399,13 +415,37 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
   page_faq: {
     title: "Frequently Asked Questions",
     items: [
-      { question: "What is 925 Sterling Silver?", answer: "925 Sterling Silver is an alloy containing 92.5% pure silver — the international standard for high-quality silver jewellery." },
-      { question: "How do I know my ring size?", answer: "You can measure the inner diameter of a well-fitting ring or request our free ring sizer." },
-      { question: "Do you offer Cash on Delivery?", answer: "Yes, Cash on Delivery is available on all orders across India." },
-      { question: "How long does shipping take?", answer: "Orders are dispatched within 24 hours and delivered in 3–7 business days depending on location." },
-      { question: "What is your return policy?", answer: "We offer easy 7-day returns on all purchases in original condition." },
-      { question: "Can I customize my jewellery?", answer: "Yes — visit our Custom Jewellery page and share your design with us." },
-      { question: "How do I care for my silver jewellery?", answer: "Store in an airtight pouch, avoid perfumes and polish gently with a soft cloth." },
+      {
+        question: "What is 925 Sterling Silver?",
+        answer:
+          "925 Sterling Silver is an alloy containing 92.5% pure silver — the international standard for high-quality silver jewellery.",
+      },
+      {
+        question: "How do I know my ring size?",
+        answer:
+          "You can measure the inner diameter of a well-fitting ring or request our free ring sizer.",
+      },
+      {
+        question: "Do you offer Cash on Delivery?",
+        answer: "Yes, Cash on Delivery is available on all orders across India.",
+      },
+      {
+        question: "How long does shipping take?",
+        answer:
+          "Orders are dispatched within 24 hours and delivered in 3–7 business days depending on location.",
+      },
+      {
+        question: "What is your return policy?",
+        answer: "We offer easy 7-day returns on all purchases in original condition.",
+      },
+      {
+        question: "Can I customize my jewellery?",
+        answer: "Yes — visit our Custom Jewellery page and share your design with us.",
+      },
+      {
+        question: "How do I care for my silver jewellery?",
+        answer: "Store in an airtight pouch, avoid perfumes and polish gently with a soft cloth.",
+      },
     ],
     aside_title: "Still have questions?",
     aside_body: "We're here to help!",
@@ -433,12 +473,20 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       "A PRIVILEGE RESERVED FOR THOSE WHO VALUE QUALITY, TRUST & TIMELESS ELEGANCE.",
     privileges: [
       { icon: "Sparkles", title: "25% OFF", description: "on everything you order for 1 year" },
-      { icon: "Star", title: "EARLY ACCESS", description: "to new arrivals & exclusive collections" },
+      {
+        icon: "Star",
+        title: "EARLY ACCESS",
+        description: "to new arrivals & exclusive collections",
+      },
       { icon: "Gem", title: "MEMBER-ONLY OFFERS", description: "special discounts all year long" },
       { icon: "Heart", title: "BIRTHDAY SURPRISE", description: "a special treat just for you" },
       { icon: "Truck", title: "PRIORITY DISPATCH", description: "faster processing & shipping" },
       { icon: "Award", title: "DEDICATED SUPPORT", description: "priority customer assistance" },
-      { icon: "Hammer", title: "CUSTOM JEWELLERY", description: "personalized designs crafted for you" },
+      {
+        icon: "Hammer",
+        title: "CUSTOM JEWELLERY",
+        description: "personalized designs crafted for you",
+      },
     ],
   },
   page_track_order: {
@@ -450,13 +498,14 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     help_text: "Need help? Contact us on +91 98765 43210",
     empty_message: "Enter your order details to see its status.",
   },
+  payment_qr: {
+    image_url: "/devika-jewellers-phonepe-qr.jpeg",
+  },
 };
 
 export type SiteContentKey = keyof SiteContentMap;
 
-export function mergeSiteContent(
-  rows: { key: string; data: unknown }[],
-): SiteContentMap {
+export function mergeSiteContent(rows: { key: string; data: unknown }[]): SiteContentMap {
   const map: Record<string, unknown> = {};
   for (const r of rows) map[r.key] = r.data;
   const out = { ...SITE_CONTENT_DEFAULTS };
@@ -464,7 +513,14 @@ export function mergeSiteContent(
     if (map[k]) {
       const def = SITE_CONTENT_DEFAULTS[k];
       const val = map[k];
-      if (def && typeof def === "object" && !Array.isArray(def) && val && typeof val === "object" && !Array.isArray(val)) {
+      if (
+        def &&
+        typeof def === "object" &&
+        !Array.isArray(def) &&
+        val &&
+        typeof val === "object" &&
+        !Array.isArray(val)
+      ) {
         (out as Record<string, unknown>)[k] = { ...(def as object), ...(val as object) };
       } else {
         (out as Record<string, unknown>)[k] = val;
@@ -473,3 +529,4 @@ export function mergeSiteContent(
   });
   return out;
 }
+
