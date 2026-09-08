@@ -33,7 +33,7 @@ function invoiceDetailsFromNotes(notes: string | null | undefined): InvoiceDetai
   if (markerAt < 0) return {};
   try {
     const parsed = JSON.parse(notes!.slice(markerAt + INVOICE_MARKER.length));
-    return parsed && typeof parsed === "object" ? parsed as InvoiceDetails : {};
+    return parsed && typeof parsed === "object" ? (parsed as InvoiceDetails) : {};
   } catch {
     return {};
   }
@@ -51,12 +51,20 @@ function mapOrder(row: any): Order {
 const checkoutInput = z.object({
   customer_name: z.string().trim().min(2).max(120),
   customer_email: z.string().trim().email().max(200),
-  customer_phone: z.string().trim().min(6).max(30).regex(/^[0-9+()\-\s]+$/, "Invalid phone"),
+  customer_phone: z
+    .string()
+    .trim()
+    .min(6)
+    .max(30)
+    .regex(/^[0-9+()\-\s]+$/, "Invalid phone"),
   shipping_address: z.string().trim().min(10).max(600),
   address_line: z.string().trim().min(5).max(400),
   city: z.string().trim().min(2).max(100),
   state: z.string().trim().min(2).max(100),
-  pincode: z.string().trim().regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
+  pincode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
   payment_method: z.enum(["upi", "card", "netbank", "cod"]),
   coupon_code: z.string().trim().max(40).optional(),
   items: z
@@ -92,7 +100,9 @@ async function requestFingerprint(request: Request, secret: string): Promise<str
     key,
     new TextEncoder().encode(getClientAddress(request)),
   );
-  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 /** Creates a real order server-side. Product names and prices are always read from the database. */
@@ -122,7 +132,8 @@ export const createOrderFn = createServerFn({ method: "POST" })
       .like("notes", `%[request:${fingerprint}]%`)
       .gte("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString());
     if (rateError) throw new Error(rateError.message);
-    if ((count ?? 0) >= 3) throw new Error("Too many order requests. Please try again in a few minutes.");
+    if ((count ?? 0) >= 3)
+      throw new Error("Too many order requests. Please try again in a few minutes.");
 
     const requestedIds = [...new Set(data.items.map((item) => item.id))];
     const { data: products, error: productError } = await supabaseAdmin
@@ -134,7 +145,8 @@ export const createOrderFn = createServerFn({ method: "POST" })
     const byId = new Map((products ?? []).map((product) => [product.id, product]));
     const items: OrderItem[] = data.items.map((item) => {
       const product = byId.get(item.id);
-      if (!product || product.sold_out) throw new Error("One or more selected products are unavailable");
+      if (!product || product.sold_out)
+        throw new Error("One or more selected products are unavailable");
       return { id: product.id, name: product.name, price: product.price, quantity: item.quantity };
     });
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -176,11 +188,14 @@ export const createOrderFn = createServerFn({ method: "POST" })
     let couponCode: string | null = null;
 
     if (data.coupon_code) {
-      const { data: redeemed, error: couponError } = await supabaseAdmin.rpc("redeem_coupon_for_order", {
-        _order_id: order.id,
-        _coupon_code: data.coupon_code,
-        _user_id: authData.user.id,
-      });
+      const { data: redeemed, error: couponError } = await supabaseAdmin.rpc(
+        "redeem_coupon_for_order",
+        {
+          _order_id: order.id,
+          _coupon_code: data.coupon_code,
+          _user_id: authData.user.id,
+        },
+      );
       if (couponError || !redeemed?.[0]) {
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
         const message = couponError?.message?.replace(/^.*?: /, "") || "Unable to apply coupon";
@@ -210,7 +225,14 @@ export const createOrderFn = createServerFn({ method: "POST" })
       await supabaseAdmin.from("orders").delete().eq("id", order.id);
       throw new Error("Unable to prepare QR payment. Please try again.");
     }
-    return { id: order.id, total: payableTotal, discount, couponCode, paymentUrl: null, verificationCode };
+    return {
+      id: order.id,
+      total: payableTotal,
+      discount,
+      couponCode,
+      paymentUrl: null,
+      verificationCode,
+    };
   });
 
 export type Order = {
@@ -228,14 +250,55 @@ export type Order = {
   notes: string;
   created_at: string;
   updated_at: string;
-  payment_status?: "pending" | "proof_submitted" | "completed" | "failed" | "cancelled" | "rejected" | null;
+  payment_status?:
+    "pending" | "proof_submitted" | "completed" | "failed" | "cancelled" | "rejected" | null;
   payment_mode?: string | null;
   payment_transaction_id?: string | null;
   payment_verification_code?: string | null;
   payment_proof_url?: string | null;
   payment_rejection_reason?: string | null;
+  payment_verification?: PaymentVerificationChecks | null;
   invoice_details?: InvoiceDetails;
 };
+
+export type PaymentVerificationChecks = {
+  proof_attached: boolean;
+  utr_format_valid: boolean;
+  utr_unique: boolean;
+  amount_matches: boolean;
+  ready_for_admin: boolean;
+  score: number;
+  submitted_at: string | null;
+};
+
+function buildPaymentVerificationChecks(
+  payment:
+    | {
+        amount: number;
+        transaction_id: string | null;
+        proof_url: string | null;
+        submitted_at: string | null;
+      }
+    | undefined,
+  orderTotal: number,
+  transactionCounts: Map<string, number>,
+): PaymentVerificationChecks | null {
+  if (!payment) return null;
+  const transactionId = payment.transaction_id?.trim().toUpperCase() ?? "";
+  const checks = {
+    proof_attached: /^https:\/\//i.test(payment.proof_url ?? ""),
+    utr_format_valid: /^[A-Z0-9_-]{8,40}$/.test(transactionId) && /\d{4}/.test(transactionId),
+    utr_unique: !!transactionId && transactionCounts.get(transactionId) === 1,
+    amount_matches: payment.amount === orderTotal,
+  };
+  const passed = Object.values(checks).filter(Boolean).length;
+  return {
+    ...checks,
+    ready_for_admin: passed === 4,
+    score: passed * 25,
+    submitted_at: payment.submitted_at,
+  };
+}
 
 /** Public order tracking only returns delivery-safe fields after matching order ID and email. */
 export const trackOrderFn = createServerFn({ method: "POST" })
@@ -274,9 +337,20 @@ export const listOrdersFn = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const orderIds = (data ?? []).map((order) => order.id);
     const { data: payments } = orderIds.length
-      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason").in("order_id", orderIds)
+      ? await supabaseAdmin
+          .from("order_payments")
+          .select(
+            "order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason,amount,submitted_at",
+          )
+          .in("order_id", orderIds)
       : { data: [] };
     const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
+    const transactionCounts = new Map<string, number>();
+    for (const payment of payments ?? []) {
+      if (!payment.transaction_id || payment.status === "rejected") continue;
+      const key = payment.transaction_id.trim().toUpperCase();
+      transactionCounts.set(key, (transactionCounts.get(key) ?? 0) + 1);
+    }
     return (data ?? []).map((row) => {
       const payment = byOrder.get(row.id);
       return {
@@ -287,6 +361,7 @@ export const listOrdersFn = createServerFn({ method: "GET" })
         payment_verification_code: payment?.verification_code ?? null,
         payment_proof_url: payment?.proof_url ?? null,
         payment_rejection_reason: payment?.rejection_reason ?? null,
+        payment_verification: buildPaymentVerificationChecks(payment, row.total, transactionCounts),
       };
     });
   });
@@ -304,13 +379,20 @@ export const listMyOrdersFn = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .select("id,customer_name,customer_email,customer_phone,shipping_address,items,subtotal,discount_amount,coupon_code,total,status,notes,created_at,updated_at")
+      .select(
+        "id,customer_name,customer_email,customer_phone,shipping_address,items,subtotal,discount_amount,coupon_code,total,status,notes,created_at,updated_at",
+      )
       .eq("customer_email", email)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const orderIds = (data ?? []).map((order) => order.id);
     const { data: payments } = orderIds.length
-      ? await supabaseAdmin.from("order_payments").select("order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason").in("order_id", orderIds)
+      ? await supabaseAdmin
+          .from("order_payments")
+          .select(
+            "order_id,status,payment_mode,transaction_id,verification_code,proof_url,rejection_reason",
+          )
+          .in("order_id", orderIds)
       : { data: [] };
     const byOrder = new Map((payments ?? []).map((payment) => [payment.order_id, payment]));
     return (data ?? []).map((row) => {
@@ -353,10 +435,7 @@ export const updateInvoiceDetailsFn = createServerFn({ method: "POST" })
       .single();
     if (readError) throw new Error(readError.message);
     const notes = `${notesWithoutInvoiceDetails(order.notes)}${INVOICE_MARKER}${JSON.stringify(data.invoice_details)}`;
-    const { error } = await context.supabase
-      .from("orders")
-      .update({ notes })
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("orders").update({ notes }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -385,10 +464,12 @@ export const getInvoiceOrderFn = createServerFn({ method: "GET" })
 export const updateOrderStatusFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string; status: OrderStatus }) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["pending", "completed", "cancelled"]),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["pending", "completed", "cancelled"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -405,16 +486,36 @@ export const updateOrderStatusFn = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       let customerId: string | null = null;
       for (let page = 1; page <= 10 && !customerId; page += 1) {
-        const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
+        const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 100,
+        });
         if (usersError) throw new Error(usersError.message);
-        customerId = users.users.find((user) => user.email?.trim().toLowerCase() === order.customer_email.trim().toLowerCase())?.id ?? null;
+        customerId =
+          users.users.find(
+            (user) =>
+              user.email?.trim().toLowerCase() === order.customer_email.trim().toLowerCase(),
+          )?.id ?? null;
         if (users.users.length < 100) break;
       }
 
       if (customerId) {
         const [{ data: plan }, { data: existing }] = await Promise.all([
-          supabaseAdmin.from("subscription_plan").select("id").eq("is_active", true).order("created_at", { ascending: true }).limit(1).maybeSingle(),
-          supabaseAdmin.from("memberships").select("id,status").eq("user_id", customerId).in("status", ["pending", "active"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+          supabaseAdmin
+            .from("subscription_plan")
+            .select("id")
+            .eq("is_active", true)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+          supabaseAdmin
+            .from("memberships")
+            .select("id,status")
+            .eq("user_id", customerId)
+            .in("status", ["pending", "active"])
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
         if (!existing || existing.status !== "active") {
           const activatedAt = new Date();
@@ -430,7 +531,9 @@ export const updateOrderStatusFn = createServerFn({ method: "POST" })
           };
           const result = existing
             ? await supabaseAdmin.from("memberships").update(membershipValues).eq("id", existing.id)
-            : await supabaseAdmin.from("memberships").insert({ ...membershipValues, user_id: customerId });
+            : await supabaseAdmin
+                .from("memberships")
+                .insert({ ...membershipValues, user_id: customerId });
           if (result.error) throw new Error(result.error.message);
           membershipActivated = true;
         }
@@ -448,3 +551,4 @@ export const deleteOrderFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+

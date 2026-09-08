@@ -1139,6 +1139,7 @@ on conflict do nothing;`}
               <div className="grid gap-3">
                 {filteredOrders.map((o) => {
                   const items = (o.items as OrderItem[]) ?? [];
+                  const verification = o.payment_verification;
                   return (
                     <div key={o.id} className="grid gap-3 border border-border p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1224,6 +1225,44 @@ on conflict do nothing;`}
                                 Amount: <strong>{formatINR(o.total)}</strong>
                               </span>
                             </div>
+                            {verification && o.payment_status === "proof_submitted" && (
+                              <div className="mt-4 border-t border-gold/25 pt-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-[10px] font-semibold tracking-[0.18em] text-foreground">
+                                    AUTOMATED PRE-CHECK · {verification.score}%
+                                  </p>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {verification.ready_for_admin
+                                      ? "READY FOR ADMIN REVIEW"
+                                      : "REVIEW BLOCKED"}
+                                  </span>
+                                </div>
+                                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                  {[
+                                    ["Valid payment-proof image", verification.proof_attached],
+                                    ["UTR format is valid", verification.utr_format_valid],
+                                    ["UTR is not used elsewhere", verification.utr_unique],
+                                    ["Expected amount matches order", verification.amount_matches],
+                                  ].map(([label, passed]) => (
+                                    <span
+                                      key={String(label)}
+                                      className={`inline-flex items-center gap-1.5 text-[11px] ${passed ? "text-foreground" : "text-muted-foreground"}`}
+                                    >
+                                      {passed ? (
+                                        <Check className="h-3.5 w-3.5 text-gold" />
+                                      ) : (
+                                        <X className="h-3.5 w-3.5" />
+                                      )}
+                                      {label}
+                                    </span>
+                                  ))}
+                                </div>
+                                <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+                                  These checks detect incomplete or repeated submissions. Confirm
+                                  the UTR and amount in PhonePe Business before accepting.
+                                </p>
+                              </div>
+                            )}
                             {o.payment_rejection_reason && (
                               <p className="mt-2 text-xs text-destructive">
                                 Last rejection: {o.payment_rejection_reason}
@@ -1244,14 +1283,28 @@ on conflict do nothing;`}
                             {o.payment_status === "proof_submitted" && (
                               <>
                                 <button
-                                  disabled={paymentVerificationMut.isPending}
-                                  onClick={() =>
-                                    paymentVerificationMut.mutate({
-                                      order_id: o.id,
-                                      decision: "approve",
-                                    })
+                                  disabled={
+                                    paymentVerificationMut.isPending ||
+                                    !verification?.ready_for_admin
                                   }
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        `Confirm ${formatINR(o.total)} with UTR ${o.payment_transaction_id} is received in PhonePe Business?`,
+                                      )
+                                    ) {
+                                      paymentVerificationMut.mutate({
+                                        order_id: o.id,
+                                        decision: "approve",
+                                      });
+                                    }
+                                  }}
                                   className="inline-flex items-center gap-1.5 bg-gold px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-onyx disabled:opacity-50"
+                                  title={
+                                    verification?.ready_for_admin
+                                      ? "Confirm payment after checking PhonePe Business"
+                                      : "Automated pre-checks must pass first"
+                                  }
                                 >
                                   <Check className="h-3.5 w-3.5" /> VERIFY & ACCEPT
                                 </button>
