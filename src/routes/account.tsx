@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   LayoutDashboard,
@@ -16,6 +16,8 @@ import {
   Save,
   Copy,
   Check,
+  Upload,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
@@ -26,6 +28,8 @@ import { formatINR } from "@/lib/products";
 import { useWishlist, wishlist } from "@/lib/wishlist";
 import { listMyReviewsFn, type ProductReview } from "@/lib/reviews.functions";
 import { formatOrderNumber } from "@/lib/order-reference";
+import { submitManualPaymentFn } from "@/lib/manual-payments.functions";
+import { siteContentQuery } from "@/lib/site-content.queries";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -384,6 +388,13 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 function OrderRows({ orders }: { orders: Order[] }) {
   const [copiedId, setCopiedId] = useState("");
+  const [paymentOrderId, setPaymentOrderId] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const submitManualPayment = useServerFn(submitManualPaymentFn);
+  const queryClient = useQueryClient();
+  const { data: siteContent } = useQuery(siteContentQuery());
   const copyOrderId = async (orderId: string) => {
     try {
       await navigator.clipboard.writeText(orderId);
@@ -432,6 +443,145 @@ function OrderRows({ orders }: { orders: Order[] }) {
                 <code className="text-[10px] text-muted-foreground">
                   {order.payment_verification_code}
                 </code>
+              )}
+            </div>
+          )}
+          {(order.payment_status === "pending" || order.payment_status === "rejected") && (
+            <div className="sm:col-span-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentOrderId((current) => (current === order.id ? "" : order.id));
+                  setTransactionId("");
+                  setPaymentProof(null);
+                }}
+                className="inline-flex items-center gap-2 bg-gold px-4 py-2.5 text-[10px] font-semibold tracking-[0.16em] text-onyx"
+              >
+                <QrCode className="h-4 w-4" />
+                {paymentOrderId === order.id ? "CLOSE PAYMENT" : "CONTINUE PAYMENT"}
+              </button>
+              {order.payment_status === "rejected" && order.payment_rejection_reason && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Previous submission: {order.payment_rejection_reason}
+                </p>
+              )}
+              {paymentOrderId === order.id && (
+                <form
+                  className="mt-4 grid gap-5 border border-gold/40 bg-secondary/20 p-5 lg:grid-cols-[260px_1fr]"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    if (!paymentProof || submittingPayment) return;
+                    setSubmittingPayment(true);
+                    try {
+                      const { data: session } = await supabase.auth.getSession();
+                      const token = session.session?.access_token;
+                      if (!token) throw new Error("Sign in again before uploading payment proof");
+                      const upload = new FormData();
+                      upload.set("order_id", order.id);
+                      upload.set("file", paymentProof);
+                      const response = await fetch("/api/payment-proof", {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${token}` },
+                        body: upload,
+                      });
+                      const result = (await response.json()) as {
+                        message?: string;
+                        url?: string;
+                      };
+                      if (!response.ok || !result.url) {
+                        throw new Error(result.message || "Unable to upload payment proof");
+                      }
+                      await submitManualPayment({
+                        data: {
+                          order_id: order.id,
+                          transaction_id: transactionId,
+                          proof_url: result.url,
+                        },
+                      });
+                      toast.success("Payment submitted for verification");
+                      setPaymentOrderId("");
+                      setTransactionId("");
+                      setPaymentProof(null);
+                      await queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error ? error.message : "Unable to submit payment proof",
+                      );
+                    } finally {
+                      setSubmittingPayment(false);
+                    }
+                  }}
+                >
+                  <div className="border border-gold/30 bg-white p-3">
+                    <img
+                      src={siteContent?.payment_qr.image_url ?? "/devika-jewellers-phonepe-qr.jpeg"}
+                      alt="Devika Jewellers PhonePe business QR code"
+                      className="mx-auto w-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
+                      COMPLETE PAYMENT
+                    </p>
+                    <h3 className="mt-1 font-display text-2xl">
+                      Pay {formatINR(order.total)} using any UPI app
+                    </h3>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      Pay the exact amount, then enter the UTR and upload the successful payment
+                      screenshot.
+                    </p>
+                    {order.payment_verification_code && (
+                      <div className="mt-3 border border-gold/40 bg-gold/10 p-3">
+                        <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
+                          PAYMENT CODE
+                        </span>
+                        <code className="ml-2 font-semibold text-gold">
+                          {order.payment_verification_code}
+                        </code>
+                      </div>
+                    )}
+                    <label className="mt-4 block">
+                      <span className="mb-1 block text-[10px] tracking-[0.16em] text-muted-foreground">
+                        UPI UTR / TRANSACTION ID
+                      </span>
+                      <input
+                        required
+                        minLength={8}
+                        maxLength={40}
+                        value={transactionId}
+                        onChange={(event) =>
+                          setTransactionId(event.target.value.replace(/[^A-Za-z0-9_-]/g, ""))
+                        }
+                        placeholder="Example: 426512345678"
+                        className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+                      />
+                    </label>
+                    <label className="mt-3 block cursor-pointer border border-dashed border-gold/60 bg-background p-4 text-center">
+                      <Upload className="mx-auto h-5 w-5 text-gold" />
+                      <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
+                        {paymentProof ? paymentProof.name : "UPLOAD PAYMENT SCREENSHOT"}
+                      </span>
+                      <span className="mt-1 block text-[9px] text-muted-foreground">
+                        JPG, PNG or WebP · maximum 5 MB
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        required
+                        className="sr-only"
+                        onChange={(event) => setPaymentProof(event.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                    <button
+                      disabled={
+                        submittingPayment || !paymentProof || transactionId.trim().length < 8
+                      }
+                      className="mt-3 w-full bg-onyx px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-cream disabled:opacity-40"
+                    >
+                      {submittingPayment ? "SUBMITTING…" : "SUBMIT FOR VERIFICATION"}
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
           )}
