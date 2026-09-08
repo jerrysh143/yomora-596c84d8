@@ -1,3 +1,5 @@
+import { YOMORA_EMAIL, YOMORA_PHONE_DIGITS, YOMORA_PHONE_DISPLAY } from "@/lib/contact-details";
+
 export type IconName =
   | "Truck"
   | "ShieldCheck"
@@ -283,7 +285,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       "Trendy & Timeless Designs",
       "Modified & Custom Jewellery",
       "Premium Packaging",
-      "Loved by Thousands of Customers",
+      "Backed by a Family Jewellery Legacy",
     ],
   },
   categories_section: { eyebrow: "SHOP BY CATEGORY", title: "Explore Our Collections" },
@@ -301,7 +303,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     title: "Custom & Modified 925 Silver Jewellery",
     body: "Have something in mind? Our karigars craft made-to-order pieces to your exact specifications.",
     button_label: "REQUEST A CUSTOM PIECE",
-    whatsapp_number: "919000000000",
+    whatsapp_number: YOMORA_PHONE_DIGITS,
     whatsapp_message: "Hi! I'd like to request a custom 925 silver jewellery piece.",
   },
   homepage_banners: {
@@ -358,12 +360,12 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     title: "A Legacy Built on Trust",
     paragraphs: [
       "It all began in 1994 when Late Shri Nehalbhai Devjibhai and Smt. Devikaben Nehalbhai laid the foundation of trust, purity and craftsmanship.",
-      "For over 32 years, we have earned the trust of thousands of families. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA.",
+      "For over 32 years, our family has built its name on trust, purity and craftsmanship. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA.",
       "Every piece we make is a promise — of hallmarked purity, timeless design and the warmth of a family business that has always put its customers first.",
     ],
     stats: [
       { value: "32+", label: "Years of Legacy" },
-      { value: "1000+", label: "Happy Customers Daily" },
+      { value: "PAN-INDIA", label: "Online Service" },
       { value: "5★", label: "Customer Rating" },
       { value: "100%", label: "Hallmarked Purity" },
     ],
@@ -402,12 +404,11 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
   page_contact: {
     title: "Get in Touch",
     subtitle: "We're here to help you.",
-    phone_lines: ["+91 98765 43210", "Mon – Sat: 10:00 AM – 7:00 PM"],
-    email: "support@yomora.in",
+    phone_lines: [YOMORA_PHONE_DISPLAY, "Mon – Sat: 10:00 AM – 7:00 PM"],
+    email: YOMORA_EMAIL,
     address_lines: [
-      "YOMORA by Nehalbhai Devika Jewellers,",
-      "122, NR Road, Andheri West,",
-      "Mumbai, Maharashtra – 400058",
+      "YOMORA by Nehalbhai Devika Jewellers",
+      "Online store — serving customers across India",
     ],
     form_button_label: "SEND MESSAGE",
     form_success_message: "Thank you — we'll be in touch shortly.",
@@ -495,7 +496,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     order_id_label: "ORDER ID",
     email_label: "EMAIL",
     button_label: "TRACK ORDER",
-    help_text: "Need help? Contact us on +91 98765 43210",
+    help_text: `Need help? Contact us on ${YOMORA_PHONE_DISPLAY}`,
     empty_message: "Enter your order details to see its status.",
   },
   payment_qr: {
@@ -527,6 +528,43 @@ export function mergeSiteContent(rows: { key: string; data: unknown }[]): SiteCo
       }
     }
   });
+  // Contact details are canonical business information. Keep old saved CMS values
+  // from reintroducing obsolete or placeholder contact details.
+  out.cta_strip = { ...out.cta_strip, whatsapp_number: YOMORA_PHONE_DIGITS };
+  out.page_contact = {
+    ...out.page_contact,
+    phone_lines: [YOMORA_PHONE_DISPLAY, "Mon – Sat: 10:00 AM – 7:00 PM"],
+    email: YOMORA_EMAIL,
+    address_lines: [
+      "YOMORA by Nehalbhai Devika Jewellers",
+      "Online store — serving customers across India",
+    ],
+  };
+  out.page_track_order = {
+    ...out.page_track_order,
+    help_text: `Need help? Contact us on ${YOMORA_PHONE_DISPLAY}`,
+  };
+  out.hero = {
+    ...out.hero,
+    features: out.hero.features.map((feature) =>
+      feature === "Loved by Thousands of Customers"
+        ? "Backed by a Family Jewellery Legacy"
+        : feature,
+    ),
+  };
+  out.page_about = {
+    ...out.page_about,
+    paragraphs: out.page_about.paragraphs.map((paragraph) =>
+      paragraph ===
+      "For over 32 years, we have earned the trust of thousands of families. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA."
+        ? "For over 32 years, our family has built its name on trust, purity and craftsmanship. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA."
+        : paragraph,
+    ),
+    stats: out.page_about.stats.map((stat) =>
+      stat.value === "1000+" && stat.label === "Happy Customers Daily"
+        ? { value: "PAN-INDIA", label: "Online Service" }
+        : stat,
+    ),
+  };
   return out;
 }
-

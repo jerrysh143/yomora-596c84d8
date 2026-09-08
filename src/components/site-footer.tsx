@@ -7,6 +7,12 @@ import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { SocialLinks } from "@/components/social-links";
 import { createInquiryFn } from "@/lib/inquiries.functions";
+import {
+  YOMORA_EMAIL,
+  YOMORA_EMAIL_LINK,
+  YOMORA_PHONE_DISPLAY,
+  YOMORA_PHONE_LINK,
+} from "@/lib/contact-details";
 
 export function SiteFooter() {
   const [joining, setJoining] = useState(false);
@@ -19,15 +25,51 @@ export function SiteFooter() {
         <div className="min-w-0">
           <div className="font-display text-2xl tracking-[0.18em] text-gold">YOMORA</div>
           <p className="mt-3 text-xs leading-relaxed text-cream/60">{f.brand_blurb}</p>
+          <div className="mt-4 space-y-1 text-xs text-cream/70">
+            <a href={YOMORA_EMAIL_LINK} className="block hover:text-gold">
+              {YOMORA_EMAIL}
+            </a>
+            <a href={YOMORA_PHONE_LINK} className="block hover:text-gold">
+              {YOMORA_PHONE_DISPLAY}
+            </a>
+          </div>
           <SocialLinks placement="footer" className="mt-4" />
         </div>
         <FooterCol title="Shop" links={f.shop_links} />
         <FooterCol title="Help" links={f.help_links} />
         <div>
-          <div className="text-xs font-semibold tracking-[0.24em] text-gold">{f.newsletter_title}</div>
+          <div className="text-xs font-semibold tracking-[0.24em] text-gold">
+            {f.newsletter_title}
+          </div>
           <p className="mt-3 text-xs text-cream/60">{f.newsletter_body}</p>
-          <form onSubmit={async (event) => { event.preventDefault(); if (joining) return; const form = event.currentTarget; const email = String(new FormData(form).get("email") ?? ""); setJoining(true); try { const result = await createInquiry({ data: { inquiry_type: "newsletter", email, name: "", phone: "", message: "" } }); toast.success(result.already ? "You are already subscribed" : "Thank you for joining YOMORA updates"); form.reset(); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to subscribe"); } finally { setJoining(false); } }} className="mt-4 flex min-w-0 overflow-hidden rounded-sm border border-white/15">
-            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (joining) return;
+              const form = event.currentTarget;
+              const email = String(new FormData(form).get("email") ?? "");
+              setJoining(true);
+              try {
+                const result = await createInquiry({
+                  data: { inquiry_type: "newsletter", email, name: "", phone: "", message: "" },
+                });
+                toast.success(
+                  result.already
+                    ? "You are already subscribed"
+                    : "Thank you for joining YOMORA updates",
+                );
+                form.reset();
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to subscribe");
+              } finally {
+                setJoining(false);
+              }
+            }}
+            className="mt-4 flex min-w-0 overflow-hidden rounded-sm border border-white/15"
+          >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
             <input
               id="newsletter-email"
               name="email"
@@ -37,7 +79,13 @@ export function SiteFooter() {
               placeholder="Email address"
               className="min-w-0 flex-1 bg-transparent px-3 py-2 text-xs outline-none placeholder:text-cream/70"
             />
-            <button disabled={joining} type="submit" className="shrink-0 bg-gold px-3 text-[10px] font-semibold tracking-[0.14em] text-onyx hover:bg-gold-soft disabled:opacity-50 lg:px-4 lg:text-[11px] lg:tracking-[0.18em]">{joining ? "JOINING…" : "JOIN"}</button>
+            <button
+              disabled={joining}
+              type="submit"
+              className="shrink-0 bg-gold px-3 text-[10px] font-semibold tracking-[0.14em] text-onyx hover:bg-gold-soft disabled:opacity-50 lg:px-4 lg:text-[11px] lg:tracking-[0.18em]"
+            >
+              {joining ? "JOINING…" : "JOIN"}
+            </button>
           </form>
         </div>
       </div>
@@ -55,7 +103,9 @@ function FooterCol({ title, links }: { title: string; links: { label: string; to
       <ul className="mt-3 space-y-2 text-xs text-cream/70">
         {links.map((l) => (
           <li key={l.label}>
-            <Link to={l.to} className="hover:text-gold">{l.label}</Link>
+            <Link to={l.to} className="hover:text-gold">
+              {l.label}
+            </Link>
           </li>
         ))}
       </ul>

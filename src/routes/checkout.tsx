@@ -506,7 +506,7 @@ function CheckoutPage() {
                     name="customer_phone"
                     label="Phone"
                     required
-                    placeholder="+91 98765 43210"
+                    placeholder="Enter mobile number"
                     value={customerPhone}
                     onChange={(event) => setCustomerPhone(event.target.value)}
                   />

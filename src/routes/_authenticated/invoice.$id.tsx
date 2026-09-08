@@ -8,6 +8,7 @@ import { getInvoiceOrderFn, type OrderItem } from "@/lib/orders.functions";
 import { formatINR } from "@/lib/products";
 import { GSTIN, GST_RATE, formatTaxINR, inclusiveTaxBreakdown } from "@/lib/tax";
 import { formatOrderNumber } from "@/lib/order-reference";
+import { YOMORA_PHONE_DISPLAY } from "@/lib/contact-details";
 
 export const Route = createFileRoute("/_authenticated/invoice/$id")({
   head: () => ({ meta: [{ title: "Invoice — YOMORA" }, { name: "robots", content: "noindex" }] }),
@@ -49,6 +50,7 @@ function InvoicePage() {
   const orderNumber = order.orderNumber ?? formatOrderNumber(order.id);
   const invoiceNumber = details.invoice_number || orderNumber;
   const sellerName = details.seller_name || "YOMORA";
+  const sellerPhone = details.seller_phone || YOMORA_PHONE_DISPLAY;
 
   return (
     <div className="min-h-screen bg-[#f7f2eb] text-[#1d1815]">
@@ -93,9 +95,7 @@ function InvoicePage() {
                   {details.seller_address}
                 </p>
               )}
-              {details.seller_phone && (
-                <p className="mt-2 text-xs text-[#665b50]">{details.seller_phone}</p>
-              )}
+              <p className="mt-2 text-xs text-[#665b50]">{sellerPhone}</p>
             </div>
             <div className="text-right">
               <p className="font-display text-4xl text-[#1d1815]">INVOICE</p>
