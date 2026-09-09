@@ -79,7 +79,7 @@ export function SiteHeader() {
       <div className="mx-auto grid h-[68px] max-w-[1760px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:h-[78px] sm:px-8 lg:px-14">
           <div className="flex items-center justify-self-start gap-3 text-[11px] font-semibold tracking-[0.08em] md:gap-5">
             <button type="button" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)} className="grid h-10 w-10 place-items-center transition-colors hover:text-gold"><Menu className="h-6 w-6" strokeWidth={1.6} /></button>
-            <span className="hidden whitespace-nowrap md:inline">INR <span className="mx-2 text-white/40">|</span> EN</span>
+            <span className="hidden whitespace-nowrap md:inline" title="Prices in Indian rupees">INR</span>
             <span className="hidden h-5 w-px bg-white/35 md:block" />
             <button aria-label="Search" onClick={() => setSearchOpen(true)} className="hidden p-1 transition-colors hover:text-gold md:block"><Search className="h-6 w-6" strokeWidth={1.6} /></button>
           </div>

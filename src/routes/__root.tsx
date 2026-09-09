@@ -84,18 +84,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "YOMORA by Nehalbhai Devika Jewellers — timeless 925 sterling silver rings, earrings, neckwear, and bracelets crafted for every you.",
+          "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994.",
       },
       { name: "author", content: "YOMORA" },
       { property: "og:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
       {
         property: "og:description",
-        content: "YOMORA by Nehalbhai Devika Jewellers — timeless 925 sterling silver rings, earrings, neckwear, and bracelets crafted for every you.",
+        content: "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
-      { name: "twitter:description", content: "YOMORA by Nehalbhai Devika Jewellers — timeless 925 sterling silver rings, earrings, neckwear, and bracelets crafted for every you." },
+      { name: "twitter:description", content: "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994." },
       { property: "og:image", content: "https://yomora.in/og-image.jpg" },
       { name: "twitter:image", content: "https://yomora.in/og-image.jpg" },
     ],

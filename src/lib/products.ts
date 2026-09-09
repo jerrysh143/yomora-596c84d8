@@ -72,3 +72,22 @@ export const isProductNew = (p: Pick<Product, "is_new" | "created_at">) => {
 export const cleanProductName = (name: string): string => {
   return name.replace(/\s+CATEGORY:\s*[A-Za-z]+$/i, "").trim();
 };
+
+const CATEGORY_LABEL_FIX: Record<string, string> = {
+  necklace: "Necklaces",
+  necklaces: "Necklaces",
+  earring: "Earrings",
+  ring: "Rings",
+  bracelet: "Bracelets",
+  watch: "Watches",
+  chain: "Chains",
+  mangalsutra: "Mangalsutras",
+};
+
+export const displayCategoryLabel = (label: string, slug?: string) => {
+  const key = (slug || label).trim().toLowerCase();
+  if (CATEGORY_LABEL_FIX[key]) return CATEGORY_LABEL_FIX[key];
+  const singular = label.trim();
+  if (CATEGORY_LABEL_FIX[singular.toLowerCase()]) return CATEGORY_LABEL_FIX[singular.toLowerCase()];
+  return label;
+};

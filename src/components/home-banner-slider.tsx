@@ -8,21 +8,23 @@ export function HomeBannerSlider() {
   const slides = [
     { image: heroMen, eyebrow: "THE MEN'S EDIT", title: "Strength, Refined", body: "Distinctive 925 silver pieces crafted for the modern man.", button: "SHOP FOR MEN", link: "/products/rings?audience=men", alt: "YOMORA men's sterling silver jewellery collection" },
     { image: heroWomen, eyebrow: "THE WOMEN'S EDIT", title: "Elegance, Defined", body: "Timeless 925 silver jewellery made to illuminate every occasion.", button: "SHOP FOR WOMEN", link: "/products?audience=women", alt: "YOMORA women's sterling silver jewellery collection" },
-    { image: heroMembership, eyebrow: "YOMORA BLACK MEMBERSHIP", title: "Belong to More", body: "Private offers, member-only privileges and elevated rewards with YOMORA Black.", button: "VIEW MEMBERSHIP", link: "/membership", alt: "YOMORA Black membership" },
+    { image: heroMembership, eyebrow: "YOMORA BLACK MEMBERSHIP", title: "Belong to More", body: "Member prices, early drops and priority help.", button: "VIEW MEMBERSHIP", link: "/membership", alt: "YOMORA Black membership" },
   ];
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
+    if (paused) return;
     const timer = window.setInterval(() => setActive((current) => (current + 1) % slides.length), 5000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [paused]);
   const previous = () => setActive((current) => (current - 1 + slides.length) % slides.length);
   const next = () => setActive((current) => (current + 1) % slides.length);
 
   return (
-    <section className="bg-onyx" aria-label="YOMORA collections">
+    <section className="bg-onyx" aria-label="YOMORA collections" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div className="group relative h-[340px] overflow-hidden min-[840px]:h-auto min-[840px]:aspect-[2000/640]">
         {slides.map((slide, index) => (
-          <a key={slide.eyebrow} href={slide.link} aria-label={slide.alt} aria-hidden={index !== active} tabIndex={index === active ? 0 : -1} className={`absolute inset-0 block transition-opacity duration-700 ease-out focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-gold ${index === active ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+          <a key={slide.eyebrow} href={slide.link} aria-label={slide.alt} aria-hidden={index !== active} tabIndex={index === active ? 0 : -1} className={`absolute inset-0 block transition-opacity duration-700 ease-out focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-gold ${index === active ? "z-[1] opacity-100" : "pointer-events-none invisible z-0 opacity-0"}`}>
             <img src={slide.image} alt={slide.alt} width={1942} height={809} className="h-full w-full object-cover object-[34%_center] min-[840px]:object-center" loading={index === 0 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "low"} decoding="async" />
             <span className="absolute inset-0 bg-gradient-to-r from-black/10 via-black/35 to-black/90 sm:from-black/5 sm:via-black/15 sm:to-black/85" />
             <span className="absolute inset-y-0 right-0 flex w-[57%] flex-col justify-center pl-4 pr-16 text-cream min-[840px]:w-[52%] min-[840px]:pl-10 min-[1200px]:w-[48%] min-[1200px]:pl-16">
