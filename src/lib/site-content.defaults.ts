@@ -533,6 +533,11 @@ export function mergeSiteContent(rows: { key: string; data: unknown }[]): SiteCo
   // Contact details are canonical business information. Keep old saved CMS values
   // from reintroducing obsolete or placeholder contact details.
   out.cta_strip = { ...out.cta_strip, whatsapp_number: YOMORA_PHONE_DIGITS };
+  out.footer = {
+    ...out.footer,
+    shop_links: SITE_CONTENT_DEFAULTS.footer.shop_links,
+    help_links: SITE_CONTENT_DEFAULTS.footer.help_links,
+  };
   out.page_contact = {
     ...out.page_contact,
     phone_lines: [YOMORA_PHONE_DISPLAY, "Mon – Sat: 10:00 AM – 7:00 PM"],
