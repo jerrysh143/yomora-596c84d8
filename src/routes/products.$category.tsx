@@ -361,8 +361,8 @@ function ProductPage({ product, products }: { product: Product; products: Produc
               ))}
             </div>
             <div className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              {tab === "description" && (<div><p>{product.description || product.tagline}</p><ul className="mt-5 list-disc space-y-1.5 pl-5 text-foreground"><li>925 Sterling Silver</li><li>Premium Finish</li><li>Oxidized Antique Detailing</li><li>Comfortable Fit</li><li>Perfect for Daily Wear & Special Occasions</li></ul></div>)}
-              {tab === "details" && (<ul className="space-y-2"><li><b className="text-foreground">Material:</b> 925 Sterling Silver</li><li><b className="text-foreground">Finish:</b> Oxidized Antique</li><li><b className="text-foreground">Hallmark:</b> BIS Certified</li></ul>)}
+              {tab === "description" && (<p>{product.description || product.tagline}</p>)}
+              {tab === "details" && (<ul className="space-y-2"><li><b className="text-foreground">Metal:</b> 925 Sterling Silver</li><li><b className="text-foreground">Hallmark:</b> BIS Hallmarked</li><li><b className="text-foreground">Exact specifications:</b> Please contact YOMORA to confirm the finish, stone, weight, dimensions and available sizes when they are not listed in the product description.</li></ul>)}
               {tab === "shipping" && (<p>Free shipping across India. Orders packed in 1–2 working days. Easy returns within 7 days — piece must be unworn and in original YOMORA packaging.</p>)}
               {tab === "reviews" && (<ProductReviews productId={product.id} productName={cleanProductName(product.name)} />)}
             </div>
