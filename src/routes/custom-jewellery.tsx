@@ -9,14 +9,21 @@ import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { getIcon } from "@/lib/icon-map";
 import { createInquiryFn } from "@/lib/inquiries.functions";
+import { YOMORA_PHONE_DIGITS } from "@/lib/contact-details";
 
 export const Route = createFileRoute("/custom-jewellery")({
   head: () => ({
     meta: [
       { title: "Custom Jewellery — YOMORA" },
-      { name: "description", content: "Personalized 925 silver jewellery designed and crafted to your requirements." },
+      {
+        name: "description",
+        content: "Personalized 925 silver jewellery designed and crafted to your requirements.",
+      },
       { property: "og:title", content: "Custom Jewellery — YOMORA" },
-      { property: "og:description", content: "Made just for you — personalized 925 silver jewellery." },
+      {
+        property: "og:description",
+        content: "Made just for you — personalized 925 silver jewellery.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -38,7 +45,9 @@ function CustomJewelleryPage() {
           <div>
             <h1 className="font-display text-5xl md:text-6xl">{c.hero_title}</h1>
             <p className="mt-3 font-display text-2xl text-gold">{c.hero_subtitle}</p>
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-cream/70">{c.hero_description}</p>
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-cream/70">
+              {c.hero_description}
+            </p>
             <ul className="mt-6 space-y-2 text-sm text-cream/85">
               {c.features.map((f) => (
                 <li key={f} className="flex items-center gap-3">
@@ -71,15 +80,74 @@ function CustomJewelleryPage() {
         </div>
 
         <form
-          onSubmit={async (e) => { e.preventDefault(); if (sending) return; const form = e.currentTarget; const values = new FormData(form); setSending(true); setSent(false); try { await createInquiry({ data: { inquiry_type: "custom_jewellery", name: String(values.get("name") ?? ""), email: String(values.get("email") ?? ""), phone: String(values.get("phone") ?? ""), message: String(values.get("message") ?? "") } }); setSent(true); form.reset(); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to send your request"); } finally { setSending(false); } }}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (sending) return;
+            const form = e.currentTarget;
+            const values = new FormData(form);
+            setSending(true);
+            setSent(false);
+            try {
+              await createInquiry({
+                data: {
+                  inquiry_type: "custom_jewellery",
+                  name: String(values.get("name") ?? ""),
+                  email: String(values.get("email") ?? ""),
+                  phone: String(values.get("phone") ?? ""),
+                  message: String(values.get("message") ?? ""),
+                },
+              });
+              setSent(true);
+              form.reset();
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to send your request");
+            } finally {
+              setSending(false);
+            }
+          }}
           className="mx-auto mt-16 grid max-w-2xl gap-4 border border-border p-8"
         >
           <h2 className="font-display text-2xl">{c.form_title}</h2>
-          <input name="name" required placeholder="Your name" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <input name="email" required type="email" placeholder="Email" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <input name="phone" required placeholder="Phone" className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <textarea name="message" required placeholder="Describe the piece you have in mind" rows={5} className="border border-border bg-background px-3 py-2.5 text-sm outline-none" />
-          <button disabled={sending} className="bg-gold px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-50">{sending ? "SENDING…" : c.form_button_label}</button>
+          <input
+            name="name"
+            required
+            placeholder="Your name"
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none"
+          />
+          <input
+            name="email"
+            required
+            type="email"
+            placeholder="Email"
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none"
+          />
+          <input
+            name="phone"
+            required
+            placeholder="Phone"
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none"
+          />
+          <textarea
+            name="message"
+            required
+            placeholder="Describe the piece you have in mind"
+            rows={5}
+            className="border border-border bg-background px-3 py-2.5 text-sm outline-none"
+          />
+          <button
+            disabled={sending}
+            className="bg-gold px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx disabled:opacity-50"
+          >
+            {sending ? "SENDING…" : c.form_button_label}
+          </button>
+          <a
+            href={`https://wa.me/${YOMORA_PHONE_DIGITS}?text=${encodeURIComponent("Hi YOMORA, I would like to discuss a custom jewellery piece.")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="border border-gold px-6 py-3 text-center text-[11px] font-semibold tracking-[0.24em] text-foreground transition-colors hover:bg-gold hover:text-onyx"
+          >
+            CHAT ON WHATSAPP
+          </a>
           {sent && <p className="text-xs text-gold">{c.form_success_message}</p>}
         </form>
       </section>

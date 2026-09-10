@@ -702,7 +702,7 @@ function CheckoutPage() {
                     <div>
                       <span className="font-display text-lg">Cash on Delivery</span>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Pay when your YOMORA parcel arrives.
+                        Pay when your YOMORA parcel arrives. No extra COD fee.
                       </p>
                     </div>
                   </label>

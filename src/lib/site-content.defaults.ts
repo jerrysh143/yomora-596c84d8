@@ -366,7 +366,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     stats: [
       { value: "32+", label: "Years of Legacy" },
       { value: "PAN-INDIA", label: "Online Service" },
-      { value: "5★", label: "Customer Rating" },
+      { value: "AHMEDABAD", label: "Gujarat" },
       { value: "100%", label: "Hallmarked Purity" },
     ],
     store_title: "Our Flagship Store",
@@ -380,7 +380,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       "Personalized Designs",
       "Premium 925 Silver",
       "Expert Craftsmanship",
-      "Timely Delivery",
+      "Typical crafting time: 10–21 days after design approval",
     ],
     steps_eyebrow: "HOW IT WORKS",
     steps: [
@@ -408,7 +408,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
     email: YOMORA_EMAIL,
     address_lines: [
       "YOMORA by Nehalbhai Devika Jewellers",
-      "Online store — serving customers across India",
+      "Ahmedabad, Gujarat — serving customers across India",
     ],
     form_button_label: "SEND MESSAGE",
     form_success_message: "Thank you — we'll be in touch shortly.",
@@ -419,25 +419,26 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       {
         question: "What is 925 Sterling Silver?",
         answer:
-          "925 Sterling Silver is an alloy containing 92.5% pure silver — the international standard for high-quality silver jewellery.",
+          "925 sterling silver contains 92.5% pure silver. YOMORA pieces are hallmarked for purity.",
       },
       {
         question: "How do I know my ring size?",
         answer:
-          "You can measure the inner diameter of a well-fitting ring or request our free ring sizer.",
+          "Measure the inner diameter of a well-fitting ring, use our size guide, or send us a photo of a fitted ring on WhatsApp for help.",
       },
       {
         question: "Do you offer Cash on Delivery?",
-        answer: "Yes, Cash on Delivery is available on all orders across India.",
+        answer: "Yes. Cash on Delivery is available across India with no extra COD fee.",
       },
       {
         question: "How long does shipping take?",
         answer:
-          "Orders are dispatched within 24 hours and delivered in 3–7 business days depending on location.",
+          "Delivery usually takes 3–7 working days after dispatch, depending on the destination. Prepaid orders are processed first.",
       },
       {
         question: "What is your return policy?",
-        answer: "We offer easy 7-day returns on all purchases in original condition.",
+        answer:
+          "Returns are accepted within 7 days for unused items with tags and original packaging. Custom-made pieces are non-returnable.",
       },
       {
         question: "Can I customize my jewellery?",
@@ -445,7 +446,8 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       },
       {
         question: "How do I care for my silver jewellery?",
-        answer: "Store in an airtight pouch, avoid perfumes and polish gently with a soft cloth.",
+        answer:
+          "Keep jewellery dry, avoid perfume, bleach and pool water, and wipe it gently with a soft dry cloth before storing it in an airtight pouch.",
       },
     ],
     aside_title: "Still have questions?",
@@ -537,16 +539,16 @@ export function mergeSiteContent(rows: { key: string; data: unknown }[]): SiteCo
     email: YOMORA_EMAIL,
     address_lines: [
       "YOMORA by Nehalbhai Devika Jewellers",
-      "Online store — serving customers across India",
+      "Ahmedabad, Gujarat — serving customers across India",
     ],
   };
   out.page_track_order = {
     ...out.page_track_order,
     help_text: `Need help? Contact us on ${YOMORA_PHONE_DISPLAY}`,
   };
-  out.hero = {
-    ...out.hero,
-    features: out.hero.features.map((feature) =>
+  out.legacy = {
+    ...out.legacy,
+    bullets: out.legacy.bullets.map((feature) =>
       feature === "Loved by Thousands of Customers"
         ? "Backed by a Family Jewellery Legacy"
         : feature,
@@ -560,11 +562,29 @@ export function mergeSiteContent(rows: { key: string; data: unknown }[]): SiteCo
         ? "For over 32 years, our family has built its name on trust, purity and craftsmanship. Now, we bring this legacy to the digital world with premium 925 silver jewellery under YOMORA."
         : paragraph,
     ),
-    stats: out.page_about.stats.map((stat) =>
-      stat.value === "1000+" && stat.label === "Happy Customers Daily"
-        ? { value: "PAN-INDIA", label: "Online Service" }
-        : stat,
-    ),
+    stats: out.page_about.stats
+      .filter((stat) => !(stat.value === "5★" && stat.label === "Customer Rating"))
+      .map((stat) =>
+        stat.value === "1000+" && stat.label === "Happy Customers Daily"
+          ? { value: "PAN-INDIA", label: "Online Service" }
+          : stat,
+      ),
   };
+  if (!out.page_about.paragraphs.some((paragraph) => paragraph.includes("Ahmedabad"))) {
+    out.page_about.paragraphs = [
+      ...out.page_about.paragraphs,
+      "Based in Ahmedabad, Gujarat, our family jewellery business serves customers across India. Each 925 silver piece is hallmarked to verify its purity.",
+    ];
+  }
+  out.page_faq = { ...out.page_faq, items: SITE_CONTENT_DEFAULTS.page_faq.items };
+  if (!out.page_custom.features.some((feature) => feature.includes("10–21 days"))) {
+    out.page_custom = {
+      ...out.page_custom,
+      features: [
+        ...out.page_custom.features.filter((feature) => feature !== "Timely Delivery"),
+        "Typical crafting time: 10–21 days after design approval",
+      ],
+    };
+  }
   return out;
 }
