@@ -14,7 +14,10 @@ export const Route = createFileRoute("/membership")({
   head: () => ({
     meta: [
       { title: "Black Signature Membership — YOMORA" },
-      { name: "description", content: "Exclusive privileges, priority service and rewards with YOMORA Black Signature." },
+      {
+        name: "description",
+        content: "Exclusive privileges, priority service and rewards with YOMORA Black Signature.",
+      },
       { property: "og:title", content: "Black Signature Membership — YOMORA" },
       { property: "og:description", content: "One membership. Exclusive privileges." },
       { property: "og:type", content: "website" },
@@ -37,7 +40,9 @@ function MembershipPage() {
         <div className="container-x mx-auto max-w-[1400px] px-4 py-16 md:py-24">
           <div className="grid items-center gap-10 md:grid-cols-2">
             <div className="text-center md:text-left">
-              <p className="text-[10px] font-semibold tracking-[0.32em] text-cream/60">{m.eyebrow}</p>
+              <p className="text-[10px] font-semibold tracking-[0.32em] text-cream/60">
+                {m.eyebrow}
+              </p>
               <h1 className="mt-3 font-display text-4xl leading-[1.05] text-cream md:text-6xl">
                 {m.title_line_1}
               </h1>
@@ -64,7 +69,9 @@ function MembershipPage() {
                     <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-gold/60 text-gold">
                       <Banknote className="h-5 w-5" strokeWidth={1.2} />
                     </div>
-                    <div className="mt-3 font-display text-xl text-gold">{m.pay_label} {formatINR(primary.price)}</div>
+                    <div className="mt-3 font-display text-xl text-gold">
+                      {m.pay_label} {formatINR(primary.price)}
+                    </div>
                     <div className="mt-1 text-[11px] text-cream/60">{m.pay_note}</div>
                   </div>
                   <div className="grid h-9 w-9 place-items-center rounded-full border border-gold/60 text-[10px] font-semibold tracking-[0.2em] text-gold">
@@ -89,14 +96,20 @@ function MembershipPage() {
               <div className="absolute inset-3 rounded-lg border border-gold/40" />
               <div className="absolute inset-5 rounded-md border border-gold/15" />
               <div className="relative flex h-full flex-col items-center justify-center px-8 text-center">
-                <div className="font-display text-4xl tracking-[0.22em] text-gold md:text-5xl">{m.card_title}</div>
-                <div className="mt-1 text-[9px] tracking-[0.32em] text-cream/60">{m.card_subtitle}</div>
+                <div className="font-display text-4xl tracking-[0.22em] text-gold md:text-5xl">
+                  {m.card_title}
+                </div>
+                <div className="mt-1 text-[9px] tracking-[0.32em] text-cream/60">
+                  {m.card_subtitle}
+                </div>
                 <div className="mt-6 h-px w-24 bg-gold/50" />
                 <div className="mt-5 font-display text-2xl tracking-[0.22em] text-cream md:text-3xl">
                   {m.card_line_1}
                 </div>
                 <div className="mt-1 text-[10px] tracking-[0.34em] text-gold">{m.card_line_2}</div>
-                <div className="mt-4 text-[9px] tracking-[0.3em] text-cream/50">{m.card_line_3}</div>
+                <div className="mt-4 text-[9px] tracking-[0.3em] text-cream/50">
+                  {m.card_line_3}
+                </div>
                 <div className="mt-3 flex items-center gap-3 text-[10px] tracking-[0.28em] text-gold">
                   <span>LUXURY</span>
                   <span className="text-gold/40">•</span>
@@ -124,21 +137,30 @@ function MembershipPage() {
               </p>
               <span className="text-gold/60">✦</span>
             </div>
-            <div className="mt-10 grid gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+            <div className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-10">
               {m.privileges.map((b, i) => {
                 const Icon = getIcon(b.icon);
                 return (
-                  <div key={b.title + i} className="text-center">
+                  <div
+                    key={b.title + i}
+                    className="w-full text-center sm:w-[calc(50%_-_1rem)] md:w-[calc(25%_-_1.5rem)] lg:w-[calc(14.285%_-_1.75rem)]"
+                  >
                     <div className="mx-auto grid h-11 w-11 place-items-center text-gold">
                       <Icon className="h-6 w-6" strokeWidth={1.2} />
                     </div>
-                    <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">{b.title.replace(/15%/gi, "25%")}</div>
-                    <div className="mt-1 text-[11px] leading-relaxed text-cream/60">{b.description.replace(/15%/gi, "25%")}</div>
+                    <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">
+                      {b.title.replace(/15%/gi, "25%")}
+                    </div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-cream/60">
+                      {b.description.replace(/15%/gi, "25%")}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-12 text-center text-[10px] tracking-[0.34em] text-cream/50">{m.privileges_footer}</p>
+            <p className="mt-12 text-center text-[10px] tracking-[0.34em] text-cream/50">
+              {m.privileges_footer}
+            </p>
           </div>
         </div>
       </section>
