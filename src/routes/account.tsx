@@ -18,6 +18,11 @@ import {
   Check,
   Upload,
   QrCode,
+  ArrowRight,
+  CircleCheck,
+  Clock3,
+  ReceiptText,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
@@ -91,6 +96,20 @@ function formatDate(value: string) {
 
 function statusLabel(status: Order["status"]) {
   return status === "completed" ? "Delivered" : status === "cancelled" ? "Cancelled" : "Pending";
+}
+
+function orderStatusStyle(status: Order["status"]) {
+  return status === "completed"
+    ? "border-emerald-600/25 bg-emerald-600/10 text-emerald-700 dark:text-emerald-300"
+    : status === "cancelled"
+      ? "border-destructive/25 bg-destructive/10 text-destructive"
+      : "border-amber-600/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+}
+
+function OrderStatusIcon({ status }: { status: Order["status"] }) {
+  if (status === "completed") return <CircleCheck className="h-3.5 w-3.5" />;
+  if (status === "cancelled") return <XCircle className="h-3.5 w-3.5" />;
+  return <Clock3 className="h-3.5 w-3.5" />;
 }
 
 function AccountPage() {
@@ -351,14 +370,14 @@ function Dashboard({
         <Stat value={reviewCount} label="Reviews" />
         <Stat value="Black" label="Member" />
       </div>
-      <div className="mt-10 border border-border">
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+      <div className="mt-10 overflow-hidden rounded-sm border border-border bg-card/30 shadow-[0_12px_40px_rgba(22,17,12,0.04)]">
+        <div className="flex items-center justify-between border-b border-border bg-secondary/20 px-5 py-4 sm:px-6">
           <h2 className="text-xs font-semibold tracking-[0.24em] text-gold">RECENT ORDERS</h2>
           <button
             onClick={() => setTab("orders")}
-            className="text-xs tracking-[0.2em] text-muted-foreground hover:text-gold"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.18em] text-muted-foreground transition-colors hover:text-gold"
           >
-            VIEW ALL
+            VIEW ALL <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
         {orders.length ? (
@@ -406,229 +425,261 @@ function OrderRows({ orders }: { orders: Order[] }) {
     }
   };
   return (
-    <ul className="divide-y divide-border text-sm">
+    <ul className="grid gap-4 p-4 text-sm sm:p-5">
       {orders.map((order) => (
         <li
           key={order.id}
-          className="grid grid-cols-1 gap-2 px-5 py-4 sm:grid-cols-[1.3fr_1fr_1fr_auto] sm:items-center"
+          className="group overflow-hidden rounded-sm border border-border bg-background shadow-[0_8px_24px_rgba(25,18,10,0.035)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-gold/45 hover:shadow-[0_14px_34px_rgba(25,18,10,0.07)]"
         >
-          <span className="text-gold">
-            Order #{order.orderNumber ?? formatOrderNumber(order.id)}
-          </span>
-          <span className="text-muted-foreground">{formatDate(order.created_at)}</span>
-          <span>{statusLabel(order.status)}</span>
-          <span className="flex items-center gap-3 sm:justify-end">
-            <span>{formatINR(order.total)}</span>
-            <Link
-              to="/invoice/$id"
-              params={{ id: order.id }}
-              className="text-[10px] font-semibold tracking-[0.16em] text-gold hover:text-foreground"
-            >
-              INVOICE
-            </Link>
-          </span>
-          {order.payment_status && (
-            <div className="flex flex-wrap items-center gap-2 sm:col-span-4">
-              <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
-                PAYMENT
-              </span>
+          <div className="flex flex-col gap-4 border-b border-border/70 bg-secondary/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
+                ORDER
+              </p>
+              <p className="mt-1 truncate font-display text-xl text-gold sm:text-2xl">
+                #{order.orderNumber ?? formatOrderNumber(order.id)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Placed on {formatDate(order.created_at)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-5 sm:justify-end">
               <span
-                className={`px-2 py-1 text-[9px] font-semibold tracking-[0.13em] ${order.payment_status === "completed" ? "bg-gold text-onyx" : order.payment_status === "rejected" ? "bg-destructive/10 text-destructive" : "border border-gold/50 text-gold"}`}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold tracking-[0.12em] ${orderStatusStyle(order.status)}`}
               >
-                {order.payment_status === "proof_submitted"
-                  ? "UNDER VERIFICATION"
-                  : order.payment_status.toUpperCase()}
+                <OrderStatusIcon status={order.status} />
+                {statusLabel(order.status).toUpperCase()}
               </span>
-              {order.payment_verification_code && (
-                <code className="text-[10px] text-muted-foreground">
-                  {order.payment_verification_code}
-                </code>
-              )}
-            </div>
-          )}
-          {(order.payment_status === "pending" || order.payment_status === "rejected") && (
-            <div className="sm:col-span-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setPaymentOrderId((current) => (current === order.id ? "" : order.id));
-                  setTransactionId("");
-                  setPaymentProof(null);
-                }}
-                className="inline-flex items-center gap-2 bg-gold px-4 py-2.5 text-[10px] font-semibold tracking-[0.16em] text-onyx"
-              >
-                <QrCode className="h-4 w-4" />
-                {paymentOrderId === order.id ? "CLOSE PAYMENT" : "CONTINUE PAYMENT"}
-              </button>
-              {order.payment_status === "rejected" && order.payment_rejection_reason && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Previous submission: {order.payment_rejection_reason}
+              <div className="text-right">
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
+                  TOTAL
                 </p>
-              )}
-              {paymentOrderId === order.id && (
-                <form
-                  className="mt-4 grid gap-5 border border-gold/40 bg-secondary/20 p-5 lg:grid-cols-[260px_1fr]"
-                  onSubmit={async (event) => {
-                    event.preventDefault();
-                    if (!paymentProof || submittingPayment) return;
-                    setSubmittingPayment(true);
-                    try {
-                      const { data: session } = await supabase.auth.getSession();
-                      const token = session.session?.access_token;
-                      if (!token) throw new Error("Sign in again before uploading payment proof");
-                      const upload = new FormData();
-                      upload.set("order_id", order.id);
-                      upload.set("file", paymentProof);
-                      const response = await fetch("/api/payment-proof", {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${token}` },
-                        body: upload,
-                      });
-                      const result = (await response.json()) as {
-                        message?: string;
-                        url?: string;
-                      };
-                      if (!response.ok || !result.url) {
-                        throw new Error(result.message || "Unable to upload payment proof");
-                      }
-                      await submitManualPayment({
-                        data: {
-                          order_id: order.id,
-                          transaction_id: transactionId,
-                          proof_url: result.url,
-                        },
-                      });
-                      toast.success("Payment submitted for verification");
-                      setPaymentOrderId("");
-                      setTransactionId("");
-                      setPaymentProof(null);
-                      await queryClient.invalidateQueries({ queryKey: ["my-orders"] });
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : "Unable to submit payment proof",
-                      );
-                    } finally {
-                      setSubmittingPayment(false);
-                    }
-                  }}
-                >
-                  <div className="border border-gold/30 bg-white p-3">
-                    <img
-                      src={siteContent?.payment_qr.image_url ?? "/devika-jewellers-phonepe-qr.jpeg"}
-                      alt="Devika Jewellers PhonePe business QR code"
-                      className="mx-auto w-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
-                      COMPLETE PAYMENT
-                    </p>
-                    <h3 className="mt-1 font-display text-2xl">
-                      Pay {formatINR(order.total)} using any UPI app
-                    </h3>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                      Pay the exact amount, then enter the UTR and upload the successful payment
-                      screenshot.
-                    </p>
-                    {order.payment_verification_code && (
-                      <div className="mt-3 border border-gold/40 bg-gold/10 p-3">
-                        <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
-                          PAYMENT CODE
-                        </span>
-                        <code className="ml-2 font-semibold text-gold">
-                          {order.payment_verification_code}
-                        </code>
-                      </div>
-                    )}
-                    <label className="mt-4 block">
-                      <span className="mb-1 block text-[10px] tracking-[0.16em] text-muted-foreground">
-                        UPI UTR / TRANSACTION ID
-                      </span>
-                      <input
-                        required
-                        minLength={8}
-                        maxLength={40}
-                        value={transactionId}
-                        onChange={(event) =>
-                          setTransactionId(event.target.value.replace(/[^A-Za-z0-9_-]/g, ""))
-                        }
-                        placeholder="Example: 426512345678"
-                        className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
-                      />
-                    </label>
-                    <label className="mt-3 block cursor-pointer border border-dashed border-gold/60 bg-background p-4 text-center">
-                      <Upload className="mx-auto h-5 w-5 text-gold" />
-                      <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
-                        {paymentProof ? paymentProof.name : "UPLOAD PAYMENT SCREENSHOT"}
-                      </span>
-                      <span className="mt-1 block text-[9px] text-muted-foreground">
-                        JPG, PNG or WebP · maximum 5 MB
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        required
-                        className="sr-only"
-                        onChange={(event) => setPaymentProof(event.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                    <button
-                      disabled={
-                        submittingPayment || !paymentProof || transactionId.trim().length < 8
-                      }
-                      className="mt-3 w-full bg-onyx px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-cream disabled:opacity-40"
-                    >
-                      {submittingPayment ? "SUBMITTING…" : "SUBMIT FOR VERIFICATION"}
-                    </button>
-                  </div>
-                </form>
-              )}
+                <p className="mt-0.5 font-display text-xl font-semibold text-foreground">
+                  {formatINR(order.total)}
+                </p>
+              </div>
             </div>
-          )}
-          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 border-t border-border/60 pt-3 sm:col-span-4">
-            <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
-              ORDER NUMBER
-            </span>
-            <code className="text-[11px] font-semibold text-foreground">
-              {order.orderNumber ?? formatOrderNumber(order.id)}
-            </code>
-            <button
-              type="button"
-              onClick={() => void copyOrderId(order.orderNumber ?? formatOrderNumber(order.id))}
-              className="inline-flex items-center gap-1 border border-gold/60 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-gold hover:bg-gold hover:text-onyx"
-              aria-label={`Copy order number ${order.orderNumber ?? formatOrderNumber(order.id)}`}
-            >
-              {copiedId === (order.orderNumber ?? formatOrderNumber(order.id)) ? (
-                <Check className="h-3 w-3" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-              {copiedId === (order.orderNumber ?? formatOrderNumber(order.id))
-                ? "COPIED"
-                : "COPY NUMBER"}
-            </button>
-            <Link
-              to="/track-order"
-              className="px-2 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-gold hover:text-foreground"
-            >
-              TRACK ORDER →
-            </Link>
           </div>
-          {order.status === "completed" && (
-            <div className="flex flex-wrap gap-2 sm:col-span-4">
-              {order.items.map((item) => (
-                <Link
-                  key={item.id}
-                  to="/products/$category"
-                  params={{ category: item.id }}
-                  hash="reviews"
-                  className="border border-gold/50 px-3 py-1.5 text-[9px] font-semibold tracking-[0.14em] text-gold hover:bg-gold hover:text-onyx"
+          <div className="grid gap-4 px-4 py-4 sm:px-5">
+            {order.payment_status && (
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
+                  PAYMENT STATUS
+                </span>
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold tracking-[0.13em] ${order.payment_status === "completed" ? "border-gold/30 bg-gold text-onyx" : order.payment_status === "rejected" ? "border-destructive/25 bg-destructive/10 text-destructive" : "border-gold/35 bg-gold/10 text-gold"}`}
                 >
-                  REVIEW {item.name.toUpperCase()}
+                  {order.payment_status === "proof_submitted"
+                    ? "UNDER VERIFICATION"
+                    : order.payment_status.toUpperCase()}
+                </span>
+                {order.payment_verification_code && (
+                  <span className="hidden h-4 w-px bg-border sm:block" />
+                )}
+                {order.payment_verification_code && (
+                  <code className="text-[10px] tracking-[0.04em] text-muted-foreground">
+                    {order.payment_verification_code}
+                  </code>
+                )}
+              </div>
+            )}
+            {(order.payment_status === "pending" || order.payment_status === "rejected") && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentOrderId((current) => (current === order.id ? "" : order.id));
+                    setTransactionId("");
+                    setPaymentProof(null);
+                  }}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm bg-gold px-5 py-3 text-[10px] font-semibold tracking-[0.16em] text-onyx shadow-[0_6px_18px_rgba(190,139,66,0.2)] transition-colors hover:bg-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 sm:w-auto"
+                >
+                  <QrCode className="h-4 w-4" />
+                  {paymentOrderId === order.id ? "CLOSE PAYMENT" : "CONTINUE PAYMENT"}
+                </button>
+                {order.payment_status === "rejected" && order.payment_rejection_reason && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Previous submission: {order.payment_rejection_reason}
+                  </p>
+                )}
+                {paymentOrderId === order.id && (
+                  <form
+                    className="mt-4 grid gap-5 rounded-sm border border-gold/35 bg-secondary/20 p-4 sm:p-5 lg:grid-cols-[260px_1fr]"
+                    onSubmit={async (event) => {
+                      event.preventDefault();
+                      if (!paymentProof || submittingPayment) return;
+                      setSubmittingPayment(true);
+                      try {
+                        const { data: session } = await supabase.auth.getSession();
+                        const token = session.session?.access_token;
+                        if (!token) throw new Error("Sign in again before uploading payment proof");
+                        const upload = new FormData();
+                        upload.set("order_id", order.id);
+                        upload.set("file", paymentProof);
+                        const response = await fetch("/api/payment-proof", {
+                          method: "POST",
+                          headers: { Authorization: `Bearer ${token}` },
+                          body: upload,
+                        });
+                        const result = (await response.json()) as {
+                          message?: string;
+                          url?: string;
+                        };
+                        if (!response.ok || !result.url) {
+                          throw new Error(result.message || "Unable to upload payment proof");
+                        }
+                        await submitManualPayment({
+                          data: {
+                            order_id: order.id,
+                            transaction_id: transactionId,
+                            proof_url: result.url,
+                          },
+                        });
+                        toast.success("Payment submitted for verification");
+                        setPaymentOrderId("");
+                        setTransactionId("");
+                        setPaymentProof(null);
+                        await queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error ? error.message : "Unable to submit payment proof",
+                        );
+                      } finally {
+                        setSubmittingPayment(false);
+                      }
+                    }}
+                  >
+                    <div className="border border-gold/30 bg-white p-3">
+                      <img
+                        src={
+                          siteContent?.payment_qr.image_url ?? "/devika-jewellers-phonepe-qr.jpeg"
+                        }
+                        alt="Devika Jewellers PhonePe business QR code"
+                        className="mx-auto w-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.2em] text-gold">
+                        COMPLETE PAYMENT
+                      </p>
+                      <h3 className="mt-1 font-display text-2xl">
+                        Pay {formatINR(order.total)} using any UPI app
+                      </h3>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                        Pay the exact amount, then enter the UTR and upload the successful payment
+                        screenshot.
+                      </p>
+                      {order.payment_verification_code && (
+                        <div className="mt-3 border border-gold/40 bg-gold/10 p-3">
+                          <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
+                            PAYMENT CODE
+                          </span>
+                          <code className="ml-2 font-semibold text-gold">
+                            {order.payment_verification_code}
+                          </code>
+                        </div>
+                      )}
+                      <label className="mt-4 block">
+                        <span className="mb-1 block text-[10px] tracking-[0.16em] text-muted-foreground">
+                          UPI UTR / TRANSACTION ID
+                        </span>
+                        <input
+                          required
+                          minLength={8}
+                          maxLength={40}
+                          value={transactionId}
+                          onChange={(event) =>
+                            setTransactionId(event.target.value.replace(/[^A-Za-z0-9_-]/g, ""))
+                          }
+                          placeholder="Example: 426512345678"
+                          className="w-full border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+                        />
+                      </label>
+                      <label className="mt-3 block cursor-pointer border border-dashed border-gold/60 bg-background p-4 text-center">
+                        <Upload className="mx-auto h-5 w-5 text-gold" />
+                        <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
+                          {paymentProof ? paymentProof.name : "UPLOAD PAYMENT SCREENSHOT"}
+                        </span>
+                        <span className="mt-1 block text-[9px] text-muted-foreground">
+                          JPG, PNG or WebP · maximum 5 MB
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          required
+                          className="sr-only"
+                          onChange={(event) => setPaymentProof(event.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                      <button
+                        disabled={
+                          submittingPayment || !paymentProof || transactionId.trim().length < 8
+                        }
+                        className="mt-3 w-full bg-onyx px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-cream disabled:opacity-40"
+                      >
+                        {submittingPayment ? "SUBMITTING…" : "SUBMIT FOR VERIFICATION"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+            <div className="flex min-w-0 flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground">
+                  ORDER NUMBER
+                </span>
+                <code className="text-[11px] font-semibold text-foreground">
+                  {order.orderNumber ?? formatOrderNumber(order.id)}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => void copyOrderId(order.orderNumber ?? formatOrderNumber(order.id))}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2 text-[9px] font-semibold tracking-[0.12em] text-gold transition-colors hover:border-gold/60 hover:bg-gold/10"
+                  aria-label={`Copy order number ${order.orderNumber ?? formatOrderNumber(order.id)}`}
+                >
+                  {copiedId === (order.orderNumber ?? formatOrderNumber(order.id)) ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  {copiedId === (order.orderNumber ?? formatOrderNumber(order.id))
+                    ? "COPIED"
+                    : "COPY"}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                <Link
+                  to="/invoice/$id"
+                  params={{ id: order.id }}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-sm px-3 py-2 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-gold"
+                >
+                  <ReceiptText className="h-3.5 w-3.5" /> INVOICE
                 </Link>
-              ))}
+                <Link
+                  to="/track-order"
+                  className="inline-flex min-h-9 items-center gap-1 rounded-sm px-3 py-2 text-[10px] font-semibold tracking-[0.12em] text-gold transition-colors hover:bg-gold/10 hover:text-foreground"
+                >
+                  TRACK ORDER <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
-          )}
+            {order.status === "completed" && (
+              <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
+                {order.items.map((item) => (
+                  <Link
+                    key={item.id}
+                    to="/products/$category"
+                    params={{ category: item.id }}
+                    hash="reviews"
+                    className="max-w-full truncate rounded-sm border border-gold/40 bg-gold/5 px-3 py-2 text-[9px] font-semibold tracking-[0.12em] text-gold transition-colors hover:bg-gold hover:text-onyx"
+                  >
+                    REVIEW {item.name.toUpperCase()}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </li>
       ))}
     </ul>
@@ -638,7 +689,7 @@ function Orders({ orders, loading }: { orders: Order[]; loading: boolean }) {
   return (
     <>
       <h1 className="font-display text-4xl">My Orders</h1>
-      <div className="mt-6 border border-border">
+      <div className="mt-6 overflow-hidden rounded-sm border border-border bg-card/30">
         {loading ? (
           <div className="p-6 text-sm text-muted-foreground">Loading your orders…</div>
         ) : orders.length ? (
