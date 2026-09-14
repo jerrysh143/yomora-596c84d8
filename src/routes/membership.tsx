@@ -143,7 +143,7 @@ function MembershipPage() {
                 return (
                   <div
                     key={b.title + i}
-                    className="w-full text-center sm:w-[calc(50%_-_1rem)] md:w-[calc(25%_-_1.5rem)] lg:w-[calc(14.285%_-_1.75rem)]"
+                    className="w-full text-center sm:w-[45%] md:w-[21%] lg:w-[12%]"
                   >
                     <div className="mx-auto grid h-11 w-11 place-items-center text-gold">
                       <Icon className="h-6 w-6" strokeWidth={1.2} />
