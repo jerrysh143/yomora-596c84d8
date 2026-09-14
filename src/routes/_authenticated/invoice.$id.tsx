@@ -82,13 +82,15 @@ function InvoicePage() {
         <section className="border border-[#d8cfc3] bg-white p-7 shadow-sm md:p-12">
           <div className="flex flex-wrap items-start justify-between gap-8 border-b border-[#ded6cc] pb-8">
             <div>
-              <img
-                src="/yomora-logo.svg"
-                width={1200}
-                height={260}
-                alt={sellerName}
-                className="h-20 w-auto max-w-[360px] object-contain object-left md:h-24"
-              />
+              <div className="inline-flex rounded-sm bg-[#0b0a08] px-4 py-3 shadow-sm [-webkit-print-color-adjust:exact] [print-color-adjust:exact]">
+                <img
+                  src="/yomora-logo.png"
+                  width={1800}
+                  height={390}
+                  alt={sellerName}
+                  className="h-auto w-[250px] object-contain sm:w-[280px]"
+                />
+              </div>
               <p className="mt-4 text-xs font-semibold text-[#665b50]">GSTIN: {GSTIN}</p>
               {details.seller_address && (
                 <p className="mt-5 max-w-xs whitespace-pre-wrap text-xs leading-relaxed text-[#665b50]">
