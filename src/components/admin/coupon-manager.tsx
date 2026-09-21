@@ -21,6 +21,7 @@ type CouponForm = {
   minimum_order: string;
   maximum_discount: string;
   member_only: boolean;
+  show_at_checkout: boolean;
   usage_limit: string;
   per_customer_limit: string;
   starts_at: string;
@@ -36,6 +37,7 @@ const emptyForm: CouponForm = {
   minimum_order: "0",
   maximum_discount: "",
   member_only: false,
+  show_at_checkout: false,
   usage_limit: "",
   per_customer_limit: "1",
   starts_at: "",
@@ -81,6 +83,7 @@ export function CouponManager() {
       minimum_order: String(coupon.minimum_order),
       maximum_discount: coupon.maximum_discount == null ? "" : String(coupon.maximum_discount),
       member_only: coupon.member_only,
+      show_at_checkout: coupon.show_at_checkout,
       usage_limit: coupon.usage_limit == null ? "" : String(coupon.usage_limit),
       per_customer_limit: String(coupon.per_customer_limit),
       starts_at: toLocalInput(coupon.starts_at),
@@ -100,6 +103,7 @@ export function CouponManager() {
         minimum_order: Number(form.minimum_order || 0),
         maximum_discount: form.maximum_discount ? Number(form.maximum_discount) : null,
         member_only: form.member_only,
+        show_at_checkout: form.show_at_checkout,
         usage_limit: form.usage_limit ? Number(form.usage_limit) : null,
         per_customer_limit: Number(form.per_customer_limit || 1),
         starts_at: toIso(form.starts_at),
@@ -163,6 +167,11 @@ export function CouponManager() {
                   {coupon.member_only && (
                     <span className="inline-flex items-center gap-1 bg-onyx px-2 py-0.5 text-[9px] font-semibold tracking-[0.14em] text-gold">
                       <Crown className="h-3 w-3" /> MEMBERS ONLY
+                    </span>
+                  )}
+                  {coupon.show_at_checkout && (
+                    <span className="bg-gold/15 px-2 py-0.5 text-[9px] font-semibold tracking-[0.14em] text-gold">
+                      SHOWN AT CHECKOUT
                     </span>
                   )}
                 </div>
@@ -255,6 +264,13 @@ export function CouponManager() {
                 <span>
                   <span className="flex items-center gap-1.5 text-sm font-semibold"><Crown className="h-4 w-4 text-gold" /> Membership users only</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">Only signed-in customers with an active, unexpired membership can use this code.</span>
+                </span>
+              </label>
+              <label className="flex items-center gap-3 border border-border bg-secondary/20 p-4 sm:col-span-2">
+                <input type="checkbox" checked={form.show_at_checkout} onChange={(e) => setForm({ ...form, show_at_checkout: e.target.checked })} />
+                <span>
+                  <span className="text-sm font-semibold">Show this coupon in checkout</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Customers can select this code from the available-deals list. Leave this off for private codes.</span>
                 </span>
               </label>
               <Field label="Customer-facing description" className="sm:col-span-2">

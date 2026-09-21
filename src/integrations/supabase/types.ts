@@ -97,6 +97,7 @@ export type Database = {
           member_only: boolean
           minimum_order: number
           per_customer_limit: number
+          show_at_checkout: boolean
           starts_at: string | null
           times_used: number
           updated_at: string
@@ -115,6 +116,7 @@ export type Database = {
           member_only?: boolean
           minimum_order?: number
           per_customer_limit?: number
+          show_at_checkout?: boolean
           starts_at?: string | null
           times_used?: number
           updated_at?: string
@@ -133,6 +135,7 @@ export type Database = {
           member_only?: boolean
           minimum_order?: number
           per_customer_limit?: number
+          show_at_checkout?: boolean
           starts_at?: string | null
           times_used?: number
           updated_at?: string

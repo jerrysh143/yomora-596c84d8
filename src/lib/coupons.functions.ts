@@ -13,6 +13,7 @@ export type Coupon = {
   minimum_order: number;
   maximum_discount: number | null;
   member_only: boolean;
+  show_at_checkout: boolean;
   usage_limit: number | null;
   per_customer_limit: number;
   times_used: number;
@@ -31,6 +32,7 @@ const couponFields = z.object({
   minimum_order: z.number().int().min(0).max(10_000_000),
   maximum_discount: z.number().int().positive().max(10_000_000).nullable(),
   member_only: z.boolean(),
+  show_at_checkout: z.boolean(),
   usage_limit: z.number().int().positive().max(1_000_000).nullable(),
   per_customer_limit: z.number().int().positive().max(100),
   starts_at: z.string().datetime().nullable(),
@@ -113,6 +115,14 @@ const validateInput = z.object({
   customer_email: z.string().trim().email().optional(),
 });
 
+export type AvailableCoupon = {
+  code: string;
+  description: string;
+  memberOnly: boolean;
+  discount: number;
+  total: number;
+};
+
 async function optionalAuthenticatedUser() {
   const [{ getRequest }, { supabaseAdmin }] = await Promise.all([
     import("@tanstack/react-start/server"),
@@ -125,6 +135,79 @@ async function optionalAuthenticatedUser() {
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   return error ? null : data.user;
 }
+
+/** Lists only coupons explicitly approved for public checkout display. */
+export const listAvailableCouponsFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => validateInput.omit({ code: true }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const requestedIds = [...new Set(data.items.map((item) => item.id))];
+    const [{ data: products, error: productsError }, { data: coupons, error: couponsError }, user] = await Promise.all([
+      supabaseAdmin.from("products").select("id,price,sold_out").in("id", requestedIds),
+      supabaseAdmin.from("coupons").select("*").eq("show_at_checkout", true).eq("is_active", true),
+      optionalAuthenticatedUser(),
+    ]);
+    if (productsError) throw new Error(productsError.message);
+    if (couponsError) throw new Error(couponsError.message);
+
+    const byId = new Map((products ?? []).map((product) => [product.id, product]));
+    const subtotal = data.items.reduce((sum, item) => {
+      const product = byId.get(item.id);
+      if (!product || product.sold_out) throw new Error("One or more selected products are unavailable");
+      return sum + product.price * item.quantity;
+    }, 0);
+    const now = Date.now();
+    let hasActiveMembership = false;
+    if (user) {
+      const { data: memberships, error } = await supabaseAdmin
+        .from("memberships")
+        .select("id,expires_at")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .limit(20);
+      if (error) throw new Error(error.message);
+      hasActiveMembership = !!memberships?.some(
+        (membership) => !membership.expires_at || new Date(membership.expires_at).getTime() >= now,
+      );
+    }
+
+    const redemptionEmail = data.customer_email?.toLowerCase() || user?.email?.toLowerCase();
+    const { data: redemptions, error: redemptionsError } = user || redemptionEmail
+      ? await (user
+          ? supabaseAdmin.from("coupon_redemptions").select("coupon_id").eq("user_id", user.id)
+          : supabaseAdmin.from("coupon_redemptions").select("coupon_id").eq("customer_email", redemptionEmail!))
+      : { data: [], error: null };
+    if (redemptionsError) throw new Error(redemptionsError.message);
+    const redemptionCounts = new Map<string, number>();
+    for (const redemption of redemptions ?? []) {
+      redemptionCounts.set(redemption.coupon_id, (redemptionCounts.get(redemption.coupon_id) ?? 0) + 1);
+    }
+
+    return (coupons ?? [])
+      .filter((coupon) => !coupon.starts_at || new Date(coupon.starts_at).getTime() <= now)
+      .filter((coupon) => !coupon.expires_at || new Date(coupon.expires_at).getTime() >= now)
+      .filter((coupon) => coupon.usage_limit == null || coupon.times_used < coupon.usage_limit)
+      .filter((coupon) => subtotal >= coupon.minimum_order)
+      .filter((coupon) => !coupon.member_only || hasActiveMembership)
+      .filter((coupon) => (redemptionCounts.get(coupon.id) ?? 0) < coupon.per_customer_limit)
+      .map((coupon) => {
+        let discount = coupon.discount_type === "percentage"
+          ? Math.floor(subtotal * coupon.discount_value / 100)
+          : coupon.discount_value;
+        if (coupon.discount_type === "percentage" && coupon.maximum_discount != null) {
+          discount = Math.min(discount, coupon.maximum_discount);
+        }
+        discount = Math.min(discount, subtotal);
+        return {
+          code: coupon.code.toUpperCase(),
+          description: coupon.description,
+          memberOnly: coupon.member_only,
+          discount,
+          total: subtotal - discount,
+        } satisfies AvailableCoupon;
+      })
+      .sort((a, b) => b.discount - a.discount || a.code.localeCompare(b.code));
+  });
 
 /** Provides a checkout preview. Final validation is repeated atomically when the order is created. */
 export const validateCouponFn = createServerFn({ method: "POST" })

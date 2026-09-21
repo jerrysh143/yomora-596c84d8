@@ -18,7 +18,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
-import { validateCouponFn } from "@/lib/coupons.functions";
+import { listAvailableCouponsFn, validateCouponFn } from "@/lib/coupons.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
@@ -84,6 +84,7 @@ function CheckoutPage() {
   const createOrder = useServerFn(createOrderFn);
   const submitManualPayment = useServerFn(submitManualPaymentFn);
   const validateCoupon = useServerFn(validateCouponFn);
+  const listAvailableCoupons = useServerFn(listAvailableCouponsFn);
   const getMyMembership = useServerFn(getMyMembershipFn);
   const [pay, setPay] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
@@ -127,6 +128,18 @@ function CheckoutPage() {
   });
   const { data: membershipPlans = [] } = useQuery(subscriptionPlansQuery());
   const { data: siteContent } = useQuery(siteContentQuery());
+  const couponCartItems = items.map((item) => ({ id: item.id, quantity: item.qty }));
+  const { data: availableCoupons = [], isLoading: couponsLoading } = useQuery({
+    queryKey: ["checkout", "available-coupons", couponCartItems, customerEmail],
+    queryFn: () =>
+      listAvailableCoupons({
+        data: {
+          items: couponCartItems,
+          ...(customerEmail.trim() ? { customer_email: customerEmail.trim() } : {}),
+        },
+      }),
+    enabled: authReady && items.length > 0,
+  });
   const activeMembershipPlan = membershipPlans.find((plan) => plan.is_active);
   const hasActiveMembership =
     membership?.status === "active" &&
@@ -137,6 +150,31 @@ function CheckoutPage() {
   const tax = inclusiveTaxBreakdown(subtotal, discount);
   const qualifiesForMembership = total >= COMPLIMENTARY_MEMBERSHIP_THRESHOLD;
   const membershipRemaining = Math.max(0, COMPLIMENTARY_MEMBERSHIP_THRESHOLD - total);
+
+  const applyCouponCode = async (code: string) => {
+    setValidatingCoupon(true);
+    try {
+      const result = await validateCoupon({
+        data: {
+          code,
+          items: couponCartItems,
+          ...(customerEmail.trim() ? { customer_email: customerEmail.trim() } : {}),
+        },
+      });
+      setAppliedCoupon(result);
+      setCouponInput(result.code);
+      toast.success(
+        result.total === 0
+          ? `Coupon applied. ${result.code} makes this order free.`
+          : `Coupon applied. You save ${formatINR(result.discount)}`,
+      );
+    } catch (error) {
+      setAppliedCoupon(null);
+      toast.error(checkoutErrorMessage(error, "Unable to apply coupon"));
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
 
   const applyAddress = (address: CheckoutAddress, fallbackName = customerName) => {
     const fields = normaliseSavedAddress(address, fallbackName);
@@ -814,6 +852,47 @@ function CheckoutPage() {
                 <label className="block text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
                   COUPON CODE
                 </label>
+                <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                  Select a YOMORA deal below and tap it to apply. Your saving appears in the order total before you place the order.
+                </p>
+                {!currentCoupon && availableCoupons.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[10px] font-semibold tracking-[0.18em] text-gold">
+                      SELECT AN AVAILABLE DEAL
+                    </p>
+                    {availableCoupons.map((coupon, index) => (
+                      <button
+                        key={coupon.code}
+                        type="button"
+                        disabled={validatingCoupon}
+                        onClick={() => applyCouponCode(coupon.code)}
+                        className={`w-full border p-3 text-left transition-colors ${
+                          index === 0
+                            ? "border-gold bg-gold/10"
+                            : "border-border bg-secondary/20 hover:border-gold/60"
+                        }`}
+                      >
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="font-mono text-sm font-semibold tracking-[0.12em] text-gold">
+                            {coupon.code}
+                          </span>
+                          <span className="text-[10px] font-semibold tracking-[0.14em] text-foreground">
+                            {coupon.total === 0
+                              ? "FREE ORDER"
+                              : `SAVE ${formatINR(coupon.discount)}`}
+                          </span>
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {coupon.description || (index === 0 ? "Best available YOMORA deal" : "Available for this order")}
+                          {coupon.memberOnly ? " · Members only" : ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!currentCoupon && couponsLoading && (
+                  <p className="mt-2 text-xs text-muted-foreground">Checking available deals…</p>
+                )}
                 {currentCoupon ? (
                   <div className="mt-2 border border-gold bg-gold/10 p-3">
                     <div className="flex items-center justify-between gap-3">
@@ -850,28 +929,7 @@ function CheckoutPage() {
                     <button
                       type="button"
                       disabled={!couponInput.trim() || items.length === 0 || validatingCoupon}
-                      onClick={async () => {
-                        setValidatingCoupon(true);
-                        try {
-                          const result = await validateCoupon({
-                            data: {
-                              code: couponInput,
-                              items: items.map((item) => ({ id: item.id, quantity: item.qty })),
-                              ...(customerEmail.trim()
-                                ? { customer_email: customerEmail.trim() }
-                                : {}),
-                            },
-                          });
-                          setAppliedCoupon(result);
-                          setCouponInput(result.code);
-                          toast.success(`Coupon applied. You save ${formatINR(result.discount)}`);
-                        } catch (error) {
-                          setAppliedCoupon(null);
-                          toast.error(checkoutErrorMessage(error, "Unable to apply coupon"));
-                        } finally {
-                          setValidatingCoupon(false);
-                        }
-                      }}
+                      onClick={() => applyCouponCode(couponInput)}
                       className="border border-l-0 border-gold bg-gold px-4 text-[10px] font-semibold tracking-[0.18em] text-onyx disabled:opacity-40"
                     >
                       {validatingCoupon ? "CHECKING…" : "APPLY"}
@@ -879,7 +937,9 @@ function CheckoutPage() {
                   </div>
                 )}
                 <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-                  Membership offers require an active membership and a signed-in account.
+                  Membership offers require an active membership and a signed-in account. Any
+                  separate bank, UPI or payment-app offer is controlled by that app and will appear
+                  there during payment.
                 </p>
               </div>
               <button
