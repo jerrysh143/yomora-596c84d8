@@ -163,11 +163,7 @@ function CheckoutPage() {
       });
       setAppliedCoupon(result);
       setCouponInput(result.code);
-      toast.success(
-        result.total === 0
-          ? `Coupon applied. ${result.code} makes this order free.`
-          : `Coupon applied. You save ${formatINR(result.discount)}`,
-      );
+      toast.success(`Coupon applied. You save ${formatINR(result.discount)}`);
     } catch (error) {
       setAppliedCoupon(null);
       toast.error(checkoutErrorMessage(error, "Unable to apply coupon"));
@@ -877,9 +873,7 @@ function CheckoutPage() {
                             {coupon.code}
                           </span>
                           <span className="text-[10px] font-semibold tracking-[0.14em] text-foreground">
-                            {coupon.total === 0
-                              ? "FREE ORDER"
-                              : `SAVE ${formatINR(coupon.discount)}`}
+                            {`SAVE ${formatINR(coupon.discount)}`}
                           </span>
                         </span>
                         <span className="mt-1 block text-xs text-muted-foreground">
