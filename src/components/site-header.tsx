@@ -139,12 +139,11 @@ export function SiteHeader() {
       </div>
 
       <nav className="hidden h-[58px] items-center justify-center gap-7 border-t border-white/10 text-sm font-semibold tracking-[0.02em] md:flex lg:gap-10" aria-label="Main navigation">
-        <Link to="/products" className="transition-colors hover:text-gold">New In</Link>
-        <Link to="/products" className="transition-colors hover:text-gold">Jewellery</Link>
-        <Link to="/products" className="transition-colors hover:text-gold">Collections</Link>
-        <Link to="/membership" className="transition-colors hover:text-gold">Black Membership</Link>
-        <Link to="/custom-jewellery" className="hidden transition-colors hover:text-gold lg:inline">Custom Jewellery</Link>
-        <Link to="/about" className="transition-colors hover:text-gold">About Us</Link>
+        <Link to="/products" className="transition-colors hover:text-gold">Shop</Link>
+        <Link to="/men" className="transition-colors hover:text-gold">For him</Link>
+        <Link to="/women" className="transition-colors hover:text-gold">For her</Link>
+        <Link to="/custom-jewellery" className="hidden transition-colors hover:text-gold lg:inline">Custom</Link>
+        <Link to="/about" className="transition-colors hover:text-gold">The House</Link>
       </nav>
 
     </header>
@@ -175,18 +174,19 @@ export function SiteHeader() {
           </div>
 
           <nav className="flex-1 px-5 py-5" aria-label="Menu navigation">
-            <DrawerLink to="/products" label="New In" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/products" label="Shop All Jewellery" icon={<ShoppingBag className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/membership" label="Black Signature Membership" icon={<Crown className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/custom-jewellery" label="Custom Jewellery" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/track-order" label="Track Your Order" icon={<PackageSearch className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/about" label="About YOMORA" icon={<User className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/contact" label="Contact Us" icon={<ChevronRight className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/products" label="Shop 925 silver" icon={<ShoppingBag className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/men" label="For him" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/women" label="For her" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/custom-jewellery" label="Custom order" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/membership" label="Membership" icon={<Crown className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/track-order" label="Track order" icon={<PackageSearch className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/about" label="The House" icon={<User className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/contact" label="WhatsApp / contact" icon={<ChevronRight className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
           </nav>
 
           <div className="border-t border-white/10 px-5 py-5 text-xs text-white/55">
             <p className="font-semibold tracking-[0.12em] text-gold">YOMORA CARE</p>
-            <p className="mt-2 leading-relaxed">Certified 925 silver • Secure payments • Easy returns</p>
+            <p className="mt-2 leading-relaxed">Hallmarked 925 • Ships across India • 7-day returns</p>
             {signedIn && (
               <button type="button" onClick={async () => { const { error } = await supabase.auth.signOut(); if (!error) window.location.assign("/"); }} className="mt-4 inline-flex items-center gap-2 text-cream hover:text-gold">
                 <LogOut className="h-4 w-4" /> Sign out
@@ -201,7 +201,7 @@ export function SiteHeader() {
   );
 }
 
-function DrawerLink({ to, label, icon, onClick }: { to: "/products" | "/membership" | "/custom-jewellery" | "/track-order" | "/about" | "/contact"; label: string; icon: React.ReactNode; onClick: () => void }) {
+function DrawerLink({ to, label, icon, onClick }: { to: "/products" | "/men" | "/women" | "/membership" | "/custom-jewellery" | "/track-order" | "/about" | "/contact"; label: string; icon: React.ReactNode; onClick: () => void }) {
   return (
     <Link to={to} onClick={onClick} className="flex items-center gap-4 border-b border-white/10 py-4 transition-colors hover:text-gold">
       <span className="shrink-0 text-gold">{icon}</span>
