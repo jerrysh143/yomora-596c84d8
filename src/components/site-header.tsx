@@ -139,12 +139,11 @@ export function SiteHeader() {
       </div>
 
       <nav className="hidden h-[58px] items-center justify-center gap-7 border-t border-white/10 text-sm font-semibold tracking-[0.02em] md:flex lg:gap-10" aria-label="Main navigation">
-        <Link to="/products" className="transition-colors hover:text-gold">New In</Link>
+        <Link to="/men" className="transition-colors hover:text-gold">Men</Link>
+        <Link to="/women" className="transition-colors hover:text-gold">Women</Link>
         <Link to="/products" className="transition-colors hover:text-gold">Jewellery</Link>
-        <Link to="/products" className="transition-colors hover:text-gold">Collections</Link>
-        <Link to="/membership" className="transition-colors hover:text-gold">Black Membership</Link>
-        <Link to="/custom-jewellery" className="hidden transition-colors hover:text-gold lg:inline">Custom Jewellery</Link>
-        <Link to="/about" className="transition-colors hover:text-gold">About Us</Link>
+        <Link to="/custom-jewellery" className="hidden transition-colors hover:text-gold lg:inline">Custom</Link>
+        <Link to="/about" className="transition-colors hover:text-gold">About</Link>
       </nav>
 
     </header>
@@ -175,10 +174,11 @@ export function SiteHeader() {
           </div>
 
           <nav className="flex-1 px-5 py-5" aria-label="Menu navigation">
-            <DrawerLink to="/products" label="New In" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/products" label="Shop All Jewellery" icon={<ShoppingBag className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/membership" label="Black Signature Membership" icon={<Crown className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
-            <DrawerLink to="/custom-jewellery" label="Custom Jewellery" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/men" label="Men" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/women" label="Women" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/products" label="Jewellery" icon={<ShoppingBag className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/custom-jewellery" label="Custom" icon={<Gem className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
+            <DrawerLink to="/membership" label="Membership" icon={<Crown className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
             <DrawerLink to="/track-order" label="Track Your Order" icon={<PackageSearch className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
             <DrawerLink to="/about" label="About YOMORA" icon={<User className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
             <DrawerLink to="/contact" label="Contact Us" icon={<ChevronRight className="h-5 w-5" />} onClick={() => setMenuOpen(false)} />
@@ -201,7 +201,7 @@ export function SiteHeader() {
   );
 }
 
-function DrawerLink({ to, label, icon, onClick }: { to: "/products" | "/membership" | "/custom-jewellery" | "/track-order" | "/about" | "/contact"; label: string; icon: React.ReactNode; onClick: () => void }) {
+function DrawerLink({ to, label, icon, onClick }: { to: "/products" | "/men" | "/women" | "/membership" | "/custom-jewellery" | "/track-order" | "/about" | "/contact"; label: string; icon: React.ReactNode; onClick: () => void }) {
   return (
     <Link to={to} onClick={onClick} className="flex items-center gap-4 border-b border-white/10 py-4 transition-colors hover:text-gold">
       <span className="shrink-0 text-gold">{icon}</span>
