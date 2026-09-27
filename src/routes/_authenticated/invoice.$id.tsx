@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -23,6 +24,15 @@ function InvoicePage() {
     queryKey: ["invoice", id],
     queryFn: () => getInvoice({ data: { id } }),
   });
+
+  useEffect(() => {
+    if (!invoiceQuery.data || new URLSearchParams(window.location.search).get("print") !== "1") {
+      return;
+    }
+    const timer = window.setTimeout(() => window.print(), 350);
+    return () => window.clearTimeout(timer);
+  }, [invoiceQuery.data]);
+
   if (invoiceQuery.isLoading)
     return (
       <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">
