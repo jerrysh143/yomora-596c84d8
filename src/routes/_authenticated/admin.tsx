@@ -23,6 +23,7 @@ import {
   RefreshCw,
   FileText,
   Save,
+  Printer,
   MessageCircle,
   Users,
   Truck,
@@ -234,7 +235,6 @@ function AdminPage() {
     id: string;
     details: InvoiceDetails;
   } | null>(null);
-
   // Admin session stays active until an explicit sign-out.
 
   const [editing, setEditing] = useState<Product | null>(null);
@@ -1548,17 +1548,22 @@ on conflict do nothing;`}
                             <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
                           </button>
                         )}
-                        <button
-                          onClick={() =>
-                            setInvoiceEditor({
-                              id: o.id,
-                              details: (o.invoice_details ?? {}) as InvoiceDetails,
-                            })
-                          }
-                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.24em] hover:border-gold hover:text-gold"
+                        <a
+                          href={`/invoice/${o.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 border border-border px-3 py-2 text-[10px] font-semibold tracking-[0.2em] hover:border-gold hover:text-gold"
                         >
-                          <FileText className="h-3.5 w-3.5" /> INVOICE DETAILS
-                        </button>
+                          <FileText className="h-3.5 w-3.5" /> VIEW / DOWNLOAD PDF
+                        </a>
+                        <a
+                          href={`/invoice/${o.id}?print=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-gold hover:bg-gold hover:text-onyx"
+                        >
+                          <Printer className="h-3.5 w-3.5" /> PRINT INVOICE
+                        </a>
                         {o.status !== "pending" && (
                           <button
                             onClick={() => orderStatusMut.mutate({ id: o.id, status: "pending" })}
