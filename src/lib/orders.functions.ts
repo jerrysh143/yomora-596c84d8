@@ -566,6 +566,38 @@ export const updateOrderStatusFn = createServerFn({ method: "POST" })
     return { ok: true, membershipActivated };
   });
 
+export const scheduleOrderProductsSoldOutFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+
+    const { data: order, error: orderError } = await context.supabase
+      .from("orders")
+      .select("status,items")
+      .eq("id", data.id)
+      .single();
+    if (orderError) throw new Error(orderError.message);
+    if (order.status !== "completed") {
+      throw new Error("Mark the order completed before scheduling its products as sold out");
+    }
+
+    const productIds = [
+      ...new Set(
+        ((order.items as unknown as OrderItem[]) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (!productIds.length) throw new Error("This order has no products to mark sold out");
+
+    const { RETIREMENT_DAYS, scheduleProductsForRetirement } =
+      await import("@/lib/product-retirement.server");
+    const scheduled = await scheduleProductsForRetirement(productIds);
+
+    return { scheduled, days: RETIREMENT_DAYS };
+  });
+
 export const deleteOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
