@@ -50,6 +50,7 @@ import { upsertCategoryFn, deleteCategoryFn } from "@/lib/categories.functions";
 import {
   listOrdersFn,
   updateOrderStatusFn,
+  scheduleOrderProductsSoldOutFn,
   deleteOrderFn,
   updateInvoiceDetailsFn,
   type OrderStatus,
@@ -160,6 +161,7 @@ function AdminPage() {
   const delCat = useServerFn(deleteCategoryFn);
   const listOrders = useServerFn(listOrdersFn);
   const updateOrder = useServerFn(updateOrderStatusFn);
+  const scheduleOrderProductsSoldOut = useServerFn(scheduleOrderProductsSoldOutFn);
   const removeOrder = useServerFn(deleteOrderFn);
   const updateInvoice = useServerFn(updateInvoiceDetailsFn);
   const savePlan = useServerFn(updateSubscriptionPlanFn);
@@ -345,6 +347,17 @@ function AdminPage() {
     onSuccess: () => {
       toast.success("Order updated");
       qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const soldOutScheduleMut = useMutation({
+    mutationFn: (id: string) => scheduleOrderProductsSoldOut({ data: { id } }),
+    onSuccess: (result) => {
+      toast.success(
+        `${result.scheduled} product${result.scheduled === 1 ? "" : "s"} sold out · automatic deletion in ${result.days} days`,
+      );
+      qc.invalidateQueries({ queryKey: ["products"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1540,13 +1553,30 @@ on conflict do nothing;`}
                           </button>
                         )}
                         {o.status === "completed" && (
-                          <button
-                            type="button"
-                            onClick={() => openWhatsAppInvoice(o)}
-                            className="inline-flex items-center gap-1.5 bg-[#25D366] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[#071b0e] hover:bg-[#20bd5a]"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              disabled={soldOutScheduleMut.isPending}
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    "Mark every product in this order Sold Out now and permanently delete the product listings after 7 days? The order and invoice will remain.",
+                                  )
+                                )
+                                  soldOutScheduleMut.mutate(o.id);
+                              }}
+                              className="inline-flex items-center gap-1.5 border border-destructive px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive hover:bg-destructive hover:text-white disabled:opacity-50"
+                            >
+                              <Package className="h-3.5 w-3.5" /> SET SOLD OUT — DELETE IN 7 DAYS
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openWhatsAppInvoice(o)}
+                              className="inline-flex items-center gap-1.5 bg-[#25D366] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[#071b0e] hover:bg-[#20bd5a]"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" /> SEND WHATSAPP INVOICE
+                            </button>
+                          </>
                         )}
                         <a
                           href={`/invoice/${o.id}`}
