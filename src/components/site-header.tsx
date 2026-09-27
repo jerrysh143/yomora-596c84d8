@@ -286,7 +286,7 @@ export function SiteHeader() {
 
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[80]"
+          className="fixed inset-0 z-[80] isolate"
           role="dialog"
           aria-modal="true"
           aria-label="Site menu"
@@ -295,9 +295,12 @@ export function SiteHeader() {
             type="button"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+            className="absolute inset-0 z-0 bg-black/65 backdrop-blur-sm"
           />
-          <aside className="relative flex h-full w-[88%] max-w-[410px] flex-col overflow-y-auto bg-onyx text-cream shadow-2xl">
+          <aside
+            style={{ backgroundColor: "#0b0a08", color: "#f7efe4", opacity: 1 }}
+            className="fixed inset-y-0 left-0 z-10 flex w-[88%] max-w-[410px] flex-col overflow-y-auto bg-[#0b0a08] text-[#f7efe4] opacity-100 shadow-2xl"
+          >
             <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-5">
               <Link to="/" onClick={() => setMenuOpen(false)} aria-label="YOMORA home">
                 <img
