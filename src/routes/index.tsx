@@ -257,7 +257,7 @@ function Index() {
                       });
                     }}
                     aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
-                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-onyx hover:bg-gold"
                   >
                     <Heart
                       className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`}

@@ -4,7 +4,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, productImage, isProductNew, cleanProductName, type Category } from "@/lib/products";
+import {
+  formatINR,
+  productImage,
+  isProductNew,
+  cleanProductName,
+  type Category,
+} from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
@@ -15,9 +21,16 @@ export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
       { title: "Shop All — YOMORA 925 Sterling Silver Jewellery" },
-      { name: "description", content: "Browse rings, earrings, neckwear and bracelets in 925 hallmarked sterling silver." },
+      {
+        name: "description",
+        content:
+          "Browse rings, earrings, neckwear and bracelets in 925 hallmarked sterling silver.",
+      },
       { property: "og:title", content: "Shop All — YOMORA" },
-      { property: "og:description", content: "925 hallmarked sterling silver jewellery for every occasion." },
+      {
+        property: "og:description",
+        content: "925 hallmarked sterling silver jewellery for every occasion.",
+      },
     ],
   }),
   loader: async ({ context }) => {
@@ -65,7 +78,9 @@ function ProductsPage() {
         <div className="container-x mx-auto max-w-[1400px] py-14">
           <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">THE COLLECTION</p>
           <h1 className="mt-3 font-display text-5xl">Shop All Jewellery</h1>
-          <p className="mt-3 max-w-xl text-sm text-cream/70">Hand-finished 925 sterling silver, hallmarked and made to be worn every day.</p>
+          <p className="mt-3 max-w-xl text-sm text-cream/70">
+            Hand-finished 925 sterling silver, hallmarked and made to be worn every day.
+          </p>
         </div>
       </section>
 
@@ -85,42 +100,83 @@ function ProductsPage() {
                   {f.label.toUpperCase()}
                 </Link>
               ) : (
-                <Link key={f.key} to="/products/$category" params={{ category: f.key }} className={className}>
+                <Link
+                  key={f.key}
+                  to="/products/$category"
+                  params={{ category: f.key }}
+                  className={className}
+                >
                   {f.label.toUpperCase()}
                 </Link>
               );
             })}
           </div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} className="accent-[color:var(--gold)]" />
+            <input
+              type="checkbox"
+              checked={onlyNew}
+              onChange={(e) => setOnlyNew(e.target.checked)}
+              className="accent-[color:var(--gold)]"
+            />
             New arrivals only
           </label>
         </div>
 
         <div className="fade-in-grid mt-8 grid grid-cols-1 gap-5 min-[400px]:grid-cols-2 min-[400px]:gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
           {items.map((p) => (
-            <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
+            <Link
+              key={p.id}
+              to="/products/$category"
+              params={{ category: p.id }}
+              className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
+            >
               <div className="relative overflow-hidden bg-secondary/40">
-              <img src={productImage(p)} width={900} height={900} loading="lazy" decoding="async" alt={`${cleanProductName(p.name)} — 925 sterling silver ${p.category}`} className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img
+                  src={productImage(p)}
+                  width={900}
+                  height={900}
+                  loading="lazy"
+                  decoding="async"
+                  alt={`${cleanProductName(p.name)} — 925 sterling silver ${p.category}`}
+                  className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
                 {p.sold_out && (
-                  <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
+                  <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">
+                    SOLD OUT
+                  </span>
                 )}
-                {hydrated && isProductNew(p) && <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>}
+                {hydrated && isProductNew(p) && (
+                  <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">
+                    NEW
+                  </span>
+                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    wishlist.toggle({ id: p.id, name: cleanProductName(p.name), price: p.price, image: productImage(p), category: p.category });
+                    wishlist.toggle({
+                      id: p.id,
+                      name: cleanProductName(p.name),
+                      price: p.price,
+                      image: productImage(p),
+                      category: p.category,
+                    });
                   }}
                   aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
-                  className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                  className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-onyx hover:bg-gold"
                 >
-                  <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
+                  <Heart
+                    className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`}
+                  />
                 </button>
               </div>
               <div className="min-w-0 py-2 min-[400px]:py-0 min-[400px]:pt-4">
-                <h3 className="line-clamp-2 font-display text-lg text-foreground">{cleanProductName(p.name)}</h3>
-                <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">{p.tagline}</p>
+                <h3 className="line-clamp-2 font-display text-lg text-foreground">
+                  {cleanProductName(p.name)}
+                </h3>
+                <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">
+                  {p.tagline}
+                </p>
                 <p className="mt-2 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
               </div>
             </Link>
@@ -128,7 +184,9 @@ function ProductsPage() {
         </div>
 
         {items.length === 0 && (
-          <p className="py-16 text-center text-sm text-muted-foreground">No pieces in this category yet.</p>
+          <p className="py-16 text-center text-sm text-muted-foreground">
+            No pieces in this category yet.
+          </p>
         )}
       </section>
 

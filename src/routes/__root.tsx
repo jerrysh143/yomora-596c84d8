@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -90,12 +91,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
       {
         property: "og:description",
-        content: "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994.",
+        content:
+          "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "YOMORA — Premium 925 Sterling Silver Jewellery" },
-      { name: "twitter:description", content: "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994." },
+      {
+        name: "twitter:description",
+        content:
+          "YOMORA by Nehalbhai Devika Jewellers. Hallmarked 925 silver rings, earrings, necklaces and bracelets. Family workshop since 1994.",
+      },
       { property: "og:image", content: "https://yomora.in/og-image.jpg" },
       { name: "twitter:image", content: "https://yomora.in/og-image.jpg" },
     ],
@@ -138,6 +144,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const usesStorefrontTheme = !pathname.startsWith("/admin") && !pathname.startsWith("/invoice/");
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
@@ -150,7 +158,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <main id="main-content">
+      <main id="main-content" className={usesStorefrontTheme ? "storefront-theme" : undefined}>
         <Outlet />
       </main>
       <Toaster

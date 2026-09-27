@@ -111,7 +111,9 @@ function EmailLogin({ redirect }: { redirect: string }) {
         });
         if (error) throw error;
         if (data.user && data.user.identities?.length === 0) {
-          throw new Error("An account already exists for this email. Sign in instead, or continue with Google if that is how you registered.");
+          throw new Error(
+            "An account already exists for this email. Sign in instead, or continue with Google if that is how you registered.",
+          );
         }
         if (!data.session) {
           toast.success("Account created. Confirm your email, then sign in to continue.");
@@ -162,11 +164,29 @@ function EmailLogin({ redirect }: { redirect: string }) {
           <>
             <label className="grid gap-1.5 text-sm">
               <span className="text-xs tracking-[0.16em] text-muted-foreground">FULL NAME</span>
-              <input type="text" required autoComplete="name" minLength={2} maxLength={120} value={fullName} onChange={(e) => setFullName(e.target.value)} className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" />
+              <input
+                type="text"
+                required
+                autoComplete="name"
+                minLength={2}
+                maxLength={120}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+              />
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-xs tracking-[0.16em] text-muted-foreground">PHONE NUMBER</span>
-              <input type="tel" required autoComplete="tel" minLength={6} maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" />
+              <input
+                type="tel"
+                required
+                autoComplete="tel"
+                minLength={6}
+                maxLength={30}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold"
+              />
             </label>
           </>
         )}
@@ -183,8 +203,16 @@ function EmailLogin({ redirect }: { redirect: string }) {
         </label>
         {mode === "signup" && (
           <label className="flex items-start gap-3 border border-border p-3 text-xs text-muted-foreground">
-            <input type="checkbox" checked={marketingOptIn} onChange={(event) => setMarketingOptIn(event.target.checked)} className="mt-0.5" />
-            <span>Keep me subscribed to YOMORA product launches, offers and future updates. I can change this anytime in Account Details.</span>
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(event) => setMarketingOptIn(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              Keep me subscribed to YOMORA product launches, offers and future updates. I can change
+              this anytime in Account Details.
+            </span>
           </label>
         )}
         <label className="grid gap-1.5 text-sm">
@@ -201,7 +229,7 @@ function EmailLogin({ redirect }: { redirect: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="bg-onyx px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90 disabled:opacity-50"
+          className="bg-gold px-6 py-3 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft disabled:opacity-50"
         >
           {loading ? "PLEASE WAIT…" : mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
         </button>

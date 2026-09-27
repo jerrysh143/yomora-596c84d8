@@ -188,6 +188,50 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+/*
+ * Customer storefront palette.
+ *
+ * The original semantic tokens were intentionally light, which meant routes
+ * built with bg-background/bg-card looked unrelated to the dark YOMORA hero
+ * and membership experience.  Scope the luxury palette to the storefront so
+ * every customer page shares one visual language while admin tools and
+ * printable invoices keep their purpose-built light surfaces.
+ */
+.storefront-theme {
+  color-scheme: dark;
+  --background: oklch(0.145 0.008 65);
+  --foreground: var(--cream);
+  --card: oklch(0.19 0.009 65);
+  --card-foreground: var(--cream);
+  --popover: oklch(0.17 0.008 65);
+  --popover-foreground: var(--cream);
+  --primary: var(--gold);
+  --primary-foreground: var(--onyx);
+  --secondary: oklch(0.225 0.012 70);
+  --secondary-foreground: var(--cream);
+  --muted: oklch(0.225 0.012 70);
+  --muted-foreground: oklch(0.76 0.018 78);
+  --accent: var(--gold);
+  --accent-foreground: var(--onyx);
+  --border: oklch(0.42 0.025 75 / 55%);
+  --input: oklch(0.42 0.025 75 / 65%);
+  --ring: var(--gold);
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.storefront-theme ::selection {
+  background: color-mix(in oklab, var(--gold) 78%, transparent);
+  color: var(--onyx);
+}
+
+.storefront-theme input,
+.storefront-theme select,
+.storefront-theme textarea {
+  color-scheme: dark;
+}
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
@@ -235,7 +279,10 @@
     font-feature-settings: "ss01", "cv11";
   }
 
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-serif);
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -244,14 +291,20 @@
 
 @utility container-x {
   padding-inline: 1.25rem;
-  @media (min-width: 768px) { padding-inline: 2.5rem; }
-  @media (min-width: 1280px) { padding-inline: 4rem; }
+  @media (min-width: 768px) {
+    padding-inline: 2.5rem;
+  }
+  @media (min-width: 1280px) {
+    padding-inline: 4rem;
+  }
 }
 
 @utility no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility fade-in-grid {
@@ -259,10 +312,18 @@
 }
 
 @keyframes yomora-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fade-in-grid { animation: none; }
+  .fade-in-grid {
+    animation: none;
+  }
 }

@@ -4,7 +4,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Heart, Search, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { formatINR, isProductNew, productImage, cleanProductName, type Audience } from "@/lib/products";
+import {
+  formatINR,
+  isProductNew,
+  productImage,
+  cleanProductName,
+  type Audience,
+} from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
@@ -100,16 +106,26 @@ export function AudienceCollection({
               {q.trim() ? `No results for “${q.trim()}”` : "Nothing here yet"}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              {q.trim() ? "Try a different name, style or category." : "New pieces are added every week."}
+              {q.trim()
+                ? "Try a different name, style or category."
+                : "New pieces are added every week."}
             </p>
-            <Link to="/products" className="mt-6 inline-block bg-gold px-6 py-3 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold/90">
+            <Link
+              to="/products"
+              className="mt-6 inline-block bg-gold px-6 py-3 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold/90"
+            >
               SHOP ALL
             </Link>
           </div>
         ) : (
           <div className="fade-in-grid mt-8 grid grid-cols-1 gap-5 min-[400px]:grid-cols-2 min-[400px]:gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
             {items.map((p) => (
-              <Link key={p.id} to="/products/$category" params={{ category: p.id }} className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0">
+              <Link
+                key={p.id}
+                to="/products/$category"
+                params={{ category: p.id }}
+                className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
+              >
                 <div className="relative overflow-hidden bg-secondary/40">
                   <img
                     src={productImage(p)}
@@ -121,25 +137,39 @@ export function AudienceCollection({
                     className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {isProductNew(p) && (
-                    <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">NEW</span>
+                    <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">
+                      NEW
+                    </span>
                   )}
                   {p.sold_out && (
-                    <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">SOLD OUT</span>
+                    <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">
+                      SOLD OUT
+                    </span>
                   )}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      wishlist.toggle({ id: p.id, name: cleanProductName(p.name), price: p.price, image: productImage(p), category: p.category });
+                      wishlist.toggle({
+                        id: p.id,
+                        name: cleanProductName(p.name),
+                        price: p.price,
+                        image: productImage(p),
+                        category: p.category,
+                      });
                     }}
                     aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
-                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx hover:bg-gold"
+                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-onyx hover:bg-gold"
                   >
-                    <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
+                    <Heart
+                      className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`}
+                    />
                   </button>
                 </div>
                 <div className="min-w-0 py-2 min-[400px]:py-0">
-                  <h3 className="line-clamp-2 text-sm text-foreground min-[400px]:mt-3">{cleanProductName(p.name)}</h3>
+                  <h3 className="line-clamp-2 text-sm text-foreground min-[400px]:mt-3">
+                    {cleanProductName(p.name)}
+                  </h3>
                   <p className="mt-1 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
                 </div>
               </Link>

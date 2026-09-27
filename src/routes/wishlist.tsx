@@ -1,6 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, ShoppingBag, Trash2, ArrowRight, Sparkles, Gem, Gift, Minus, Plus, X, Eye } from "lucide-react";
+import {
+  Heart,
+  ShoppingBag,
+  Trash2,
+  ArrowRight,
+  Sparkles,
+  Gem,
+  Gift,
+  Minus,
+  Plus,
+  X,
+  Eye,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useWishlist, wishlist, type WishlistItem } from "@/lib/wishlist";
@@ -31,7 +43,9 @@ function WishlistPage() {
         <div className="container-x mx-auto max-w-[1400px] py-14">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">SAVED FOR LATER</p>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">
+                SAVED FOR LATER
+              </p>
               <h1 className="mt-3 font-display text-5xl">Your Wishlist</h1>
               <p className="mt-3 max-w-xl text-sm text-cream/70">
                 {count === 0
@@ -110,7 +124,7 @@ function WishlistCard({ item }: { item: WishlistItem }) {
             toast.success("Removed from wishlist");
           }}
           aria-label="Remove from wishlist"
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-onyx shadow-sm hover:bg-gold"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-onyx shadow-sm hover:bg-gold"
         >
           <X className="h-4 w-4" />
         </button>
@@ -159,21 +173,22 @@ function WishlistCard({ item }: { item: WishlistItem }) {
             </button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Total <span className="font-semibold text-foreground">{formatINR(item.price * qty)}</span>
+            Total{" "}
+            <span className="font-semibold text-foreground">{formatINR(item.price * qty)}</span>
           </p>
         </div>
 
         <div className="mt-3 grid gap-2">
           <button
             onClick={addToCart}
-            className="inline-flex items-center justify-center gap-2 bg-onyx px-4 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-cream hover:bg-onyx/90"
+            className="inline-flex items-center justify-center gap-2 bg-gold px-4 py-2.5 text-[11px] font-semibold tracking-[0.24em] text-onyx hover:bg-gold-soft"
           >
             <ShoppingBag className="h-3.5 w-3.5" /> ADD TO CART
           </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={moveToCart}
-              className="inline-flex items-center justify-center gap-2 border border-onyx px-3 py-2 text-[10px] font-semibold tracking-[0.22em] text-onyx hover:bg-onyx hover:text-cream"
+              className="inline-flex items-center justify-center gap-2 border border-gold px-3 py-2 text-[10px] font-semibold tracking-[0.22em] text-gold hover:bg-gold hover:text-onyx"
             >
               <ArrowRight className="h-3.5 w-3.5" /> MOVE
             </button>

@@ -21,7 +21,14 @@ export function NotifyMeForm({ productId }: { productId: string }) {
     setStatus("saving");
     setError("");
     try {
-      await submit({ data: { product_id: productId, name: name.trim(), email: email.trim(), phone: phone.trim() } });
+      await submit({
+        data: {
+          product_id: productId,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+        },
+      });
       setStatus("done");
     } catch (err) {
       setStatus("error");
@@ -42,7 +49,7 @@ export function NotifyMeForm({ productId }: { productId: string }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex w-full items-center justify-center gap-2 bg-onyx px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-cream hover:bg-onyx/90"
+        className="inline-flex w-full items-center justify-center gap-2 bg-gold px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-onyx hover:bg-gold-soft"
       >
         <BellRing className="h-4 w-4 text-gold" /> NOTIFY ME WHEN AVAILABLE
       </button>

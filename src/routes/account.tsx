@@ -615,7 +615,7 @@ function OrderRows({ orders }: { orders: Order[] }) {
                         disabled={
                           submittingPayment || !paymentProof || transactionId.trim().length < 8
                         }
-                        className="mt-3 w-full bg-onyx px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-cream disabled:opacity-40"
+                        className="mt-3 w-full bg-gold px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-onyx disabled:opacity-40"
                       >
                         {submittingPayment ? "SUBMITTING…" : "SUBMIT FOR VERIFICATION"}
                       </button>
@@ -909,7 +909,7 @@ function Addresses({
         <button
           disabled={saving}
           onClick={addAddress}
-          className="mt-5 inline-flex items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"
+          className="mt-5 inline-flex items-center gap-2 bg-gold px-5 py-3 text-[11px] tracking-[0.2em] text-onyx disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> {saving ? "SAVING…" : "SAVE ADDRESS"}
         </button>
@@ -1035,7 +1035,7 @@ function Details({
         <button
           disabled={saving}
           onClick={save}
-          className="inline-flex w-fit items-center gap-2 bg-onyx px-5 py-3 text-[11px] tracking-[0.2em] text-cream disabled:opacity-50"
+          className="inline-flex w-fit items-center gap-2 bg-gold px-5 py-3 text-[11px] tracking-[0.2em] text-onyx disabled:opacity-50"
         >
           <Save className="h-4 w-4" /> SAVE CHANGES
         </button>
