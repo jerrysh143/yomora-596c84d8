@@ -33,6 +33,10 @@ const mapRow = (r: any): Product => ({
 });
 
 export const listProductsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { deleteExpiredRetiredProducts } = await import("@/lib/product-retirement.server");
+  await deleteExpiredRetiredProducts().catch((error) =>
+    console.error("Unable to clean expired product listings", error),
+  );
   const sb = serverPublicClient();
   const { data, error } = await sb
     .from("products")
@@ -45,6 +49,10 @@ export const listProductsFn = createServerFn({ method: "GET" }).handler(async ()
 export const listAdminProductsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { deleteExpiredRetiredProducts } = await import("@/lib/product-retirement.server");
+    await deleteExpiredRetiredProducts().catch((error) =>
+      console.error("Unable to clean expired product listings", error),
+    );
     const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -53,7 +61,9 @@ export const listAdminProductsFn = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Forbidden: admin role required");
     const { data, error } = await context.supabase
       .from("products")
-      .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at")
+      .select(
+        "id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []).map(mapRow);
@@ -62,10 +72,16 @@ export const listAdminProductsFn = createServerFn({ method: "GET" })
 export const getProductFn = createServerFn({ method: "GET" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
+    const { deleteExpiredRetiredProducts } = await import("@/lib/product-retirement.server");
+    await deleteExpiredRetiredProducts().catch((error) =>
+      console.error("Unable to clean expired product listings", error),
+    );
     const sb = serverPublicClient();
     const { data: row, error } = await sb
       .from("products")
-      .select("id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at")
+      .select(
+        "id,name,price,category,audience,tagline,description,image_url,gallery_urls,is_new,sold_out,created_at",
+      )
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -73,17 +89,28 @@ export const getProductFn = createServerFn({ method: "GET" })
   });
 
 const productInput = z.object({
-  id: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens"),
+  id: z
+    .string()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens"),
   name: z.string().min(1).max(120),
   price: z.number().int().min(0).max(10_000_000),
-  category: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, "Invalid category slug"),
+  category: z
+    .string()
+    .min(1)
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Invalid category slug"),
   audience: z.enum(["men", "women", "kids", "unisex"]).default("unisex"),
   tagline: z.string().max(200).default(""),
   description: z.string().max(4000).default(""),
   image_url: z
     .string()
     .max(1000)
-    .refine((v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v), "Use a secure image URL")
+    .refine(
+      (v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v),
+      "Use a secure image URL",
+    )
     .transform((v) => (v === "" ? null : v))
     .nullable(),
   gallery_urls: z
@@ -91,7 +118,10 @@ const productInput = z.object({
       z
         .string()
         .max(1000)
-        .refine((v) => (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v), "Use a secure image URL"),
+        .refine(
+          (v) => (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v),
+          "Use a secure image URL",
+        ),
     )
     .max(12)
     .default([]),
@@ -119,7 +149,10 @@ const productImagesInput = z.object({
   image_url: z
     .string()
     .max(1000)
-    .refine((v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v), "Use a secure image URL")
+    .refine(
+      (v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v),
+      "Use a secure image URL",
+    )
     .transform((v) => (v === "" ? null : v))
     .nullable(),
   gallery_urls: z
@@ -127,7 +160,10 @@ const productImagesInput = z.object({
       z
         .string()
         .max(1000)
-        .refine((v) => (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v), "Use a secure image URL"),
+        .refine(
+          (v) => (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v),
+          "Use a secure image URL",
+        ),
     )
     .max(12),
 });
