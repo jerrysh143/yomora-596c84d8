@@ -1130,6 +1130,15 @@ on conflict do nothing;`}
                   </button>
                 );
               })}
+              <a
+                href="https://dashboard.velocity.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 border border-gold bg-gold/10 px-4 py-2 text-[11px] font-semibold tracking-[0.2em] text-gold transition-colors hover:bg-gold hover:text-onyx sm:ml-auto"
+              >
+                <Truck className="h-3.5 w-3.5" /> VELOCITY ORDERS
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
             </div>
 
             {filteredOrders.length === 0 ? (
