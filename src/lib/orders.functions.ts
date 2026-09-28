@@ -17,6 +17,7 @@ export type OrderItem = {
   name: string;
   price: number;
   quantity: number;
+  image_url?: string | null;
 };
 
 export type InvoiceDetails = {
@@ -147,7 +148,7 @@ export const createOrderFn = createServerFn({ method: "POST" })
     const requestedIds = [...new Set(data.items.map((item) => item.id))];
     const { data: products, error: productError } = await supabaseAdmin
       .from("products")
-      .select("id,name,price,sold_out")
+      .select("id,name,price,image_url,sold_out")
       .in("id", requestedIds);
     if (productError) throw new Error(productError.message);
 
@@ -156,7 +157,13 @@ export const createOrderFn = createServerFn({ method: "POST" })
       const product = byId.get(item.id);
       if (!product || product.sold_out)
         throw new Error("One or more selected products are unavailable");
-      return { id: product.id, name: product.name, price: product.price, quantity: item.quantity };
+      return {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: item.quantity,
+        image_url: product.image_url,
+      };
     });
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     // Keep this server-side so the browser cannot alter the payable amount.
@@ -357,6 +364,22 @@ export const listOrdersFn = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const productIds = [
+      ...new Set(
+        (data ?? []).flatMap((order) =>
+          (Array.isArray(order.items) ? (order.items as OrderItem[]) : [])
+            .map((item) => item.id)
+            .filter(Boolean),
+        ),
+      ),
+    ];
+    const { data: productImages, error: imageError } = productIds.length
+      ? await supabaseAdmin.from("products").select("id,image_url").in("id", productIds)
+      : { data: [], error: null };
+    if (imageError) throw new Error(imageError.message);
+    const imagesByProduct = new Map(
+      (productImages ?? []).map((product) => [product.id, product.image_url]),
+    );
     const orderIds = (data ?? []).map((order) => order.id);
     const { data: payments } = orderIds.length
       ? await supabaseAdmin
@@ -377,6 +400,10 @@ export const listOrdersFn = createServerFn({ method: "GET" })
       const payment = byOrder.get(row.id);
       return {
         ...mapOrder(row),
+        items: (Array.isArray(row.items) ? (row.items as OrderItem[]) : []).map((item) => ({
+          ...item,
+          image_url: item.image_url || imagesByProduct.get(item.id) || null,
+        })),
         orderNumber: formatOrderNumber(row.id),
         payment_status: (payment?.status ?? null) as Order["payment_status"],
         payment_mode: payment?.payment_mode ?? null,
@@ -578,8 +605,8 @@ export const scheduleOrderProductsSoldOutFn = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .single();
     if (orderError) throw new Error(orderError.message);
-    if (order.status !== "completed") {
-      throw new Error("Mark the order completed before scheduling its products as sold out");
+    if (order.status === "cancelled") {
+      throw new Error("Cancelled orders cannot have products marked sold out");
     }
 
     const productIds = [
@@ -594,6 +621,7 @@ export const scheduleOrderProductsSoldOutFn = createServerFn({ method: "POST" })
     const { RETIREMENT_DAYS, scheduleProductsForRetirement } =
       await import("@/lib/product-retirement.server");
     const scheduled = await scheduleProductsForRetirement(productIds);
+    if (!scheduled) throw new Error("No matching products were found for this order");
 
     return { scheduled, days: RETIREMENT_DAYS };
   });
