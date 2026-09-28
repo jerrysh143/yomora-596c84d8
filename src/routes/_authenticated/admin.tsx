@@ -1207,9 +1207,23 @@ on conflict do nothing;`}
                       {items.length > 0 && (
                         <div className="grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
                           {items.map((i, idx) => (
-                            <div key={idx} className="flex justify-between">
-                              <span>
-                                {i.name} × {i.quantity}
+                            <div key={idx} className="flex items-center justify-between gap-3">
+                              <span className="flex min-w-0 items-center gap-3">
+                                {i.image_url ? (
+                                  <img
+                                    src={i.image_url}
+                                    alt={i.name}
+                                    className="h-12 w-12 shrink-0 rounded object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-muted">
+                                    <Package className="h-5 w-5" />
+                                  </span>
+                                )}
+                                <span>
+                                  {i.name} × {i.quantity}
+                                </span>
                               </span>
                               <span>{formatINR(i.price * i.quantity)}</span>
                             </div>
@@ -1552,23 +1566,25 @@ on conflict do nothing;`}
                             <Truck className="h-3.5 w-3.5" /> CREATE VELOCITY SHIPMENT
                           </button>
                         )}
+                        {o.status !== "cancelled" && (
+                          <button
+                            type="button"
+                            disabled={soldOutScheduleMut.isPending}
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  "Mark every product in this order Sold Out now and permanently delete the product listings after 7 days? The order and invoice will remain.",
+                                )
+                              )
+                                soldOutScheduleMut.mutate(o.id);
+                            }}
+                            className="inline-flex items-center gap-1.5 border border-destructive px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive hover:bg-destructive hover:text-white disabled:opacity-50"
+                          >
+                            <Package className="h-3.5 w-3.5" /> SET SOLD OUT — DELETE IN 7 DAYS
+                          </button>
+                        )}
                         {o.status === "completed" && (
                           <>
-                            <button
-                              type="button"
-                              disabled={soldOutScheduleMut.isPending}
-                              onClick={() => {
-                                if (
-                                  confirm(
-                                    "Mark every product in this order Sold Out now and permanently delete the product listings after 7 days? The order and invoice will remain.",
-                                  )
-                                )
-                                  soldOutScheduleMut.mutate(o.id);
-                              }}
-                              className="inline-flex items-center gap-1.5 border border-destructive px-3 py-2 text-[10px] font-semibold tracking-[0.16em] text-destructive hover:bg-destructive hover:text-white disabled:opacity-50"
-                            >
-                              <Package className="h-3.5 w-3.5" /> SET SOLD OUT — DELETE IN 7 DAYS
-                            </button>
                             <button
                               type="button"
                               onClick={() => openWhatsAppInvoice(o)}
