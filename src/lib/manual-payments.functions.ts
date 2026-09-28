@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { formatOrderNumber } from "@/lib/order-reference";
 
 const submitSchema = z.object({
   order_id: z.string().uuid(),
@@ -56,6 +57,122 @@ export type CustomerNotification = {
   read_at: string | null;
   created_at: string;
 };
+
+async function findCustomerIdByEmail(
+  supabaseAdmin: SupabaseClient<Database>,
+  email: string,
+): Promise<string | null> {
+  for (let page = 1; page <= 10; page += 1) {
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
+    const customerId = users.users.find(
+      (user) => user.email?.trim().toLowerCase() === email.trim().toLowerCase(),
+    )?.id;
+    if (customerId) return customerId;
+    if (users.users.length < 100) break;
+  }
+  return null;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function sendPaymentVerificationReminderEmail(input: {
+  customerName: string;
+  customerEmail: string;
+  orderReference: string;
+}) {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return false;
+
+  const { default: nodemailer } = await import("nodemailer");
+  const port = Number(process.env.SMTP_PORT || 465);
+  const secure = process.env.SMTP_SECURE
+    ? process.env.SMTP_SECURE.toLowerCase() === "true"
+    : port === 465;
+  const from = process.env.SMTP_FROM || `YOMORA <${user}>`;
+  const accountUrl = `${process.env.PUBLIC_SITE_URL || "https://yomora.in"}/account?section=orders`;
+  const safeName = escapeHtml(input.customerName);
+  const safeReference = escapeHtml(input.orderReference);
+
+  const transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+  await transporter.sendMail({
+    from,
+    to: input.customerEmail,
+    replyTo: "hello@yomora.in",
+    subject: `Complete payment verification for YOMORA order #${input.orderReference}`,
+    text: `Hello ${input.customerName},\n\nPayment verification for your YOMORA order #${input.orderReference} is not completed yet. Please open My Orders, upload a clear payment screenshot and enter the correct UTR number.\n\nComplete verification: ${accountUrl}\n\nWe will confirm your order after the payment is verified.\n\nYOMORA by Nehalbhai Devika Jewellers`,
+    html: `<!doctype html><html><body style="margin:0;background:#f6f0e7;color:#17130f;font-family:Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:32px 18px"><div style="background:#0d0b09;color:#d1a45f;padding:22px;text-align:center;letter-spacing:5px;font-size:20px">YOMORA</div><div style="background:#fffaf2;border:1px solid #dbcbb5;padding:30px"><p style="margin-top:0">Hello ${safeName},</p><h1 style="font-family:Georgia,serif;font-size:27px;font-weight:400">Complete payment verification</h1><p>Payment verification for order <strong>#${safeReference}</strong> is not completed yet.</p><p>Please open My Orders, upload a clear payment screenshot and enter the correct UTR number.</p><p style="margin:28px 0"><a href="${accountUrl}" style="display:inline-block;background:#0d0b09;color:#d1a45f;padding:14px 20px;text-decoration:none;font-weight:700;letter-spacing:1px">COMPLETE VERIFICATION</a></p><p style="color:#6f6255;font-size:13px">We will confirm your order after the payment is verified.</p></div><div style="padding:18px;text-align:center;color:#6f6255;font-size:12px">YOMORA by Nehalbhai Devika Jewellers · hello@yomora.in</div></div></body></html>`,
+  });
+  return true;
+}
+
+const paymentReminderSchema = z.object({ order_id: z.string().uuid() });
+
+export const sendPaymentVerificationReminderFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => paymentReminderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Administrator access required");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,customer_name,customer_email,status")
+      .eq("id", data.order_id)
+      .maybeSingle();
+    if (!order) throw new Error("Order not found");
+    if (order.status === "cancelled") throw new Error("Cancelled orders cannot receive reminders");
+
+    const { data: payment } = await supabaseAdmin
+      .from("order_payments")
+      .select("status,payment_mode")
+      .eq("order_id", order.id)
+      .eq("provider", "manual_phonepe")
+      .maybeSingle();
+    if (!payment || payment.payment_mode !== "UPI_QR")
+      throw new Error("This order does not use QR payment verification");
+    if (payment.status === "completed") throw new Error("Payment is already verified");
+
+    const orderReference = formatOrderNumber(order.id);
+    const customerId = await findCustomerIdByEmail(supabaseAdmin, order.customer_email);
+    let notificationSent = false;
+    if (customerId) {
+      const { error } = await supabaseAdmin.from("customer_notifications").insert({
+        user_id: customerId,
+        order_id: order.id,
+        kind: "order_update",
+        title: "Complete your payment verification",
+        message: `Payment verification for order #${orderReference} is not completed. Upload a clear payment screenshot and enter the correct UTR number in My Orders.`,
+      });
+      if (error) throw new Error(error.message);
+      notificationSent = true;
+    }
+
+    let emailSent = false;
+    try {
+      emailSent = await sendPaymentVerificationReminderEmail({
+        customerName: order.customer_name,
+        customerEmail: order.customer_email,
+        orderReference,
+      });
+    } catch (error) {
+      console.error("Payment verification reminder email failed", error);
+    }
+
+    return { ok: true, notificationSent, emailSent };
+  });
 
 export const submitManualPaymentFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -222,4 +339,3 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
