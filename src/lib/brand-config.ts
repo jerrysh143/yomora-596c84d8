@@ -68,4 +68,4 @@ export function membershipBenefitList(list: string[]): string[] {
  * Supabase `coupons` table via the same server functions checkout uses; this is
  * only the label shown to shoppers.
  */
-export const WELCOME_OFFER_CODE = "WELCOME10";
+export const WELCOME_OFFER_CODE = "YOM10";
