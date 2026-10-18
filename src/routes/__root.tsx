@@ -1,4 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CartDrawer } from "@/components/cart-drawer";
+import { WhatsappButton } from "@/components/whatsapp-button";
 import {
   Outlet,
   Link,
@@ -160,6 +162,8 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <main id="main-content" className={usesStorefrontTheme ? "storefront-theme" : undefined}>
         <Outlet />
+        {usesStorefrontTheme && !pathname.startsWith("/checkout") ? <WhatsappButton /> : null}
+        {usesStorefrontTheme ? <CartDrawer /> : null}
       </main>
       <Toaster
         className="yomora-toaster"

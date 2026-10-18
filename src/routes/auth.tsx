@@ -53,6 +53,15 @@ function AuthPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <section className="container-x mx-auto grid max-w-md gap-6 py-20">
+        {safeRedirect.startsWith("/checkout") && (
+          <div className="border border-border bg-secondary/70 px-5 py-4 text-sm text-foreground">
+            <p className="font-semibold">Your bag is saved.</p>
+            <p className="mt-1 text-muted-foreground">
+              Sign in once with Google or email to place your order. We use your account to send
+              order updates, match your payment and let you track delivery.
+            </p>
+          </div>
+        )}
         <EmailLogin redirect={safeRedirect} />
       </section>
       <SiteFooter />
