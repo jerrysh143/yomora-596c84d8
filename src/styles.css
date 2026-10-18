@@ -63,6 +63,7 @@
   --color-gold-soft: var(--gold-soft);
   --color-onyx: var(--onyx);
   --color-cream: var(--cream);
+  --color-gold-ink: var(--gold-ink);
   --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
@@ -153,6 +154,7 @@
   --cream: oklch(0.965 0.012 80);
   --gold: oklch(0.72 0.09 75);
   --gold-soft: oklch(0.82 0.06 82);
+  --gold-ink: oklch(0.55 0.09 70);
 
   --background: var(--cream);
   --foreground: oklch(0.18 0.01 60);
@@ -198,27 +200,73 @@
  * printable invoices keep their purpose-built light surfaces.
  */
 .storefront-theme {
+  /* Redesign: warm ivory base with black and gold accents. */
+  color-scheme: light;
+  --background: oklch(0.975 0.011 85);
+  --foreground: oklch(0.2 0.01 60);
+  --card: oklch(0.99 0.006 85);
+  --card-foreground: oklch(0.2 0.01 60);
+  --popover: oklch(0.99 0.006 85);
+  --popover-foreground: oklch(0.2 0.01 60);
+  --primary: var(--onyx);
+  --primary-foreground: var(--cream);
+  --secondary: oklch(0.94 0.016 80);
+  --secondary-foreground: var(--onyx);
+  --muted: oklch(0.94 0.016 80);
+  --muted-foreground: oklch(0.47 0.018 70);
+  --accent: var(--gold);
+  --accent-foreground: var(--onyx);
+  --border: oklch(0.88 0.018 80);
+  --input: oklch(0.86 0.018 80);
+  --ring: var(--gold);
+  /* Gold used for text on ivory needs more contrast than the decorative gold. */
+  --gold-ink: oklch(0.55 0.09 70);
+  /* Slightly deeper gold so gold text stays legible on ivory. */
+  --gold: oklch(0.6 0.095 72);
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Dark bands (footer, membership, header) keep the original luxury palette. */
+.storefront-theme :is(.theme-dark, .bg-onyx, .bg-\[\#0b0a08\], footer) {
   color-scheme: dark;
   --background: oklch(0.145 0.008 65);
   --foreground: var(--cream);
   --card: oklch(0.19 0.009 65);
   --card-foreground: var(--cream);
-  --popover: oklch(0.17 0.008 65);
-  --popover-foreground: var(--cream);
-  --primary: var(--gold);
-  --primary-foreground: var(--onyx);
   --secondary: oklch(0.225 0.012 70);
   --secondary-foreground: var(--cream);
   --muted: oklch(0.225 0.012 70);
   --muted-foreground: oklch(0.76 0.018 78);
-  --accent: var(--gold);
-  --accent-foreground: var(--onyx);
   --border: oklch(0.42 0.025 75 / 55%);
   --input: oklch(0.42 0.025 75 / 65%);
-  --ring: var(--gold);
-  min-height: 100vh;
-  background: var(--background);
-  color: var(--foreground);
+  --gold: oklch(0.72 0.09 75);
+  --gold-ink: oklch(0.72 0.09 75);
+}
+
+/* Shimmer placeholder shown behind images until they paint. */
+.img-shimmer {
+  background-color: oklch(0.93 0.016 80);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    oklch(0.98 0.008 85 / 0.85) 45%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  animation: yomora-shimmer 1.4s ease-in-out infinite;
+}
+:is(.theme-dark, .bg-onyx) .img-shimmer {
+  background-color: oklch(0.22 0.01 65);
+  background-image: linear-gradient(100deg, transparent 20%, oklch(0.3 0.01 65 / 0.8) 45%, transparent 70%);
+}
+@keyframes yomora-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .img-shimmer { animation: none; }
 }
 
 .storefront-theme ::selection {
@@ -229,7 +277,7 @@
 .storefront-theme input,
 .storefront-theme select,
 .storefront-theme textarea {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 .dark {
@@ -325,5 +373,12 @@
 @media (prefers-reduced-motion: reduce) {
   .fade-in-grid {
     animation: none;
+  }
+}
+
+/* Lift the WhatsApp button above the product page's sticky add bar on mobile. */
+@media (max-width: 767px) {
+  body[data-sticky-bar="1"] .wa-fab {
+    bottom: 84px;
   }
 }

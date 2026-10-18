@@ -476,6 +476,7 @@ export const SITE_CONTENT_DEFAULTS: SiteContentMap = {
       "A PRIVILEGE RESERVED FOR THOSE WHO VALUE QUALITY, TRUST & TIMELESS ELEGANCE.",
     privileges: [
       { icon: "Sparkles", title: "25% OFF", description: "on everything you order for 1 year" },
+      { icon: "Hammer", title: "ZERO MAKING CHARGES", description: "on every 925 silver piece for 1 year" },
       {
         icon: "Star",
         title: "EARLY ACCESS",

@@ -20,6 +20,12 @@ import { productsQuery, productQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
 import { useWishlist, wishlist } from "@/lib/wishlist";
 import { cart } from "@/lib/cart";
+import { cartDrawer } from "@/lib/cart-drawer";
+import { lookupPincode } from "@/lib/pincode";
+import { listProductReviewsFn } from "@/lib/reviews.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { CollectionPageSkeleton } from "@/components/product-grid-skeleton";
 import { ProductReviews } from "@/components/product-reviews";
 import { NotifyMeForm } from "@/components/notify-me-form";
@@ -37,6 +43,7 @@ import {
   ArrowRight,
   LoaderCircle,
   Share2,
+  Banknote,
 } from "lucide-react";
 
 const SITE_URL = "https://yomora.in";
@@ -247,7 +254,7 @@ function CategoryPage({ category, products }: { category: CategoryRow; products:
               params={{ category: p.id }}
               className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
             >
-              <div className="relative overflow-hidden bg-secondary/40">
+              <div className="img-shimmer relative overflow-hidden">
                 <img
                   src={productImage(p)}
                   width={900}
@@ -340,19 +347,37 @@ function ProductPage({ product, products }: { product: Product; products: Produc
     if (window.location.hash === "#reviews") setTab("reviews");
   }, []);
   const handleCartAction = () => {
-    if (cartActionStatus === "ready") {
-      nav({ to: "/checkout" });
-      return;
-    }
     if (cartActionStatus === "loading") return;
     if (cartButtonTimer.current !== null) window.clearTimeout(cartButtonTimer.current);
     add();
     setCartAction({ productId: product.id, status: "loading" });
     cartButtonTimer.current = window.setTimeout(() => {
-      setCartAction({ productId: product.id, status: "ready" });
+      setCartAction({ productId: product.id, status: "idle" });
       cartButtonTimer.current = null;
-    }, 5000);
+      cartDrawer.open();
+    }, 350);
   };
+  const listReviews = useServerFn(listProductReviewsFn);
+  const reviewsQuery = useQuery({
+    queryKey: ["product-reviews", product.id],
+    queryFn: () => listReviews({ data: { product_id: product.id } }),
+    retry: false,
+  });
+  const reviewCount = reviewsQuery.data?.length ?? 0;
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+  }, []);
+  // Reviews tab is shown once there are published reviews, or to signed-in customers
+  // so verified buyers can still leave the first review.
+  const showReviewsTab = reviewCount > 0 || signedIn;
+  useEffect(() => {
+    if (product.sold_out) return;
+    document.body.dataset.stickyBar = "1";
+    return () => {
+      delete document.body.dataset.stickyBar;
+    };
+  }, [product.sold_out]);
   const handleBuyNow = () => {
     if (cartActionStatus === "idle") add();
     if (cartButtonTimer.current !== null) {
@@ -453,7 +478,7 @@ function ProductPage({ product, products }: { product: Product; products: Produc
               <ChevronDown className="h-4 w-4" />
             </button>
           </div>
-          <div className="relative order-1 mx-auto w-full max-w-[450px] self-start bg-onyx md:max-w-none lg:order-2">
+          <div className="img-shimmer relative order-1 mx-auto w-full max-w-[450px] self-start md:max-w-none lg:order-2">
             <img
               src={gallery[activeImg]}
               alt={cleanProductName(product.name)}
@@ -503,12 +528,14 @@ function ProductPage({ product, products }: { product: Product; products: Produc
                 925 HALLMARKED
               </span>
             </div>
-            <h1 className="mt-4 font-display text-4xl uppercase leading-tight text-foreground md:text-5xl">
+            <h1 className="mt-4 font-display text-4xl leading-tight text-foreground md:text-5xl">
               {cleanProductName(product.name)}
             </h1>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Verified reviews appear below after delivery.
-            </p>
+            {reviewCount > 0 && (
+              <a href="#reviews" onClick={() => setTab("reviews")} className="mt-3 inline-block text-xs text-muted-foreground underline">
+                {reviewCount} verified {reviewCount === 1 ? "review" : "reviews"}
+              </a>
+            )}
             <p className="mt-6 text-3xl font-semibold text-foreground">
               {formatINR(product.price)}
             </p>
@@ -542,33 +569,52 @@ function ProductPage({ product, products }: { product: Product; products: Produc
                   onClick={handleCartAction}
                   disabled={cartActionStatus === "loading"}
                   aria-busy={cartActionStatus === "loading"}
-                  className={`relative flex w-full items-center justify-center gap-3 overflow-hidden border px-6 py-4 text-[11px] font-bold tracking-[0.24em] transition-all duration-300 ${cartActionStatus === "ready" ? "border-gold bg-gold text-onyx hover:bg-gold-soft" : "border-gold bg-gold text-onyx hover:bg-gold/90"} ${cartActionStatus === "loading" ? "cursor-wait" : "cursor-pointer"}`}
+                  className={`relative flex w-full items-center justify-center gap-3 overflow-hidden border border-onyx bg-onyx px-6 py-4 text-[11px] font-bold tracking-[0.24em] text-cream transition-all duration-300 hover:bg-black ${cartActionStatus === "loading" ? "cursor-wait" : "cursor-pointer"}`}
                 >
                   {cartActionStatus === "loading" ? (
                     <>
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      <span>ADDING TO CART</span>
-                    </>
-                  ) : cartActionStatus === "ready" ? (
-                    <>
-                      <span>PROCEED TO CHECKOUT</span>
-                      <ArrowRight className="h-4 w-4" />
+                      <span>ADDING TO BAG</span>
                     </>
                   ) : (
-                    <span>ADD TO CART</span>
+                    <span>ADD TO BAG</span>
                   )}
                 </button>
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  className="w-full border border-gold px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-gold hover:bg-gold hover:text-onyx"
+                  className="w-full border border-foreground px-6 py-4 text-[11px] font-bold tracking-[0.28em] text-foreground hover:bg-foreground hover:text-background"
                 >
                   BUY NOW
                 </button>
               </div>
             )}
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-gold" /> 100% Secure Payment
+            <DeliveryCheck />
+            <div className="mt-5 divide-y divide-border border border-border bg-card text-sm">
+              <p className="flex gap-3 px-4 py-3">
+                <Banknote className="h-5 w-5 shrink-0 text-gold" strokeWidth={1.5} />
+                <span>
+                  <b className="font-semibold">Cash on Delivery available</b> · no extra COD fee. UPI also accepted.
+                </span>
+              </p>
+              <p className="flex gap-3 px-4 py-3">
+                <RotateCcw className="h-5 w-5 shrink-0 text-gold" strokeWidth={1.5} />
+                <span>
+                  <b className="font-semibold">7-day returns</b> for unused items with tags and original packaging.
+                </span>
+              </p>
+              <p className="flex gap-3 px-4 py-3">
+                <ShieldCheck className="h-5 w-5 shrink-0 text-gold" strokeWidth={1.5} />
+                <span>
+                  <b className="font-semibold">6-month warranty</b> and lifetime replating.
+                </span>
+              </p>
+            </div>
+            <div className="mt-3 flex items-center gap-3 bg-secondary/70 px-4 py-3 text-sm">
+              <Gift className="h-5 w-5 shrink-0 text-gold" strokeWidth={1.5} />
+              <span>
+                <b className="font-semibold">Comes with a premium YOMORA gift box.</b> Ready to gift.
+              </span>
             </div>
           </div>
         </div>
@@ -596,7 +642,9 @@ function ProductPage({ product, products }: { product: Product; products: Produc
         <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
           <div>
             <div className="flex flex-wrap gap-6 border-b border-border">
-              {(["description", "details", "shipping", "reviews"] as const).map((k) => (
+              {(["description", "details", "shipping", "reviews"] as const)
+                .filter((k) => k !== "reviews" || showReviewsTab)
+                .map((k) => (
                 <button
                   key={k}
                   onClick={() => setTab(k)}
@@ -629,7 +677,7 @@ function ProductPage({ product, products }: { product: Product; products: Produc
                   7 days — piece must be unworn and in original YOMORA packaging.
                 </p>
               )}
-              {tab === "reviews" && (
+              {tab === "reviews" && showReviewsTab && (
                 <ProductReviews
                   productId={product.id}
                   productName={cleanProductName(product.name)}
@@ -671,7 +719,7 @@ function ProductPage({ product, products }: { product: Product; products: Produc
                 params={{ category: p.id }}
                 className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-background min-[400px]:p-0"
               >
-                <div className="relative overflow-hidden bg-secondary/40">
+                <div className="img-shimmer relative overflow-hidden">
                   <img
                     src={productImage(p)}
                     width={600}
@@ -695,7 +743,78 @@ function ProductPage({ product, products }: { product: Product; products: Produc
           </div>
         </section>
       )}
+      {!product.sold_out && (
+        <div className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-base leading-tight">{cleanProductName(product.name)}</p>
+            <p className="text-sm font-semibold">{formatINR(product.price)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCartAction}
+            className="h-12 shrink-0 bg-onyx px-6 text-[11px] font-bold tracking-[0.18em] text-cream"
+          >
+            ADD TO BAG
+          </button>
+        </div>
+      )}
       <SiteFooter />
+    </div>
+  );
+}
+
+function DeliveryCheck() {
+  const [pincode, setPincode] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [place, setPlace] = useState("");
+  const check = async () => {
+    if (!/^\d{6}$/.test(pincode)) {
+      setStatus("error");
+      return;
+    }
+    setStatus("loading");
+    try {
+      const office = await lookupPincode(pincode);
+      setPlace(`${office.city}, ${office.state}`);
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
+  };
+  return (
+    <div className="mt-6">
+      <p className="text-xs font-semibold text-foreground">Check delivery</p>
+      <form
+        className="mt-2 flex border border-border bg-card"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void check();
+        }}
+      >
+        <input
+          inputMode="numeric"
+          autoComplete="postal-code"
+          aria-label="Delivery pincode"
+          placeholder="Enter 6-digit pincode"
+          value={pincode}
+          onChange={(e) => {
+            setPincode(e.target.value.replace(/\D/g, "").slice(0, 6));
+            setStatus("idle");
+          }}
+          className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm outline-none"
+        />
+        <button type="submit" className="border-l border-border px-4 text-xs font-semibold tracking-[0.12em]">
+          {status === "loading" ? "CHECKING…" : "CHECK"}
+        </button>
+      </form>
+      <p
+        className={`mt-2 text-xs ${status === "error" ? "text-destructive" : status === "success" ? "text-emerald-700" : "text-muted-foreground"}`}
+        aria-live="polite"
+      >
+        {status === "success" && `✓ Delivers to ${place} · usually 3–7 working days after dispatch · free shipping`}
+        {status === "error" && "We couldn't find that pincode. Please check it, or ask us on WhatsApp."}
+        {(status === "idle" || status === "loading") && "Free shipping across India. Delivery usually takes 3–7 working days after dispatch."}
+      </p>
     </div>
   );
 }

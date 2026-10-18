@@ -19,6 +19,7 @@ import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
 import { createOrderFn } from "@/lib/orders.functions";
 import { listAvailableCouponsFn, validateCouponFn } from "@/lib/coupons.functions";
+import { lookupPincode } from "@/lib/pincode";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyMembershipFn } from "@/lib/memberships.functions";
 import { subscriptionPlansQuery } from "@/lib/subscription.queries";
@@ -252,20 +253,9 @@ function CheckoutPage() {
     const timer = window.setTimeout(async () => {
       setPincodeStatus("loading");
       try {
-        const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error("Pincode lookup failed");
-        const payload = (await response.json()) as Array<{
-          Status?: string;
-          PostOffice?: Array<{ District?: string; State?: string }>;
-        }>;
-        const office = payload?.[0]?.PostOffice?.[0];
-        if (payload?.[0]?.Status !== "Success" || !office?.District || !office?.State) {
-          throw new Error("Pincode not found");
-        }
-        setCity(office.District);
-        setState(office.State);
+        const office = await lookupPincode(pincode, controller.signal);
+        setCity(office.city);
+        setState(office.state);
         setPincodeStatus("success");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;

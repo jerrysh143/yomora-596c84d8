@@ -32,16 +32,16 @@ function AboutPage() {
       <section className="container-x mx-auto max-w-[1400px] py-16">
         <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">{c.eyebrow}</p>
         <h1 className="mt-3 font-display text-5xl leading-tight md:text-6xl">{c.title}</h1>
-        <div className="mt-10 grid gap-12 md:grid-cols-2">
+        <div className="mt-10 grid grid-cols-1 gap-12 md:grid-cols-2 [&>*]:min-w-0">
           <div className="space-y-5 text-sm leading-relaxed text-muted-foreground">
             {c.paragraphs.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
-          <div className="flex aspect-[4/3] items-center justify-center border border-gold/25 bg-onyx p-10 text-center text-cream">
+          <div className="flex min-h-[240px] sm:aspect-[4/3] items-center justify-center border border-gold/25 bg-onyx p-6 text-center sm:p-10 text-cream">
             <div>
               <p className="text-[10px] font-semibold tracking-[0.28em] text-gold">OUR HOME</p>
-              <p className="mt-4 font-display text-4xl">Ahmedabad, Gujarat</p>
+              <p className="mt-4 font-display text-3xl sm:text-4xl">Ahmedabad, Gujarat</p>
               <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-cream/65">
                 Family jewellers serving customers across India with hallmarked 925 sterling silver.
               </p>

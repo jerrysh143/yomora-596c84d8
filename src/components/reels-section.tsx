@@ -40,7 +40,7 @@ function normalizeUrl(u: string) {
   }
 }
 
-export function ReelsSection() {
+export function ReelsSection({ fallbackImages = [] }: { fallbackImages?: { src: string; alt: string }[] }) {
   const { data: content } = useQuery(siteContentQuery());
   const reels = content?.reels ?? SITE_CONTENT_DEFAULTS.reels;
   const social = content?.social ?? SITE_CONTENT_DEFAULTS.social;
@@ -48,6 +48,11 @@ export function ReelsSection() {
   const ref = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [shouldLoadEmbeds, setShouldLoadEmbeds] = useState(false);
+  // Instagram embeds are often blocked (privacy settings, ad blockers, slow networks),
+  // which used to leave an empty black panel. Show a photo strip instead when no
+  // embed has rendered shortly after loading.
+  const [embedRendered, setEmbedRendered] = useState(false);
+  const [embedFailed, setEmbedFailed] = useState(false);
 
   useEffect(() => {
     if (!reels.enabled || reels.items.length === 0 || !sectionRef.current) return;
@@ -77,6 +82,7 @@ export function ReelsSection() {
 
     const apply = () => {
       const frames = root.querySelectorAll<HTMLIFrameElement>("iframe.instagram-media");
+      if (frames.length > 0) setEmbedRendered(true);
       frames.forEach((f) => {
         if (reels.autoplay) f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
         else f.removeAttribute("allow");
@@ -120,26 +126,59 @@ export function ReelsSection() {
     };
   }, [reels.enabled, reels.autoplay, reels.loop, reels.items.length, shouldLoadEmbeds]);
 
+  useEffect(() => {
+    if (!shouldLoadEmbeds || embedRendered) return;
+    const t = window.setTimeout(() => setEmbedFailed(true), 7000);
+    return () => window.clearTimeout(t);
+  }, [shouldLoadEmbeds, embedRendered]);
+
   if (!reels.enabled || reels.items.length === 0) return null;
+  const instagramUrl = instagram ? normalizeUrl(instagram.url) : null;
+  const showFallback = embedFailed && !embedRendered;
 
   return (
     <section ref={sectionRef} className="bg-onyx">
-      <div className="mx-auto flex max-w-[1400px] flex-col items-center py-20">
+      <div className="mx-auto flex max-w-[1400px] flex-col items-center py-16 md:py-20">
+        <p className="text-[11px] font-semibold tracking-[0.24em] text-gold">ON INSTAGRAM</p>
+        <h2 className="mt-3 px-6 text-center font-display text-3xl text-cream md:text-4xl">
+          See YOMORA pieces worn every day
+        </h2>
+        {showFallback ? (
+          <div className="mt-10 grid w-full grid-cols-2 gap-3 px-5 sm:grid-cols-4 md:px-10">
+            {fallbackImages.slice(0, 4).map((img) => (
+              <a
+                key={img.src}
+                href={instagramUrl ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="img-shimmer group relative block aspect-square overflow-hidden"
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </a>
+            ))}
+          </div>
+        ) : null}
         <div
           ref={ref}
-          className="no-scrollbar flex w-full snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 md:justify-center md:gap-6 md:px-10"
+          className={`mt-10 no-scrollbar ${showFallback ? "hidden" : "flex"} w-full snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 md:justify-center md:gap-6 md:px-10`}
         >
           {reels.items.map((r, i) => (
             normalizeUrl(r.url) ? (
             <div
               key={i}
-              className="group relative aspect-[9/16] w-[78vw] max-w-[320px] flex-none snap-center overflow-hidden border border-gold/40 bg-[#0d0d0d] shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:-translate-y-1 hover:border-gold sm:w-[280px] md:w-[300px]"
+              className="img-shimmer group relative aspect-[9/16] w-[78vw] max-w-[320px] flex-none snap-center overflow-hidden border border-gold/40 shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:-translate-y-1 hover:border-gold sm:w-[280px] md:w-[300px]"
             >
               <blockquote
                 className="instagram-media !m-0 !min-w-0 !w-full h-full"
                 data-instgrm-permalink={normalizeUrl(r.url)!}
                 data-instgrm-version="14"
-                style={{ background: "#0d0d0d", margin: 0, minWidth: 0, width: "100%" }}
+                style={{ background: "transparent", margin: 0, minWidth: 0, width: "100%" }}
               />
               {/* Block clicks on Instagram's overlay link so the tile stays visual-only. */}
               <div className="pointer-events-none absolute inset-0" aria-hidden />
@@ -148,10 +187,10 @@ export function ReelsSection() {
           ))}
         </div>
 
-        {instagram && normalizeUrl(instagram.url) && (
+        {instagramUrl && (
           <div className="mt-12 flex flex-col items-center">
             <a
-              href={normalizeUrl(instagram.url)!}
+              href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 border border-gold/60 px-10 py-3.5 text-[12px] tracking-[0.28em] text-gold transition-colors hover:border-gold hover:bg-gold/10"

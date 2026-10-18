@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cart, useCart } from "@/lib/cart";
 import { formatINR } from "@/lib/products";
+import { useCartCoupon } from "@/lib/use-cart-coupon";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -20,7 +21,10 @@ export const Route = createFileRoute("/cart")({
 function CartPage() {
   const { items, subtotal, count } = useCart();
   const shipping = 0;
-  const discount = subtotal >= 1500 ? 210 : 0;
+  // Discount preview comes from the same Supabase coupon logic checkout uses
+  // (listAvailableCouponsFn); it is confirmed again when the order is created.
+  const { coupon, isLoading: couponLoading } = useCartCoupon(items);
+  const discount = coupon?.discount ?? 0;
   const total = subtotal + shipping - discount;
   return (
     <div className="min-h-screen bg-background">
@@ -112,9 +116,14 @@ function CartPage() {
               <dl className="mt-5 space-y-3 text-sm">
                 <Row k="Subtotal" v={formatINR(subtotal)} />
                 <Row k="Shipping" v="FREE" />
-                {discount > 0 && <Row k="Discount (WELCOME10)" v={`-${formatINR(discount)}`} />}
+                {discount > 0 && coupon && (
+                  <Row k={`Code ${coupon.code} (apply at checkout)`} v={`-${formatINR(discount)}`} />
+                )}
+                {!couponLoading && discount === 0 && (
+                  <p className="text-xs text-muted-foreground">Have a coupon? Apply it at checkout.</p>
+                )}
                 <div className="my-3 h-px bg-border" />
-                <Row k="Total" v={formatINR(total)} bold />
+                <Row k={discount > 0 ? "Estimated total" : "Total"} v={formatINR(total)} bold />
               </dl>
               <Link
                 to="/checkout"

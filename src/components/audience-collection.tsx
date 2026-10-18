@@ -126,7 +126,7 @@ export function AudienceCollection({
                 params={{ category: p.id }}
                 className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
               >
-                <div className="relative overflow-hidden bg-secondary/40">
+                <div className="img-shimmer relative overflow-hidden">
                   <img
                     src={productImage(p)}
                     width={900}

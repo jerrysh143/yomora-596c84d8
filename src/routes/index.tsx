@@ -1,25 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, X } from "lucide-react";
-import {
-  Heart,
-  Percent,
-  Headphones,
-  Gift,
-  Rocket,
-  Cake,
-  BadgeCheck,
-  Gem,
-  Banknote,
-  ShoppingBag,
-} from "lucide-react";
+import { Banknote, Check, Heart } from "lucide-react";
 import legacyImg from "@/assets/legacy-showroom.jpg";
-import { HomeBannerSlider } from "@/components/home-banner-slider";
+// Real Aurelia ring on-hand product photo (served from the store media bucket).
+const heroImg = "https://media.yomora.in/site-images/2d8fc8ea-8d93-4400-9e67-9b33d702679e.jpg";
+import customImg from "@/assets/custom-jewellery-banner-wide.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReelsSection } from "@/components/reels-section";
+import { WhatsappIcon, whatsappHref } from "@/components/whatsapp-button";
 import { formatINR, productImage, isProductNew } from "@/lib/products";
 import { productsQuery } from "@/lib/products.queries";
 import { categoriesQuery } from "@/lib/categories.queries";
@@ -27,6 +16,8 @@ import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SiteIcon } from "@/lib/site-icons";
 import { useWishlist, wishlist } from "@/lib/wishlist";
+import { MEMBERSHIP_HEADLINE, membershipPrivileges } from "@/lib/brand-config";
+import type { IconName } from "@/lib/site-content.defaults";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -38,6 +29,28 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+const HOME_CATEGORY_SLUGS = ["rings", "earrings", "neckwear", "bracelets", "chains", "anklets"];
+const CATEGORY_NOTES: Record<string, string> = {
+  rings: "Solitaires to couple sets",
+  earrings: "Studs and jhumkas",
+  neckwear: "Pendants and sets",
+  bracelets: "Cuffs, bangles and panja",
+  chains: "Box, rope and herringbone",
+  anklets: "Payal and toe rings",
+};
+const OCCASIONS = [
+  { slug: "mangalsutra", title: "Wedding and festive", body: "Mangalsutra, necklace sets and jhumkas", big: true },
+  { slug: "couplerings", title: "Couple and anniversary", body: "Matching ring sets" },
+  { slug: "rakhi", title: "Rakhi", body: "Silver blessing rakhis" },
+  { slug: "rings", title: "Everyday", body: "Light rings for daily wear" },
+  { slug: "watches", title: "Heritage watches", body: "Oxidised and floral dials" },
+];
+const GIFT_BUDGETS = [
+  { budget: 1000, note: "Pendants, studs and rakhis" },
+  { budget: 2500, note: "Rings, chains and couple sets" },
+  { budget: 10000, note: "Bracelets, chains and jhumkas" },
+];
+
 function Index() {
   const { data: products } = useSuspenseQuery(productsQuery());
   const { data: CATEGORIES } = useSuspenseQuery(categoriesQuery());
@@ -46,185 +59,249 @@ function Index() {
   const { data: content } = useSuspenseQuery(siteContentQuery());
   const legacy = content.legacy;
   const assurance = content.assurance_bar;
-  const ctaStrip = content.cta_strip;
-  // 3 products per category, in category order; categories without products are skipped
-  const featured = CATEGORIES.flatMap((c) =>
-    products.filter((p) => p.category === c.slug).slice(0, 3),
-  );
+  const whatsappNumber = content.cta_strip?.whatsapp_number;
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
-  const [selectedCategory, setSelectedCategory] = useState<{
-    slug: string;
-    label: string;
-    audiences: Array<"men" | "women">;
-  } | null>(null);
-  const categoryRailRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!selectedCategory) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedCategory(null);
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [selectedCategory]);
+  const available = products.filter((p) => !p.sold_out);
+  const firstImageFor = (slug: string) => {
+    const p = available.find((x) => x.category === slug) ?? products.find((x) => x.category === slug);
+    return p ? productImage(p) : "";
+  };
+  const labelFor = (slug: string) => {
+    const label = CATEGORIES.find((c) => c.slug === slug)?.label ?? slug;
+    return label === "Necklace" ? "Necklaces" : label;
+  };
+  const homeCategories = HOME_CATEGORY_SLUGS.filter((slug) =>
+    products.some((p) => p.category === slug),
+  );
+  const occasions = OCCASIONS.filter((o) => products.some((p) => p.category === o.slug));
+  // 12 products: round-robin across categories so the edit shows range, newest first.
+  const featured = (() => {
+    const pools = CATEGORIES.map((c) => available.filter((p) => p.category === c.slug));
+    const out: typeof products = [];
+    for (let round = 0; out.length < 12 && round < 12; round++) {
+      for (const pool of pools) {
+        if (pool[round] && out.length < 12) out.push(pool[round]);
+      }
+    }
+    return out;
+  })();
+  const giftThumbs = (max: number) =>
+    available.filter((p) => p.price <= max).slice(0, 2).map((p) => ({ src: productImage(p), alt: p.name }));
+  const trustItems = [
+    ...(assurance.enabled ? assurance.items.slice(0, 4) : []).map((it) => ({
+      icon: <SiteIcon name={it.icon} className="h-6 w-6" />,
+      title: it.title,
+      subtitle: it.subtitle,
+    })),
+    { icon: <Banknote className="h-6 w-6" strokeWidth={1.4} />, title: "Cash on Delivery", subtitle: "No extra COD fee" },
+  ];
+  const reelFallback = available.slice(0, 4).map((p) => ({ src: productImage(p), alt: p.name }));
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <HomeBannerSlider />
-
-      <div className="border-b border-gold/20 bg-onyx px-4 py-3 text-center text-[10px] font-semibold tracking-[0.16em] text-cream/80 sm:text-xs sm:tracking-[0.22em]">
-        925 STERLING SILVER · FAMILY JEWELLERS SINCE 1994 · FREE SHIPPING IN INDIA
-      </div>
-
-      {/* CATEGORIES */}
-      <section className="overflow-hidden bg-secondary/40">
-        <div className="mx-auto max-w-[1900px] pb-9 pt-4 md:px-2 md:pb-12 md:pt-6">
-          <div className="relative">
-            <div
-              ref={categoryRailRef}
-              id="category-rail"
-              className="flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-3 pb-2 md:gap-4 md:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+      {/* HERO — one editorial message instead of a carousel */}
+      <section className="bg-secondary/70">
+        <div className="mx-auto grid max-w-[1760px] md:min-h-[560px] md:grid-cols-[1.05fr_1fr] lg:min-h-[640px]">
+          <div className="relative order-1 aspect-[4/3] max-h-[50svh] w-full overflow-hidden md:order-2 md:aspect-auto md:max-h-none">
+            <img
+              src={heroImg}
+              alt="Aurelia rectangular 925 silver ring worn on the hand"
+              width={1200}
+              height={1200}
+              fetchPriority="high"
+              decoding="async"
+              className="img-shimmer absolute inset-0 h-full w-full object-cover object-[50%_42%]"
+            />
+            <Link
+              to="/products/$category"
+              params={{ category: "rings" }}
+              search={{ audience: undefined }}
+              className="absolute bottom-3 left-3 hidden bg-background/90 px-4 py-2.5 text-xs text-foreground backdrop-blur sm:block md:bottom-6 md:left-6"
             >
-              {CATEGORIES.map((c) => {
-                const categoryLabel = c.label === "Necklace" ? "Necklaces" : c.label;
-                const categoryProducts = products.filter((x) => x.category === c.slug);
-                const p = categoryProducts[0];
-                const img = p ? productImage(p) : "";
-                const audiences: Array<"men" | "women"> = [
-                  ...(categoryProducts.some((x) => x.audience === "men" || x.audience === "unisex")
-                    ? ["men" as const]
-                    : []),
-                  ...(categoryProducts.some(
-                    (x) => x.audience === "women" || x.audience === "unisex",
-                  )
-                    ? ["women" as const]
-                    : []),
-                ];
-                return (
-                  <button
-                    type="button"
-                    key={c.slug}
-                    onClick={() =>
-                      setSelectedCategory({ slug: c.slug, label: categoryLabel, audiences })
-                    }
-                    aria-label={`Choose who is shopping for ${categoryLabel}`}
-                    className="group w-20 shrink-0 snap-start text-center md:w-[142px] xl:w-[calc((100%-7rem)/8)]"
-                  >
-                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-xl border border-gold/45 bg-secondary/40 transition-all duration-500 group-hover:-translate-y-1 group-hover:border-gold group-hover:shadow-[0_20px_45px_-24px_color-mix(in_oklab,var(--color-gold)_75%,transparent)] md:rounded-[1.75rem]">
-                      <img
-                        src={img}
-                        width={600}
-                        height={600}
-                        loading={CATEGORIES.indexOf(c) < 6 ? "eager" : "lazy"}
-                        fetchPriority={CATEGORIES.indexOf(c) < 6 ? "high" : "auto"}
-                        decoding="async"
-                        alt={`${categoryLabel} — 925 sterling silver collection`}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    </div>
-                    <span className="mt-3 block truncate text-sm font-medium text-foreground transition-colors group-hover:text-gold md:mt-4 md:text-[21.6px] md:font-normal md:leading-[1.8]">
-                      {categoryLabel}
-                    </span>
-                  </button>
-                );
-              })}
+              <span className="block font-display text-base">Shop rings</span>
+              925 hallmarked silver →
+            </Link>
+          </div>
+          <div className="order-2 flex flex-col justify-center px-5 pb-8 pt-5 sm:px-8 md:order-1 md:px-12 md:py-16 lg:px-20">
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-gold sm:text-[11px]">
+              FAMILY JEWELLERS SINCE 1994 · AHMEDABAD
+            </p>
+            <h1 className="mt-2 font-display text-[34px] leading-[1.05] text-foreground sm:text-5xl md:mt-5 lg:text-[68px]">
+              Elegance, defined in 925 silver.
+            </h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base md:mt-5 md:text-lg">
+              Timeless 925 silver jewellery made to illuminate every occasion.
+              <span className="hidden sm:inline"> Hallmarked, and made by a family trusted for over 32 years.</span>
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:flex md:mt-8">
+              <Link
+                to="/women"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap bg-onyx px-3 text-xs font-semibold tracking-[0.1em] sm:px-5 lg:px-7 sm:tracking-[0.12em] text-cream hover:bg-black"
+              >
+                SHOP FOR HER
+              </Link>
+              <Link
+                to="/men"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap border border-foreground px-3 text-xs font-semibold tracking-[0.1em] sm:px-5 lg:px-7 sm:tracking-[0.12em] text-foreground hover:bg-foreground hover:text-background"
+              >
+                SHOP FOR HIM
+              </Link>
             </div>
-            <button
-              type="button"
-              aria-label="Scroll categories left"
-              onClick={() =>
-                categoryRailRef.current?.scrollBy({
-                  left: -categoryRailRef.current.clientWidth * 0.8,
-                  behavior: "smooth",
-                })
-              }
-              className="absolute left-0 top-[36%] hidden h-14 w-14 -translate-x-1/3 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold md:grid"
-            >
-              <ArrowRight className="h-5 w-5 rotate-180" />
-            </button>
-            <button
-              type="button"
-              aria-label="Scroll categories right"
-              onClick={() =>
-                categoryRailRef.current?.scrollBy({
-                  left: categoryRailRef.current.clientWidth * 0.8,
-                  behavior: "smooth",
-                })
-              }
-              className="absolute right-0 top-[36%] hidden h-14 w-14 translate-x-1/3 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm backdrop-blur transition-colors hover:border-gold hover:text-gold md:grid"
-            >
-              <ArrowRight className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </section>
 
-      {/* FEATURED */}
-      {assurance.enabled && assurance.items.length > 0 ? (
-        <section className="bg-secondary/40 text-foreground">
-          <div className="container-x mx-auto max-w-[1600px] pb-12 pt-2 sm:pb-16">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {assurance.items.map((it, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 rounded-2xl border border-gold/25 bg-background/70 px-5 py-5 transition-all hover:border-gold/55 hover:bg-background"
-                >
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-gold/30 bg-background text-gold">
-                    <SiteIcon name={it.icon} className="h-7 w-7" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold tracking-[0.02em] text-foreground sm:text-base">
-                      {it.title}
-                    </span>
-                    <span className="mt-1 block truncate text-xs text-muted-foreground sm:text-sm">
-                      {it.subtitle}
-                    </span>
-                  </span>
+      {/* TRUST STRIP */}
+      <section className="border-b border-border bg-background">
+        <div className="container-x mx-auto grid max-w-[1400px] grid-cols-2 gap-x-4 gap-y-5 py-6 md:grid-cols-5 md:py-7">
+          {trustItems.map((it, i) => (
+            <div
+              key={it.title}
+              className={`flex items-center gap-3 ${i === trustItems.length - 1 ? "col-span-2 md:col-span-1" : ""}`}
+            >
+              <span className="text-gold">{it.icon}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{it.title}</span>
+                <span className="block text-xs text-muted-foreground">{it.subtitle}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SHOP BY CATEGORY */}
+      <section className="bg-background">
+        <div className="container-x mx-auto max-w-[1400px] py-16 md:py-24">
+          <SectionHead eyebrow="SHOP BY CATEGORY" title="Find your piece" linkLabel="View all" />
+          <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5 lg:grid-cols-6">
+            {homeCategories.map((slug) => (
+              <Link
+                key={slug}
+                to="/products/$category"
+                params={{ category: slug }}
+                search={{ audience: undefined }}
+                className="group text-center"
+              >
+                <div className="img-shimmer aspect-[4/5] overflow-hidden">
+                  <img
+                    src={firstImageFor(slug)}
+                    alt={`${labelFor(slug)} in 925 sterling silver`}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
                 </div>
+                <h3 className="mt-3 font-display text-lg text-foreground md:text-2xl">{labelFor(slug)}</h3>
+                <p className="hidden text-xs text-muted-foreground sm:block">{CATEGORY_NOTES[slug]}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SHOP BY OCCASION */}
+      {occasions.length > 0 && (
+        <section className="bg-background">
+          <div className="container-x mx-auto max-w-[1400px] pb-16 md:pb-24">
+            <SectionHead eyebrow="SHOP BY OCCASION" title="For the moments that matter" />
+            <div className="mt-8 grid auto-rows-[170px] grid-cols-2 gap-3 sm:auto-rows-[220px] md:auto-rows-[260px] md:grid-cols-[1.3fr_1fr_1fr] md:gap-5">
+              {occasions.map((o, i) => (
+                <Link
+                  key={o.slug + o.title}
+                  to="/products/$category"
+                  params={{ category: o.slug }}
+                  search={{ audience: undefined }}
+                  className={`img-shimmer group relative overflow-hidden ${i === 0 ? "col-span-2 row-span-1 md:col-span-1 md:row-span-2" : ""}`}
+                >
+                  <img
+                    src={firstImageFor(o.slug)}
+                    alt={o.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <span className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70" />
+                  <span className="absolute inset-x-4 bottom-4 text-white md:inset-x-6 md:bottom-6">
+                    <span className="block font-display text-2xl leading-tight md:text-3xl">{o.title}</span>
+                    <span className="mt-1 block text-xs text-white/85 md:text-sm">{o.body}</span>
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
         </section>
-      ) : null}
+      )}
 
-      {/* FEATURED */}
-      <section className="bg-background">
-        <div className="container-x mx-auto max-w-[1400px] py-20">
-          <div className="flex items-end justify-between gap-6">
-            <div>
-              <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">
-                CURATED FOR YOU
-              </p>
-              <h2 className="mt-3 font-display text-4xl text-foreground">The YOMORA Edit</h2>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Handpicked 925 silver designs for moments that deserve distinction.
-              </p>
-            </div>
+      {/* GIFTS BY BUDGET */}
+      <section className="bg-secondary/70">
+        <div className="container-x mx-auto max-w-[1400px] py-16 md:py-24">
+          <SectionHead
+            eyebrow="GIFTING"
+            title="Gifts, sorted by budget"
+            body="Every order arrives in a premium YOMORA gift box."
+          />
+          <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+            {GIFT_BUDGETS.map((g) => (
+              <Link
+                key={g.budget}
+                to="/products"
+                search={{ budget: g.budget }}
+                className="flex flex-col gap-2 border border-border bg-background p-5 transition-colors hover:border-foreground md:p-7"
+              >
+                <span className="text-[10px] font-semibold tracking-[0.2em] text-gold">UNDER</span>
+                <span className="font-display text-3xl leading-none text-foreground md:text-4xl">
+                  {formatINR(g.budget)}
+                </span>
+                <span className="text-xs text-muted-foreground md:text-sm">{g.note}</span>
+                <span className="mt-2 flex gap-2">
+                  {giftThumbs(g.budget).map((t) => (
+                    <span key={t.src} className="img-shimmer h-12 w-12 overflow-hidden md:h-16 md:w-16">
+                      <img src={t.src} alt={t.alt} loading="lazy" className="h-full w-full object-cover" />
+                    </span>
+                  ))}
+                </span>
+              </Link>
+            ))}
             <Link
-              to="/products"
-              className="hidden text-[11px] font-semibold tracking-[0.22em] text-foreground hover:text-gold md:inline-flex"
+              to="/custom-jewellery"
+              className="flex flex-col gap-2 bg-onyx p-5 text-cream md:p-7"
             >
-              SHOP ALL →
+              <span className="text-[10px] font-semibold tracking-[0.2em] text-gold">MADE TO ORDER</span>
+              <span className="font-display text-3xl leading-none md:text-4xl">Custom</span>
+              <span className="text-xs text-cream/70 md:text-sm">
+                Share your idea; crafted in 10–21 days after design approval
+              </span>
+              <span className="mt-auto pt-2 text-xs font-semibold tracking-[0.12em] text-gold">
+                START A CUSTOM PIECE →
+              </span>
             </Link>
           </div>
+        </div>
+      </section>
 
-          <div className="fade-in-grid mt-10 grid grid-cols-1 gap-5 min-[400px]:grid-cols-2 min-[400px]:gap-3 sm:gap-6 md:grid-cols-4 xl:grid-cols-5">
+      {/* THE YOMORA EDIT — 12 products */}
+      <section className="bg-background">
+        <div className="container-x mx-auto max-w-[1400px] py-16 md:py-24">
+          <SectionHead
+            eyebrow="CURATED FOR YOU"
+            title="The YOMORA edit"
+            body="Handpicked 925 silver designs for moments that deserve distinction."
+            linkLabel="Shop all"
+          />
+          <div className="fade-in-grid mt-8 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4">
             {featured.map((p) => (
               <Link
                 key={p.id}
                 to="/products/$category"
                 params={{ category: p.id }}
                 search={{ audience: undefined }}
-                className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
+                className="group block"
               >
-                <div className="relative overflow-hidden bg-secondary/40">
+                <div className="img-shimmer relative overflow-hidden">
                   <img
                     src={productImage(p)}
                     width={900}
@@ -235,13 +312,8 @@ function Index() {
                     className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {isProductNew(p) && (
-                    <span className="absolute left-3 top-3 bg-gold px-2 py-1 text-[10px] font-semibold tracking-[0.2em] text-onyx">
+                    <span className="absolute left-3 top-3 bg-background px-2 py-1 text-[10px] font-semibold tracking-[0.16em] text-foreground">
                       NEW
-                    </span>
-                  )}
-                  {p.sold_out && (
-                    <span className="absolute inset-x-0 bottom-0 bg-onyx/85 py-2 text-center text-[10px] font-bold tracking-[0.24em] text-cream">
-                      SOLD OUT
                     </span>
                   )}
                   <button
@@ -257,300 +329,232 @@ function Index() {
                       });
                     }}
                     aria-label={wishSet.has(p.id) ? "Remove from wishlist" : "Add to wishlist"}
-                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-onyx hover:bg-gold"
+                    className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground hover:bg-gold"
                   >
-                    <Heart
-                      className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`}
-                    />
+                    <Heart className={`h-4 w-4 ${wishSet.has(p.id) ? "fill-current text-gold" : ""}`} />
                   </button>
                 </div>
-                <div className="min-w-0 py-2 min-[400px]:py-0 min-[400px]:pt-4">
-                  <h3 className="line-clamp-2 font-display text-lg text-foreground">{p.name}</h3>
-                  <p className="mt-1 hidden text-xs text-muted-foreground min-[500px]:block">
-                    {p.tagline}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold tracking-wide text-foreground">
-                    {formatINR(p.price)}
-                  </p>
-                </div>
+                <h3 className="mt-3 line-clamp-2 font-display text-lg leading-snug text-foreground">{p.name}</h3>
+                <p className="mt-1 hidden line-clamp-1 text-xs text-muted-foreground sm:block">{p.tagline}</p>
+                <p className="mt-1.5 text-sm font-semibold text-foreground">{formatINR(p.price)}</p>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* REELS — lifestyle / social proof after products */}
-      <ReelsSection />
-
-      {/* LEGACY — brand story after customer has seen product */}
-      <section className="bg-background">
-        <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-20 md:grid-cols-[1fr_1.1fr_0.9fr]">
-          <img
-            src={legacy.image_url || legacyImg}
-            width={1200}
-            height={900}
-            loading="lazy"
-            decoding="async"
-            alt="Nehalbhai Devika Jewellers showroom"
-            className="h-full w-full object-cover"
-          />
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">
-              {legacy.eyebrow}
-            </p>
-            <h2 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
-              {legacy.title_line_1}
-              <br />
-              {legacy.title_line_2}
-            </h2>
-            <div className="mt-4 h-px w-20 bg-gold" />
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-              {legacy.description}
-            </p>
+          <div className="mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex h-12 items-center border border-foreground px-8 text-xs font-semibold tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background"
+            >
+              SHOP ALL JEWELLERY
+            </Link>
           </div>
-          <ul className="space-y-3 border-l border-gold/40 pl-6 md:pl-8">
-            {legacy.bullets.map((t) => (
-              <li key={t} className="flex items-center gap-3 text-sm text-foreground">
-                <Check className="h-4 w-4 text-gold" />
-                {t}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
-      {/* SUBSCRIPTION */}
+      {/* HERITAGE STORY */}
+      <section className="bg-secondary/70">
+        <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-24">
+          <div className="img-shimmer overflow-hidden">
+            <img
+              src={legacy.image_url || legacyImg}
+              width={1200}
+              height={900}
+              loading="lazy"
+              decoding="async"
+              alt="Nehalbhai Devika Jewellers showroom"
+              className="aspect-[4/3] h-full w-full object-cover md:aspect-[4/5]"
+            />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-gold">OUR STORY</p>
+            <h2 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
+              A legacy of trust.
+              <br />A future of luxury.
+            </h2>
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground md:text-base">
+              It all began in 1994 when Late Shri Nehalbhai Devjibhai and Smt. Devikaben Nehalbhai
+              laid the foundation of trust, purity and craftsmanship.
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{legacy.description}</p>
+            <ul className="mt-6 grid gap-2 text-sm text-foreground sm:grid-cols-2">
+              {legacy.bullets.map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-gold" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-border pt-6">
+              {[
+                ["1994", "Founded in Ahmedabad"],
+                ["32+ years", "Of family legacy"],
+                ["Pan-India", "Online service"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <p className="font-display text-2xl text-foreground md:text-3xl">{k}</p>
+                  <p className="text-xs text-muted-foreground">{v}</p>
+                </div>
+              ))}
+            </div>
+            <Link to="/about" className="mt-8 inline-block border-b border-foreground pb-0.5 text-sm font-semibold">
+              Read our story
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* MEMBERSHIP — one block, same benefits as /membership */}
       {activePlans.length > 0 && (
         <section id="subscription" className="bg-onyx text-cream">
-          <BlackSignatureBlock
+          <MembershipBlock
             price={activePlans[0].price}
-            duration={activePlans[0].duration_label || "Year"}
-            tagline={activePlans[0].tagline || "Exclusive. Rewarded. Always."}
-            ctaLabel={activePlans[0].cta_label || "Join Now"}
+            ctaLabel={activePlans[0].cta_label || "Become a member"}
+            privileges={membershipPrivileges(content.page_membership.privileges)}
+            shopAmountLabel={content.page_membership.shop_amount_label}
+            validityNote={content.page_membership.validity_note}
           />
         </section>
       )}
 
-      <SiteFooter />
-
-      {selectedCategory && (
-        <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-onyx/75 px-4 backdrop-blur-sm"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedCategory(null);
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="category-audience-title"
-            className="relative w-full max-w-lg border border-gold/35 bg-background p-7 text-center shadow-2xl sm:p-10"
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedCategory(null)}
-              aria-label="Close selection"
-              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-gold"
+      {/* CUSTOM — WhatsApp first */}
+      <section className="grid bg-secondary/70 md:grid-cols-2">
+        <div className="px-5 py-14 sm:px-8 md:px-12 md:py-20 lg:px-20">
+          <p className="text-[11px] font-semibold tracking-[0.22em] text-gold">CUSTOM JEWELLERY</p>
+          <h2 className="mt-3 font-display text-4xl text-foreground md:text-5xl">Made just for you</h2>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
+            Have a design in mind? We make personalised 925 silver jewellery as per your style and
+            requirements.
+          </p>
+          <ol className="mt-6 space-y-3 text-sm text-foreground">
+            {[
+              "Share your design or inspiration with us on WhatsApp",
+              "We send you the best quote",
+              "Our experts craft it, typically 10–21 days after design approval",
+              "Delivered safely to your doorstep",
+            ].map((t, i) => (
+              <li key={t} className="flex gap-4">
+                <span className="w-6 font-display text-xl text-gold">{String(i + 1).padStart(2, "0")}</span>
+                <span className="pt-1">{t}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a
+              href={whatsappHref(whatsappNumber || "", "Hi! I'd like to request a custom 925 silver jewellery piece.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center gap-2 bg-onyx px-6 text-xs font-semibold tracking-[0.12em] text-cream hover:bg-black"
             >
-              <X className="h-5 w-5" />
-            </button>
-            <p className="text-[10px] font-semibold tracking-[0.3em] text-gold">
-              SHOP {selectedCategory.label.toUpperCase()}
-            </p>
-            <h2
-              id="category-audience-title"
-              className="mt-3 font-display text-3xl text-foreground sm:text-4xl"
-            >
-              {selectedCategory.audiences.length === 1
-                ? `Selected for ${selectedCategory.audiences[0] === "men" ? "Him" : "Her"}`
-                : "Who are you shopping for?"}
-            </h2>
-            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              {selectedCategory.audiences.length === 1
-                ? `These ${selectedCategory.label.toLowerCase()} are currently available in this collection.`
-                : `Choose a collection to see ${selectedCategory.label.toLowerCase()} selected for them.`}
-            </p>
-            <div
-              className={`mt-8 grid gap-3 ${selectedCategory.audiences.length > 1 ? "sm:grid-cols-2" : "mx-auto max-w-sm"}`}
-            >
-              {[
-                { audience: "men" as const, eyebrow: "FOR HIM", title: "Men's Collection" },
-                { audience: "women" as const, eyebrow: "FOR HER", title: "Women's Collection" },
-              ]
-                .filter((choice) => selectedCategory.audiences.includes(choice.audience))
-                .map((choice) => (
-                  <Link
-                    key={choice.audience}
-                    to="/products/$category"
-                    params={{ category: selectedCategory.slug }}
-                    search={{ audience: choice.audience }}
-                    onClick={() => setSelectedCategory(null)}
-                    className="group border border-border bg-secondary/25 px-5 py-6 text-left transition-all hover:border-gold hover:bg-gold/10"
-                  >
-                    <span className="block text-[10px] font-semibold tracking-[0.26em] text-gold">
-                      {choice.eyebrow}
-                    </span>
-                    <span className="mt-2 flex items-center justify-between font-display text-xl text-foreground">
-                      {choice.title}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </Link>
-                ))}
-            </div>
+              <WhatsappIcon className="h-4 w-4" /> SHARE YOUR IDEA ON WHATSAPP
+            </a>
             <Link
-              to="/products/$category"
-              params={{ category: selectedCategory.slug }}
-              search={{ audience: undefined }}
-              onClick={() => setSelectedCategory(null)}
-              className="mt-5 inline-flex text-[10px] font-semibold tracking-[0.2em] text-muted-foreground transition-colors hover:text-gold"
+              to="/custom-jewellery"
+              className="inline-flex h-12 items-center justify-center border border-foreground px-6 text-xs font-semibold tracking-[0.12em] text-foreground"
             >
-              VIEW ALL {selectedCategory.label.toUpperCase()}
+              ENQUIRY FORM
             </Link>
-          </section>
+          </div>
         </div>
-      )}
+        <div className="img-shimmer relative min-h-[260px] overflow-hidden">
+          <img
+            src={customImg}
+            alt="Custom 925 silver pendant by YOMORA"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-[85%_50%]"
+          />
+        </div>
+      </section>
+
+      <ReelsSection fallbackImages={reelFallback} />
+
+      <SiteFooter />
     </div>
   );
 }
 
-function BlackSignatureBlock({
+function SectionHead({
+  eyebrow,
+  title,
+  body,
+  linkLabel,
+}: {
+  eyebrow: string;
+  title: string;
+  body?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-gold">{eyebrow}</p>
+        <h2 className="mt-2 font-display text-3xl text-foreground md:text-5xl">{title}</h2>
+        {body ? <p className="mt-2 max-w-xl text-sm text-muted-foreground md:text-base">{body}</p> : null}
+      </div>
+      {linkLabel ? (
+        <Link to="/products" className="w-fit border-b border-foreground pb-0.5 text-sm font-semibold text-foreground">
+          {linkLabel}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function MembershipBlock({
   price,
-  duration,
-  tagline,
   ctaLabel,
+  privileges,
+  shopAmountLabel,
+  validityNote,
 }: {
   price: number;
-  duration: string;
-  tagline: string;
   ctaLabel: string;
+  privileges: { icon: IconName; title: string; description: string }[];
+  shopAmountLabel: string;
+  validityNote: string;
 }) {
-  const privileges = [
-    { icon: Percent, t: "25% OFF", d: "on everything you order for 1 year" },
-    { icon: Rocket, t: "EARLY ACCESS", d: "to new arrivals & exclusive collections" },
-    { icon: Gift, t: "MEMBER-ONLY OFFERS", d: "special discounts all year long" },
-    { icon: Cake, t: "BIRTHDAY SURPRISE", d: "a special treat just for you" },
-    { icon: BadgeCheck, t: "PRIORITY DISPATCH", d: "faster processing & shipping" },
-    { icon: Headphones, t: "DEDICATED SUPPORT", d: "priority customer assistance" },
-    { icon: Gem, t: "CUSTOM JEWELLERY", d: "personalized designs crafted for you" },
-  ];
+  const shopAmount = shopAmountLabel.match(/₹[\d,]+/)?.[0] ?? "₹25,000";
   return (
-    <div className="container-x mx-auto max-w-[1400px] px-4 py-16 md:py-24">
-      {/* Top row: title + unlock */}
-      <div className="grid items-center gap-10 md:grid-cols-2">
-        <div className="text-center md:text-left">
-          <p className="text-[10px] font-semibold tracking-[0.32em] text-cream/60">YOMORA</p>
-          <h2 className="mt-3 font-display text-4xl leading-[1.05] text-cream md:text-6xl">
-            BLACK SIGNATURE
-          </h2>
-          <p className="mt-2 font-display text-2xl tracking-[0.35em] text-gold md:text-3xl">
-            MEMBERSHIP
-          </p>
-          <div className="mt-5 flex items-center justify-center gap-3 md:justify-start">
-            <span className="h-px w-10 bg-gold/60" />
-            <span className="text-gold">✦</span>
-            <span className="h-px w-10 bg-gold/60" />
+    <div className="container-x mx-auto grid max-w-[1400px] items-center gap-10 py-16 md:grid-cols-[1.1fr_1fr] md:gap-16 md:py-24">
+      <div>
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-gold">YOMORA BLACK SIGNATURE MEMBERSHIP</p>
+        <h2 className="mt-3 font-display text-4xl text-cream md:text-5xl">Belong to more.</h2>
+        <p className="mt-4 max-w-md text-sm leading-relaxed text-cream/70 md:text-base">{MEMBERSHIP_HEADLINE}.</p>
+        <div className="mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="border border-white/15 p-4 text-center">
+            <p className="font-display text-3xl text-cream">{formatINR(price)}</p>
+            <p className="text-[11px] text-cream/60">one-time fee (non-refundable)</p>
           </div>
-          <p className="mt-4 text-[11px] font-semibold tracking-[0.42em] text-cream/70">
-            {tagline.toUpperCase()}
-          </p>
-        </div>
-
-        <div className="border border-gold/30 bg-black/40 p-6 md:p-8">
-          <p className="text-center text-[11px] font-semibold tracking-[0.3em] text-gold">
-            HOW TO UNLOCK YOUR MEMBERSHIP
-          </p>
-          <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="text-center">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-gold/60 text-gold">
-                <Banknote className="h-5 w-5" strokeWidth={1.2} />
-              </div>
-              <div className="mt-3 font-display text-xl text-gold">PAY {formatINR(price)}</div>
-              <div className="mt-1 text-[11px] text-cream/60">
-                one-time membership fee (non-refundable)
-              </div>
-            </div>
-            <div className="grid h-9 w-9 place-items-center rounded-full border border-gold/60 text-[10px] font-semibold tracking-[0.2em] text-gold">
-              OR
-            </div>
-            <div className="text-center">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-gold/60 text-gold">
-                <ShoppingBag className="h-5 w-5" strokeWidth={1.2} />
-              </div>
-              <div className="mt-3 font-display text-xl text-gold">SHOP FOR ₹25,000</div>
-              <div className="mt-1 text-[11px] text-cream/60">or more in a single transaction</div>
-            </div>
-          </div>
-          <p className="mt-6 text-center text-[11px] text-cream/60">
-            Your membership is valid for 1 {duration.toLowerCase()} from the date of activation.
-          </p>
-        </div>
-      </div>
-
-      {/* Center: signature card */}
-      <div className="mt-14 grid place-items-center">
-        <div className="relative aspect-[1.6/1] w-full max-w-md">
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#1a1a1a] via-black to-[#0a0a0a] shadow-[0_40px_100px_-30px_rgba(212,175,55,0.55)]" />
-          <div className="absolute inset-3 rounded-lg border border-gold/40" />
-          <div className="absolute inset-5 rounded-md border border-gold/15" />
-          <div className="relative flex h-full flex-col items-center justify-center px-8 text-center">
-            <div className="font-display text-4xl tracking-[0.22em] text-gold md:text-5xl">
-              YOMORA
-            </div>
-            <div className="mt-1 text-[9px] tracking-[0.32em] text-cream/60">
-              BY NEHALBHAI DEVIKA JEWELLERS
-            </div>
-            <div className="mt-6 h-px w-24 bg-gold/50" />
-            <div className="mt-5 font-display text-2xl tracking-[0.22em] text-cream md:text-3xl">
-              BLACK SIGNATURE
-            </div>
-            <div className="mt-1 text-[10px] tracking-[0.34em] text-gold">MEMBERSHIP</div>
-            <div className="mt-4 text-[9px] tracking-[0.3em] text-cream/50">
-              EXCLUSIVE MEMBERS ONLY
-            </div>
-            <div className="mt-3 flex items-center gap-3 text-[10px] tracking-[0.28em] text-gold">
-              <span>LUXURY</span>
-              <span className="text-gold/40">•</span>
-              <span>LEGACY</span>
-              <span className="text-gold/40">•</span>
-              <span>TRUST</span>
-            </div>
+          <span className="text-[10px] tracking-[0.2em] text-cream/50">OR</span>
+          <div className="border border-white/15 p-4 text-center">
+            <p className="font-display text-3xl text-cream">{shopAmount}+</p>
+            <p className="text-[11px] text-cream/60">spent in a single order</p>
           </div>
         </div>
+        <p className="mt-3 text-xs text-cream/50">{validityNote}</p>
         <Link
           to="/membership"
-          className="mt-10 inline-flex items-center gap-3 bg-gold px-10 py-3.5 text-[11px] font-semibold tracking-[0.32em] text-onyx hover:bg-gold-soft"
+          className="mt-7 inline-flex h-12 items-center bg-gold px-8 text-xs font-semibold tracking-[0.14em] text-onyx hover:bg-gold-soft"
         >
           {ctaLabel.toUpperCase()}
         </Link>
       </div>
-
-      {/* Bottom: privileges */}
-      <div className="mt-16 border-t border-gold/20 pt-10">
-        <div className="flex items-center justify-center gap-4">
-          <span className="text-gold/60">✦</span>
-          <p className="text-center text-[12px] font-semibold tracking-[0.36em] text-gold">
-            ONE MEMBERSHIP. ENDLESS PRIVILEGES.
-          </p>
-          <span className="text-gold/60">✦</span>
-        </div>
-        <div className="mt-10 grid gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-          {privileges.map((b) => (
-            <div key={b.t} className="text-center">
-              <div className="mx-auto grid h-11 w-11 place-items-center text-gold">
-                <b.icon className="h-6 w-6" strokeWidth={1.2} />
-              </div>
-              <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">
-                {b.t}
-              </div>
-              <div className="mt-1 text-[11px] leading-relaxed text-cream/60">{b.d}</div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-12 text-center text-[10px] tracking-[0.34em] text-cream/50">
-          A PRIVILEGE RESERVED FOR THOSE WHO VALUE QUALITY, TRUST &amp; TIMELESS ELEGANCE.
-        </p>
-      </div>
+      <ul className="grid gap-5 sm:grid-cols-2">
+        {privileges.map((b) => (
+          <li key={b.title} className="flex gap-3">
+            <SiteIcon name={b.icon} className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+            <span>
+              <span className="block text-sm font-semibold text-cream">{sentenceCase(b.title)}</span>
+              <span className="block text-xs text-cream/60">{b.description}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
+}
+
+function sentenceCase(value: string) {
+  const v = value.trim().toLowerCase();
+  return v.charAt(0).toUpperCase() + v.slice(1);
 }

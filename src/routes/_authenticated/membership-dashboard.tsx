@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { membershipBenefitList } from "@/lib/brand-config";
 import { Crown, Calendar, BadgeCheck, Clock, Sparkles, RefreshCw, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -200,7 +201,7 @@ function MembershipDashboard() {
                     <Sparkles className="h-3.5 w-3.5" /> BENEFITS INCLUDED
                   </div>
                   <ul className="mt-4 space-y-2 text-[12px] leading-relaxed text-cream/75">
-                    {(membership.plan?.benefits?.length
+                    {membershipBenefitList(membership.plan?.benefits?.length
                       ? membership.plan.benefits
                       : [
                           "25% off on everything for 1 year",
@@ -211,7 +212,7 @@ function MembershipDashboard() {
                     ).map((b) => (
                       <li key={b} className="flex gap-2">
                         <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gold" />
-                        <span>{b.replace(/15%/gi, "25%")}</span>
+                        <span>{b}</span>
                       </li>
                     ))}
                   </ul>
@@ -273,7 +274,7 @@ function EmptyState({
       </div>
       <h2 className="mt-5 font-display text-3xl text-cream">You're not a member yet</h2>
       <p className="mx-auto mt-3 max-w-lg text-sm text-cream/70">
-        Join Black Signature to unlock 25% off, early access, priority dispatch and more.
+        Join Black Signature to unlock 25% off, zero making charges, early access, priority dispatch and more.
         {plan ? ` Membership from ${formatINR(plan.price)} / ${plan.duration_label.toLowerCase()}.` : ""}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
