@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { WhatsappIcon } from "@/components/whatsapp-button";
+import customImg from "@/assets/custom-jewellery-banner-wide.jpg";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -55,8 +57,26 @@ function CustomJewelleryPage() {
                 </li>
               ))}
             </ul>
+            <a
+              href={`https://wa.me/${YOMORA_PHONE_DIGITS}?text=${encodeURIComponent("Hi YOMORA, I would like to discuss a custom jewellery piece.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex h-12 items-center gap-2 bg-[#1f7a4d] px-6 text-xs font-semibold tracking-[0.12em] text-white hover:bg-[#18603c]"
+            >
+              <WhatsappIcon className="h-4 w-4" /> SHARE YOUR IDEA ON WHATSAPP
+            </a>
+            <p className="mt-3 text-xs text-cream/60">Prefer email? Use the enquiry form below.</p>
           </div>
-          <div className="aspect-[4/3] bg-white/5" />
+          <div className="img-shimmer relative aspect-[4/3] overflow-hidden">
+            <img
+              src={customImg}
+              alt="Custom 925 silver pendant crafted by YOMORA"
+              width={2000}
+              height={469}
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-[85%_50%]"
+            />
+          </div>
         </div>
       </section>
 
