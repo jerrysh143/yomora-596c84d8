@@ -40,6 +40,10 @@ export const Route = createFileRoute("/products/")({
       context.queryClient.ensureQueryData(siteContentQuery()),
     ]);
   },
+  validateSearch: (search: Record<string, unknown>): { budget?: number } => {
+    const budget = Number(search.budget);
+    return Number.isFinite(budget) && budget > 0 ? { budget } : {};
+  },
   pendingMs: 150,
   pendingMinMs: 300,
   pendingComponent: CollectionPageSkeleton,
@@ -54,6 +58,7 @@ function ProductsPage() {
   const { items: wishItems } = useWishlist();
   const wishSet = new Set(wishItems.map((w) => w.id));
   const filter: Filter = "all";
+  const { budget } = Route.useSearch();
   const [onlyNew, setOnlyNew] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -62,8 +67,9 @@ function ProductsPage() {
   const items = useMemo(() => {
     let list = filter === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === filter);
     if (onlyNew) list = list.filter((p) => isProductNew(p));
+    if (budget) list = list.filter((p) => p.price <= budget);
     return list;
-  }, [filter, onlyNew, PRODUCTS]);
+  }, [filter, onlyNew, PRODUCTS, budget]);
 
   const filters: { key: Filter; label: string }[] = [
     { key: "all", label: "All" },
@@ -77,7 +83,9 @@ function ProductsPage() {
       <section className="bg-onyx text-cream">
         <div className="container-x mx-auto max-w-[1400px] py-14">
           <p className="text-[11px] font-semibold tracking-[0.28em] text-gold">THE COLLECTION</p>
-          <h1 className="mt-3 font-display text-5xl">Shop All Jewellery</h1>
+          <h1 className="mt-3 font-display text-5xl">
+            {budget ? `Gifts under ${formatINR(budget)}` : "Shop all jewellery"}
+          </h1>
           <p className="mt-3 max-w-xl text-sm text-cream/70">
             Hand-finished 925 sterling silver, hallmarked and made to be worn every day.
           </p>
@@ -130,7 +138,7 @@ function ProductsPage() {
               params={{ category: p.id }}
               className="group grid grid-cols-[42%_1fr] items-center gap-2 border border-border/70 bg-secondary/20 p-2 min-[400px]:block min-[400px]:border-0 min-[400px]:bg-transparent min-[400px]:p-0"
             >
-              <div className="relative overflow-hidden bg-secondary/40">
+              <div className="img-shimmer relative overflow-hidden">
                 <img
                   src={productImage(p)}
                   width={900}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MEMBERSHIP_HEADLINE, membershipBenefitText } from "@/lib/brand-config";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Banknote, ShoppingBag } from "lucide-react";
@@ -44,19 +45,17 @@ function MembershipPage() {
                 {m.eyebrow}
               </p>
               <h1 className="mt-3 font-display text-4xl leading-[1.05] text-cream md:text-6xl">
-                {m.title_line_1}
+                Black Signature
               </h1>
-              <p className="mt-2 font-display text-2xl tracking-[0.35em] text-gold md:text-3xl">
-                {m.title_line_2}
+              <p className="mt-2 font-display text-2xl tracking-[0.2em] text-gold md:text-3xl">
+                Membership
               </p>
               <div className="mt-5 flex items-center justify-center gap-3 md:justify-start">
                 <span className="h-px w-10 bg-gold/60" />
                 <span className="text-gold">✦</span>
                 <span className="h-px w-10 bg-gold/60" />
               </div>
-              <p className="mt-4 text-[11px] font-semibold tracking-[0.42em] text-cream/70">
-                {(primary?.tagline || m.tagline_fallback).toUpperCase()}
-              </p>
+              <p className="mt-4 text-sm text-cream/75 md:text-base">{MEMBERSHIP_HEADLINE}.</p>
             </div>
 
             {primary && (
@@ -149,10 +148,10 @@ function MembershipPage() {
                       <Icon className="h-6 w-6" strokeWidth={1.2} />
                     </div>
                     <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">
-                      {b.title.replace(/15%/gi, "25%")}
+                      {membershipBenefitText(b.title)}
                     </div>
                     <div className="mt-1 text-[11px] leading-relaxed text-cream/60">
-                      {b.description.replace(/15%/gi, "25%")}
+                      {membershipBenefitText(b.description)}
                     </div>
                   </div>
                 );

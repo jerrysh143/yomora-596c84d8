@@ -106,7 +106,7 @@ function WishlistCard({ item }: { item: WishlistItem }) {
 
   return (
     <div className="group flex flex-col">
-      <div className="relative overflow-hidden bg-secondary/40">
+      <div className="img-shimmer relative overflow-hidden">
         <Link to="/products/$category" params={{ category: item.id }} className="block">
           <img
             src={item.image}
