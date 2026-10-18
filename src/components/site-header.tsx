@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
 import {
   Search,
   User,
@@ -60,13 +61,28 @@ export function SiteHeader() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMenuOpen(false);
     };
-    document.body.style.overflow = "hidden";
+    // Lock page scroll (html + body) while the drawer is open, without layout shift.
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPaddingRight: body.style.paddingRight,
+    };
+    const scrollbar = window.innerWidth - html.clientWidth;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
     window.addEventListener("keydown", closeOnEscape);
     return () => {
-      document.body.style.overflow = "";
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.paddingRight = prev.bodyPaddingRight;
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [menuOpen]);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => setMenuOpen(false), [pathname]);
   const { data: siteContent } = useQuery(siteContentQuery());
   const header = siteContent?.header ?? SITE_CONTENT_DEFAULTS.header;
   const { count } = useCart();
@@ -85,8 +101,12 @@ export function SiteHeader() {
   return (
     <>
       <div className="bg-gold px-4 py-2 text-center text-[11px] font-medium tracking-[0.04em] text-onyx sm:text-xs">
-        Welcome offer: use code <b className="font-semibold tracking-[0.12em]">{WELCOME_OFFER_CODE}</b> at checkout
-        <span className="hidden sm:inline"> · Free shipping across India · Cash on Delivery, no extra fee</span>
+        Welcome offer: use code{" "}
+        <b className="font-semibold tracking-[0.12em]">{WELCOME_OFFER_CODE}</b> at checkout
+        <span className="hidden sm:inline">
+          {" "}
+          · Free shipping across India · Cash on Delivery, no extra fee
+        </span>
       </div>
       {stuck && <div style={{ height: headerH }} aria-hidden />}
       <header
@@ -295,154 +315,157 @@ export function SiteHeader() {
         </nav>
       </header>
 
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-[80] isolate"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Site menu"
-        >
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 z-0 bg-black/65 backdrop-blur-sm"
-          />
-          <aside
-            style={{ backgroundColor: "#0b0a08", color: "#f7efe4", opacity: 1 }}
-            className="fixed inset-y-0 left-0 z-10 flex w-[88%] max-w-[410px] flex-col overflow-y-auto bg-[#0b0a08] text-[#f7efe4] opacity-100 shadow-2xl"
+      {menuOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] isolate h-[100dvh] w-screen overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site menu"
           >
-            <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-5">
-              <Link to="/" onClick={() => setMenuOpen(false)} aria-label="YOMORA home">
-                <img
-                  src="/yomora-logo.png"
-                  width={1800}
-                  height={390}
-                  alt="YOMORA"
-                  className="h-10 w-auto max-w-[210px] object-contain"
-                />
-              </Link>
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setMenuOpen(false)}
-                className="grid h-11 w-11 place-items-center transition-colors hover:text-gold"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 border-b border-white/10">
-              <Link
-                to={signedIn ? "/account" : "/auth"}
-                onClick={() => setMenuOpen(false)}
-                className="grid min-h-24 place-items-center border-r border-white/10 px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
-              >
-                <span>
-                  <User className="mx-auto h-6 w-6" strokeWidth={1.5} />
-                  <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
-                    {signedIn ? "ACCOUNT" : "SIGN IN"}
-                  </span>
-                </span>
-              </Link>
-              <Link
-                to="/wishlist"
-                onClick={() => setMenuOpen(false)}
-                className="grid min-h-24 place-items-center border-r border-white/10 px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
-              >
-                <span>
-                  <Heart className="mx-auto h-6 w-6" strokeWidth={1.5} />
-                  <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
-                    WISHLIST ({wishlistCount})
-                  </span>
-                </span>
-              </Link>
-              <Link
-                to="/cart"
-                onClick={() => setMenuOpen(false)}
-                className="grid min-h-24 place-items-center px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
-              >
-                <span>
-                  <ShoppingBag className="mx-auto h-6 w-6" strokeWidth={1.5} />
-                  <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
-                    CART ({count})
-                  </span>
-                </span>
-              </Link>
-            </div>
-
-            <nav className="flex-1 px-5 py-5" aria-label="Menu navigation">
-              <DrawerLink
-                to="/products"
-                label="Shop 925 silver"
-                icon={<ShoppingBag className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/men"
-                label="For him"
-                icon={<Gem className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/women"
-                label="For her"
-                icon={<Gem className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/custom-jewellery"
-                label="Custom order"
-                icon={<Gem className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/membership"
-                label="Membership"
-                icon={<Crown className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/track-order"
-                label="Track order"
-                icon={<PackageSearch className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/about"
-                label="The House"
-                icon={<User className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-              <DrawerLink
-                to="/contact"
-                label="WhatsApp / contact"
-                icon={<ChevronRight className="h-5 w-5" />}
-                onClick={() => setMenuOpen(false)}
-              />
-            </nav>
-
-            <div className="border-t border-white/10 px-5 py-5 text-xs text-white/55">
-              <p className="font-semibold tracking-[0.12em] text-gold">YOMORA CARE</p>
-              <p className="mt-2 leading-relaxed">
-                Hallmarked 925 • Ships across India • 7-day returns
-              </p>
-              {signedIn && (
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              className="absolute inset-0 z-0 hidden bg-black/70 backdrop-blur-sm sm:block"
+            />
+            <aside
+              style={{ backgroundColor: "#0b0a08", color: "#f7efe4", opacity: 1 }}
+              className="absolute inset-y-0 left-0 z-10 flex h-[100dvh] w-full max-w-full touch-pan-y flex-col overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0b0a08] pb-[env(safe-area-inset-bottom)] text-[#f7efe4] opacity-100 shadow-2xl sm:w-[410px] sm:max-w-[88vw] sm:border-r sm:border-white/10"
+            >
+              <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-5">
+                <Link to="/" onClick={() => setMenuOpen(false)} aria-label="YOMORA home">
+                  <img
+                    src="/yomora-logo.png"
+                    width={1800}
+                    height={390}
+                    alt="YOMORA"
+                    className="h-10 w-auto max-w-[210px] object-contain"
+                  />
+                </Link>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const { error } = await supabase.auth.signOut();
-                    if (!error) window.location.assign("/");
-                  }}
-                  className="mt-4 inline-flex items-center gap-2 text-cream hover:text-gold"
+                  aria-label="Close menu"
+                  onClick={() => setMenuOpen(false)}
+                  className="grid h-11 w-11 place-items-center transition-colors hover:text-gold"
                 >
-                  <LogOut className="h-4 w-4" /> Sign out
+                  <X className="h-6 w-6" />
                 </button>
-              )}
-            </div>
-          </aside>
-        </div>
-      )}
+              </div>
+
+              <div className="grid grid-cols-3 border-b border-white/10">
+                <Link
+                  to={signedIn ? "/account" : "/auth"}
+                  onClick={() => setMenuOpen(false)}
+                  className="grid min-h-24 place-items-center border-r border-white/10 px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
+                >
+                  <span>
+                    <User className="mx-auto h-6 w-6" strokeWidth={1.5} />
+                    <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
+                      {signedIn ? "ACCOUNT" : "SIGN IN"}
+                    </span>
+                  </span>
+                </Link>
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMenuOpen(false)}
+                  className="grid min-h-24 place-items-center border-r border-white/10 px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
+                >
+                  <span>
+                    <Heart className="mx-auto h-6 w-6" strokeWidth={1.5} />
+                    <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
+                      WISHLIST ({wishlistCount})
+                    </span>
+                  </span>
+                </Link>
+                <Link
+                  to="/cart"
+                  onClick={() => setMenuOpen(false)}
+                  className="grid min-h-24 place-items-center px-2 py-4 text-center transition-colors hover:bg-white/5 hover:text-gold"
+                >
+                  <span>
+                    <ShoppingBag className="mx-auto h-6 w-6" strokeWidth={1.5} />
+                    <span className="mt-2 block text-[10px] font-semibold tracking-[0.12em]">
+                      CART ({count})
+                    </span>
+                  </span>
+                </Link>
+              </div>
+
+              <nav className="flex-1 px-5 py-5" aria-label="Menu navigation">
+                <DrawerLink
+                  to="/products"
+                  label="Shop 925 silver"
+                  icon={<ShoppingBag className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/men"
+                  label="For him"
+                  icon={<Gem className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/women"
+                  label="For her"
+                  icon={<Gem className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/custom-jewellery"
+                  label="Custom order"
+                  icon={<Gem className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/membership"
+                  label="Membership"
+                  icon={<Crown className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/track-order"
+                  label="Track order"
+                  icon={<PackageSearch className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/about"
+                  label="The House"
+                  icon={<User className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <DrawerLink
+                  to="/contact"
+                  label="WhatsApp / contact"
+                  icon={<ChevronRight className="h-5 w-5" />}
+                  onClick={() => setMenuOpen(false)}
+                />
+              </nav>
+
+              <div className="border-t border-white/10 px-5 py-5 text-xs text-white/55">
+                <p className="font-semibold tracking-[0.12em] text-gold">YOMORA CARE</p>
+                <p className="mt-2 leading-relaxed">
+                  Hallmarked 925 • Ships across India • 7-day returns
+                </p>
+                {signedIn && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const { error } = await supabase.auth.signOut();
+                      if (!error) window.location.assign("/");
+                    }}
+                    className="mt-4 inline-flex items-center gap-2 text-cream hover:text-gold"
+                  >
+                    <LogOut className="h-4 w-4" /> Sign out
+                  </button>
+                )}
+              </div>
+            </aside>
+          </div>,
+          document.body,
+        )}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
