@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SITE_CONTENT_DEFAULTS } from "@/lib/site-content.defaults";
 import { useCart } from "@/lib/cart";
+import { cartDrawer } from "@/lib/cart-drawer";
+import { WELCOME_OFFER_CODE } from "@/lib/brand-config";
 import { useWishlist } from "@/lib/wishlist";
 import { SearchOverlay } from "@/components/search-overlay";
 import { useServerFn } from "@tanstack/react-start";
@@ -82,6 +84,10 @@ export function SiteHeader() {
 
   return (
     <>
+      <div className="bg-gold px-4 py-2 text-center text-[11px] font-medium tracking-[0.04em] text-onyx sm:text-xs">
+        Welcome offer: use code <b className="font-semibold tracking-[0.12em]">{WELCOME_OFFER_CODE}</b> at checkout
+        <span className="hidden sm:inline"> · Free shipping across India · Cash on Delivery, no extra fee</span>
+      </div>
       {stuck && <div style={{ height: headerH }} aria-hidden />}
       <header
         ref={headerRef}
@@ -248,7 +254,12 @@ export function SiteHeader() {
             )}
             <Link
               to="/cart"
-              aria-label={`Cart (${count} items)`}
+              aria-label={`Bag (${count} items)`}
+              onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                event.preventDefault();
+                cartDrawer.open();
+              }}
               className="relative flex h-10 items-center gap-1 p-1.5 transition-colors hover:text-gold sm:p-2"
             >
               <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} />
@@ -279,7 +290,7 @@ export function SiteHeader() {
             Custom
           </Link>
           <Link to="/about" className="transition-colors hover:text-gold">
-            The House
+            Our story
           </Link>
         </nav>
       </header>
