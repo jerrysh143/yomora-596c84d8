@@ -16,7 +16,7 @@ import { subscriptionPlansQuery } from "@/lib/subscription.queries";
 import { siteContentQuery } from "@/lib/site-content.queries";
 import { SiteIcon } from "@/lib/site-icons";
 import { useWishlist, wishlist } from "@/lib/wishlist";
-import { MEMBERSHIP_HEADLINE, membershipBenefitText } from "@/lib/brand-config";
+import { MEMBERSHIP_HEADLINE, membershipPrivileges } from "@/lib/brand-config";
 import type { IconName } from "@/lib/site-content.defaults";
 
 export const Route = createFileRoute("/")({
@@ -409,7 +409,7 @@ function Index() {
           <MembershipBlock
             price={activePlans[0].price}
             ctaLabel={activePlans[0].cta_label || "Become a member"}
-            privileges={content.page_membership.privileges}
+            privileges={membershipPrivileges(content.page_membership.privileges)}
             shopAmountLabel={content.page_membership.shop_amount_label}
             validityNote={content.page_membership.validity_note}
           />
@@ -544,8 +544,8 @@ function MembershipBlock({
           <li key={b.title} className="flex gap-3">
             <SiteIcon name={b.icon} className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
             <span>
-              <span className="block text-sm font-semibold text-cream">{sentenceCase(membershipBenefitText(b.title))}</span>
-              <span className="block text-xs text-cream/60">{membershipBenefitText(b.description)}</span>
+              <span className="block text-sm font-semibold text-cream">{sentenceCase(b.title)}</span>
+              <span className="block text-xs text-cream/60">{b.description}</span>
             </span>
           </li>
         ))}

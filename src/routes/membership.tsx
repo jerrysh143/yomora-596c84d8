@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MEMBERSHIP_HEADLINE, membershipBenefitText } from "@/lib/brand-config";
+import { MEMBERSHIP_HEADLINE, membershipPrivileges } from "@/lib/brand-config";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Banknote, ShoppingBag } from "lucide-react";
@@ -137,7 +137,7 @@ function MembershipPage() {
               <span className="text-gold/60">✦</span>
             </div>
             <div className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-10">
-              {m.privileges.map((b, i) => {
+              {membershipPrivileges(m.privileges).map((b, i) => {
                 const Icon = getIcon(b.icon);
                 return (
                   <div
@@ -148,10 +148,10 @@ function MembershipPage() {
                       <Icon className="h-6 w-6" strokeWidth={1.2} />
                     </div>
                     <div className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-cream">
-                      {membershipBenefitText(b.title)}
+                      {b.title}
                     </div>
                     <div className="mt-1 text-[11px] leading-relaxed text-cream/60">
-                      {membershipBenefitText(b.description)}
+                      {b.description}
                     </div>
                   </div>
                 );
